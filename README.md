@@ -1,8 +1,6 @@
 # PhotoFrameGS02
 
-E-ink digital picture frame with remote image updates via 
-FTP and configuration settings adjustable through Telnet. 
-Features deep sleep mode with RTC backup for extended battery life.
+E-ink digital picture frame with remote image updates via FTP and configuration settings adjustable through Telnet. Features deep sleep mode with RTC backup for extended battery life.
 
 ## 🔧 Hardware
 
@@ -156,7 +154,7 @@ Place `config.ini` in LittleFS root (`/config.ini`):
 ```ini
 [device]
 appname = PHOTO FRAME GS02
-version = v2.0
+version = v1.0
 
 [display]
 jpg_brightness = 30      ; 0-100%
