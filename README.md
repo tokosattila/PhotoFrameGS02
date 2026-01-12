@@ -1,4 +1,4 @@
-# PhotoFrameGS02
+# Photo Frame GS02 (Grayscale E-ink)
 
 E-ink digital picture frame with remote image updates via FTP and configuration settings adjustable through Telnet. Features deep sleep mode with RTC backup for extended battery life.
 
