@@ -2,6 +2,14 @@
 
 E-ink digital picture frame with remote image updates via FTP and configuration settings adjustable through Telnet. Features deep sleep mode with RTC backup for extended battery life.
 
+> **📌 Note:** This project is designed for the newer **LilyGo T5 4.7" E-Paper Plus** (ESP32-S3). For the older **LilyGo T5 4.7" E-Paper** (WROVER-E) version, check out [PhotoFrameGS01](https://github.com/tokosattila/PhotoFrameGS01.git).
+
+## 📸 Gallery
+
+| <img src="docs/images/pic01.jpg" width="240px" alt="Photo Frame Display" /> | <img src="docs/images/pic02.jpg" width="240px" alt="Photo Frame Hardware" /> | <img src="docs/images/pic03.jpg" width="240px" alt="Photo Frame Back Side" /> |
+|:---:|:---:|:---:|
+| *Photo Frame with Image* | *Hardware backside* | *Backside covered* |
+
 ## 🔧 Hardware
 
 | Component | Specification |
@@ -14,29 +22,13 @@ E-ink digital picture frame with remote image updates via FTP and configuration 
 | **RTC** | PCF8563 (I2C, battery backup) |
 | **Storage** | SD Card (SPI) + LittleFS (internal) |
 | **Battery** | Li-Ion 18650 (optional) |
-| **Button** | GPIO21 (wake-up & settings) |
-
-### Pin Configuration (ESP32-S3)
-
-| Pin | Function |
-|-----|----------|
-| GPIO21 | Button (wake-up / settings) |
-| GPIO48 | Reset button |
-| GPIO14 | Battery ADC |
-| GPIO18 | RTC SDA (I2C) |
-| GPIO17 | RTC SCL (I2C) |
-| GPIO16 | SD MISO |
-| GPIO15 | SD MOSI |
-| GPIO11 | SD SCK |
-| GPIO42 | SD CS |
 
 ## 🔄 Operating Modes
 
 | Mode | Description |
 |------|-------------|
-| **Photo Frame Mode** | JPEG slideshow from SD Card or LittleFS with grayscale rendering |
-| **Deep Sleep Mode** | Low-power state with RTC timekeeping, configurable wake intervals |
-| **Maintenance Mode** | Button-triggered mode for WiFi config, FTP & Telnet access |
+| **Photo Frame Mode** | JPEG slideshow from SD Card or LittleFS with grayscale rendering, deep sleep between wake intervals (10sec to monthly) |
+| **Maintenance Mode** | Button-triggered mode for configuration & remote management |
 | **Low Battery Mode** | Auto shutdown with battery icon display |
 
 ## ✨ Features
@@ -108,6 +100,8 @@ lib/
 
 test/
 ├── mocks/                      # Mock classes for testing
+│   ├── MockString.h
+│   └── MockWiFiClient.h
 ├── test_Button/                # Button unit tests
 ├── test_ConfigCommand/         # Config command parsing tests
 ├── test_Configuration/         # Configuration parser tests
@@ -149,7 +143,7 @@ pio device monitor
 
 ## ⚙️ Configuration
 
-Place `config.ini` in LittleFS root (`/config.ini`):
+Place `config.ini` in SD Card or LittleFS root (`/config.ini`):
 
 ```ini
 [device]
@@ -157,27 +151,19 @@ appname = PHOTO FRAME GS02
 version = v1.0
 
 [display]
-jpg_brightness = 30      ; 0-100%
-jpg_contrast = 35        ; 0-100%
-jpg_gamma = 135          ; gamma correction
-image_file =             ; current image file
-images_dir = images      ; images directory
-image_ext = *.jpg        ; image file extension filter
-
-[storage]
-default_fs = 2           ; 1=LittleFS, 2=SDCard
-fallback_enable = true   ; smart fallback if images empty
+jpg_brightness = 25         ; 0-100%
+jpg_contrast = 75           ; 0-100%
+jpg_gamma = 125             ; gamma correction
+image_file =                ; current image file
 
 [ntp]
 ntp_server = pool.ntp.org
 ntp_port = 123
-ntp_gmt_offset = 1       ; GMT offset in hours
-ntp_update = 60000       ; update interval ms
-
-[connection]
-ap_enable = false        ; AP mode (true) or STA mode (false)
+ntp_gmt_offset = 7200       ;GMT+2 in seconds
+ntp_update = 60000          ; update interval ms
 
 [ap mode]
+ap_enable = true
 ap_ssid = PhotoFrameGS02
 ap_password = 123456789
 ap_ip = 192.168.4.1
@@ -197,24 +183,28 @@ sta_dns1 = 192.168.0.1
 sta_dns2 = 8.8.8.8
 
 [mdns]
-mdns_enable = true
-mdns_hostname = photoframe
+mdns_enable = false
+mdns_hostname = photoframegs02
 
 [timer]
-wake_up = 4              ; 1=10sec, 2=1min, 3=1hour, 4=12hour, 5=Daily, 6=Weekly, 7=Monthly
+wake_up = 5                 ; 1=10sec, 2=1min, 3=1hour, 4=12hour, 5=Daily, 6=Weekly, 7=Monthly
 
 [telnet]
 telnet_enable = true
 telnet_port = 23
 telnet_username = admin
 telnet_password = 123456789
-telnet_session = 3600000 ; session timeout ms
+telnet_session = 3600000    ; session timeout ms
 
 [ftp]
 ftp_enable = true
 ftp_port = 21
 ftp_username = admin
 ftp_password = 123456789
+
+[storage]
+default_file_system = sdcard ; 1=LittleFS, 2=SDCard
+fallback_enabled = true      ; smart fallback if images empty
 ```
 
 ## 📡 Telnet Commands
@@ -238,19 +228,33 @@ ftp_password = 123456789
 | `netinfo` | Show network info (IP, MAC, RSSI) |
 | `batinfo` | Show battery voltage and percentage |
 | `config <key> [value]` | Get or set config value |
-| `fetch <url> [filename]` | Download image (max. 200kB, *.jpg) |
+| `fetch <url> [filename]` | Download image (max. 200kB, type: *.jpg, *.jpeg) |
 | `reset config` | Factory reset configuration |
 | `reboot` | Restart device |
 | `logout` | Logout telnet session |
 | `exit` | Exit telnet connection |
 
+## 🔌 Pin Configuration
+
+| Pin | Function | Description |
+|-----|----------|-------------|
+| GPIO21 | Button 1 | Wake from deep sleep, Enter maintenance mode |
+| GPIO48 | Button 2 | Factory reset (hold 30 sec) |
+| GPIO14 | Battery ADC | Battery voltage measurement |
+| GPIO18 | RTC SDA (I2C) | PCF8563 real-time clock data line |
+| GPIO17 | RTC SCL (I2C) | PCF8563 real-time clock clock line |
+| GPIO16 | SD MISO | SD Card data out (Master In Slave Out) |
+| GPIO15 | SD MOSI | SD Card data in (Master Out Slave In) |
+| GPIO11 | SD SCK | SD Card serial clock |
+| GPIO42 | SD CS | SD Card chip select |
+
 ## 📦 Dependencies
 
-- [LilyGoEPD47](https://github.com/Xinyuan-LilyGO/LilyGo-EPD47) — E-Paper driver for ESP32-S3
-- [JPEGDEC](https://github.com/bitbank2/JPEGDEC) — Fast JPEG decoder
-- [SimpleFTPServer](https://github.com/xreef/SimpleFTPServer) — FTP server (modified for dual storage)
+- [LilyGoEPD47](https://github.com/Xinyuan-LilyGO/LilyGo-EPD47) — E-Paper driver
+- [JPEGDEC](https://github.com/bitbank2/JPEGDEC) — JPEG decoder
+- [SimpleFTPServer](https://github.com/xreef/SimpleFTPServer) — FTP server
 - [ArduinoHttpClient](https://github.com/arduino-libraries/ArduinoHttpClient) — HTTP client
-- [Unity](https://github.com/ThrowTheSwitch/Unity) — Unit testing framework
+- [Unity](https://github.com/ThrowTheSwitch/Unity) — Unit testing
 
 ## 🔋 Power Management
 
@@ -264,9 +268,6 @@ ftp_password = 123456789
 
 ## 📄 License
 
-MIT
+MIT License
 
----
-
-**Author:** Szeklerman  
-**Hardware:** LilyGo T5 4.7" E-Paper Plus (ESP32-S3)
+Copyright (c) 2025-2026 Szeklerman
