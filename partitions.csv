@@ -1,0 +1,11 @@
+# Name,Type,SubType,Offset,Size,Flags
+nvs,data,nvs,0x9000,24K,
+phy_init,data,phy,0xF000,4K,
+factory,app,factory,0x10000,3840K,
+littlefs,data,spiffs,0x3D0000,11456K,
+coredump,data,coredump,0xF00000,64K,
+# nvs,data,nvs,0x9000,0x6000,
+# phy_init,data,phy,0xF000,0x1000,
+# factory,app,factory,0x10000,0x3C0000,
+# littlefs,data,spiffs,0x3D0000,0xB30000,
+# coredump,data,coredump,0xF00000,0x10000,
