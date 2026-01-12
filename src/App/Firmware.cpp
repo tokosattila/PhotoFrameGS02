@@ -4,6 +4,8 @@
 
 #define BUF_SIZE 1024
 
+namespace App {
+
 Firmware_::Firmware_(fs::FS &filesystem, const String &path)
   : _fs(filesystem), _path(path) {}
 
@@ -122,3 +124,5 @@ bool Firmware_::performUpdate(Stream *logStream) {
     if(logStream) logStream->println("Update successful, rebooting...");
     return true;
 }
+
+} // namespace App
