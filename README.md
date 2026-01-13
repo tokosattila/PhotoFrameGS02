@@ -16,7 +16,6 @@ E-ink digital picture frame with remote image updates via FTP and configuration 
 
 ## 🔧 Hardware
 
-|
 | Component | Specification |
 |-----------|--------------|
 | **Board** | LilyGo T5 4.7" E-Paper Plus |
@@ -27,7 +26,8 @@ E-ink digital picture frame with remote image updates via FTP and configuration 
 | **RTC** | PCF8563 (I2C, battery backup) |
 | **Storage** | SD Card (SPI) + LittleFS (internal) |
 | **Battery** | Li-Ion 18650 (optional) |
-| <img src="docs/LilyGoT54.7E-PaperPlus-Pins.png" width="370px" alt="PIN" /> |
+
+<img src="docs/LilyGoT54.7E-PaperPlus-Pins.png" width="370px" alt="PIN" />
 
 ## 🔄 Operating Modes
 
