@@ -26,8 +26,13 @@
 #include <vector>
 #include <algorithm>
 #include <atomic>
+#include <ctype.h>
+#include <stdio.h>
+#include <strings.h>
+#include <mbedtls/sha256.h>
 #include <USB.h>
 #include <Arduino.h>
+#include <Update.h>
 #include <Preferences.h>
 #include <Wire.h>
 #include <FS.h>
@@ -46,7 +51,7 @@
 
 namespace App {
 
-  #define PRODUCTION true
+  #define PRODUCTION false
   
   #define DEFINE_TAG(tTag) static constexpr const char *TAG = tTag
 
@@ -250,6 +255,10 @@ namespace App {
   constexpr const char *IMAGES_DIR = "images";
   constexpr const char *CONFIG_FILE = "/config.ini";
 
+  constexpr const char *FIRMWARE_DIR = "/update";
+  constexpr const char *FIRMWARE_PATH = "/update/firmware.bin";
+  constexpr const char *FIRMWARE_SHA_PATH = "/update/firmware.sha256";
+
   constexpr EFileSystemType DEFAULT_FILE_SYSTEM = EFileSystemType::SDCard;
   constexpr bool STORAGE_FALLBACK_ENABLED = true;
 
@@ -309,6 +318,7 @@ namespace App {
 #include <App/Button.h>
 #include <App/Display.h>
 #include <App/FTP.h>
+#include <App/Firmware.h>
 #include <App/Telnet/Command.h>
 #include <App/Telnet/Commands/CallbackCommand.h>
 #include <App/Telnet.h>
@@ -331,6 +341,7 @@ namespace App {
 #define BTN Button_::Instance()
 #define DSP Display_::Instance()
 #define FTP FTP_::Instance()
+#define FWU Firmware_::Instance()
 #define TLN Telnet_::Instance()
 
 #endif

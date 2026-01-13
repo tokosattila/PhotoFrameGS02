@@ -31,7 +31,7 @@ namespace App {
     private:
       static constexpr uint16_t kHttpPort = 80;
       static constexpr uint16_t kHttpsPort = 443;
-      static constexpr int kMaxFileSizeKB = 200;
+      static constexpr int kMaxFileSizeKB = 400;
       static constexpr int kMaxFileSizeBytes = kMaxFileSizeKB * 1024;
       static constexpr int kHttpsMinHeap = 50 * 1024;
       static constexpr int kTimeoutMs = 10 * 1000;

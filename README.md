@@ -10,6 +10,10 @@ E-ink digital picture frame with remote image updates via FTP and configuration 
 |:---:|:---:|:---:|
 | *Photo Frame with Image* | *Hardware backside* | *Backside covered* |
 
+| <img src="docs/images/pic04.jpg" width="360px" alt="Telnet" /> | <img src="docs/images/pic05.jpg" width="360px" alt="FTP" /> |
+|:---:|:---:|:---:|
+| *Telnet* | *FTP* |
+
 ## 🔧 Hardware
 
 | Component | Specification |
@@ -40,6 +44,7 @@ E-ink digital picture frame with remote image updates via FTP and configuration 
 - **NTP Time Sync** — Automatic time synchronization with RTC backup
 - **FTP Server** — Upload/manage images wirelessly (SD Card or LittleFS)
 - **Telnet Console** — Remote monitoring, configuration & commands
+- **Firmware OTA (Dual Slot)** — Update firmware via `/update/` (ota_0/ota_1) with boot-slot control
 - **Battery Monitoring** — Auto low-power mode with voltage display
 - **Grayscale Rendering** — 16-level dithering with brightness/contrast/gamma control
 - **Deep Sleep Wake-up** — Timer-based or button-triggered (EXT1)
@@ -55,19 +60,21 @@ src/
 │   ├── Configuration.cpp/h     # INI config management
 │   ├── Connection.cpp/h        # WiFi management (AP/STA)
 │   ├── Display.cpp/h           # E-Paper driver wrapper
-│   ├── FileSystem.cpp/h        # Abstract filesystem interface
-│   ├── LittleFS.cpp/h          # LittleFS operations
-│   ├── SDCard.cpp/h            # SD Card operations (SPI)
-│   ├── Storage.cpp/h           # Storage manager with fallback
+│   ├── Firmware.cpp/h          # Firmware manager
 │   ├── FTP.cpp/h               # FTP server
 │   ├── Global.h                # Global definitions & macros
+│   ├── LittleFS.cpp/h          # LittleFS operations
 │   ├── NTP.cpp/h               # NTP time sync
 │   ├── RTCTime.cpp/h           # PCF8563 RTC driver
+│   ├── SDCard.cpp/h            # SD Card operations (SPI)
+│   ├── Storage.cpp/h           # Storage manager with fallback
 │   ├── Telnet.cpp/h            # Telnet console
 │   ├── Telnet/
 │   │   ├── Command.h           # Base command interface
 │   │   └── Commands/           # Telnet command implementations
 │   │       ├── BatInfoCommand.h
+│   │       ├── BootPartitionCommand.h
+│   │       ├── CallBackCommand.h
 │   │       ├── CatCommand.h
 │   │       ├── ClearCommand.h
 │   │       ├── ConfigCommand.h
@@ -75,10 +82,12 @@ src/
 │   │       ├── ExitCommand.h
 │   │       ├── FetchCommand.h
 │   │       ├── FileSystemInfoCommand.h
+│   │       ├── FirmwareUpdateCommand.h
 │   │       ├── HelpCommand.h
 │   │       ├── ListCommand.h
 │   │       ├── LogoutCommand.h
 │   │       ├── MemInfoCommand.h
+│   │       ├── NotFoundCommand.h
 │   │       ├── NetInfoCommand.h
 │   │       ├── NvsInfoCommand.h
 │   │       ├── RebootCommand.h
@@ -228,11 +237,25 @@ fallback_enabled = true      ; smart fallback if images empty
 | `netinfo` | Show network info (IP, MAC, RSSI) |
 | `batinfo` | Show battery voltage and percentage |
 | `config <key> [value]` | Get or set config value |
-| `fetch <url> [filename]` | Download image (max. 200kB, type: *.jpg, *.jpeg) |
+| `fetch <url> [filename]` | Download image (max. 400kB, type: *.jpg, *.jpeg) |
+| `fwupdate [status\|verify\|run]` | Verify/apply firmware update from `/update/` |
+| `fwupdate` | Show update status |
+| `fwupdate verify` | Verify firmware.bin/firmware.sha256 |
+| `fwupdate run` | Perform update (asks y/n) |
+| `bootpart [status\|ota0\|ota1]` | Show or set active OTA boot slot |
 | `reset config` | Factory reset configuration |
 | `reboot` | Restart device |
 | `logout` | Logout telnet session |
 | `exit` | Exit telnet connection |
+
+## 🧩 Firmware (OTA)
+
+This project uses a dual-slot OTA layout (`ota_0` + `ota_1`) controlled by the `otadata` partition.
+
+- **Applying update**: upload `firmware.bin` and `firmware.sha256` into `/update/` on the active storage, then run `fwupdate verify` and `fwupdate run`.
+- **Which slot is running**: use `bootpart status` (shows Running/Boot partitions).
+- **Force boot slot**: use `bootpart ota0` or `bootpart ota1`, then `reboot`.
+- **USB upload note**: a plain USB upload typically writes the firmware at `0x10000` (often `ota_0`). If the device still boots the other slot, set it explicitly with `bootpart`.
 
 ## 🔌 Pin Configuration
 

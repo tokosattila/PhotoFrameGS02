@@ -245,7 +245,10 @@ namespace App {
   bool SDCard_::DeleteFile(const char *tPath) {
     Guard tLock;
     if (!mMounted) return false;
-    bool tOk = SD.remove(tPath);
+    char tNormalizedPath[128];
+    strncpy(tNormalizedPath, NormalizePath(tPath), sizeof(tNormalizedPath) - 1);
+    tNormalizedPath[sizeof(tNormalizedPath) - 1] = '\0';
+    bool tOk = SD.remove(tNormalizedPath);
     if (tOk) xLOG("File deleted → %s", tPath);
     else xLOG("Error deleted file → %s", tPath);
     return tOk;
@@ -267,7 +270,10 @@ namespace App {
   bool SDCard_::DeleteDir(const char *tPath) {
     Guard tLock;
     if (!mMounted) return false;
-    bool tOk = SD.rmdir(tPath);
+    char tNormalizedPath[128];
+    strncpy(tNormalizedPath, NormalizePath(tPath), sizeof(tNormalizedPath) - 1);
+    tNormalizedPath[sizeof(tNormalizedPath) - 1] = '\0';
+    bool tOk = SD.rmdir(tNormalizedPath);
     if (tOk) xLOG("Directory deleted → %s", tPath);
     else xLOG("Error deleted directory → %s", tPath);
     return tOk;

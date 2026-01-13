@@ -1,40 +1,41 @@
-// src/App/Firmware.h
-// Simple firmware updater class for single-partition ESP32
-
 #ifndef FIRMWARE_H
 #define FIRMWARE_H
 
-#include <Arduino.h>
-#include <FS.h>
 #include <App/Global.h>
 
 namespace App {
 
-class Firmware_ {
-    DEFINE_TAG("FW");
+  class Firmware_ {
+    DEFINE_TAG("FWU");
+    friend class AutoGuard<Firmware_>;
     public:
-        using Guard = AutoGuard<Firmware_>;
-        Firmware_(fs::FS &filesystem, const String &path = "/update/firmware.bin");
-
-        // Check if firmware file exists and non-zero
-        bool updateAvailable();
-
-        // Verify SHA256 hex file located at shaPath (e.g. /update/firmware.sha256)
-        bool verifySha256(const String &shaPath);
-
-        // Perform firmware update from binary; optional log stream for progress
-        bool performUpdate(Stream *logStream = nullptr);
-
-        // Human-readable last error
-        String getLastError() const;
-
+      using Guard = AutoGuard<Firmware_>;
+      static Firmware_ &Instance();
+      static void Lock();
+      static void Unlock();
+      bool Init();
+      bool UpdateAvailable();
+      bool VerifySha256(const char *tShaPath = nullptr);
+      bool PerformUpdate(Stream *tLogStream = nullptr);
+      bool CleanupUpdateDirIfExists(Stream *tLogStream = nullptr);
+      const char *GetLastError() const;
     private:
-        fs::FS &_fs;
-        String _path;
-        String _lastError;
-        void setError(const String &err);
-};
+      Firmware_();
+      ~Firmware_();
+      Firmware_(const Firmware_ &) = delete;
+      Firmware_ &operator=(const Firmware_ &) = delete;
+      mutable SemaphoreHandle_t mMutex = nullptr;
+      static constexpr size_t mUpdateBufferDefaultSize = 4096;
+      uint8_t *mUpdateBuffer = nullptr;
+      size_t mUpdateBufferSize = 0;
+      const char *mPath = FIRMWARE_PATH;
+      const char *mShaPath = FIRMWARE_SHA_PATH;
+      char mLastError[256] = "";
+      void SetError(const char *tErrorMessage);
+      bool EnsureUpdateBuffer();
+      bool CleanupUpdateDir(Stream *tLogStream);
+    };
 
-} // namespace App
+}
 
-#endif // FIRMWARE_H
+#endif

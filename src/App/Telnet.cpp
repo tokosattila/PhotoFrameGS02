@@ -13,6 +13,8 @@
 #include <App/Telnet/Commands/BatInfoCommand.h>
 #include <App/Telnet/Commands/ConfigCommand.h>
 #include <App/Telnet/Commands/FetchCommand.h>
+#include <App/Telnet/Commands/FirmwareUpdateCommand.h>
+#include <App/Telnet/Commands/BootPartitionCommand.h>
 #include <App/Telnet/Commands/CallbackCommand.h>
 #include <App/Telnet/Commands/ResetCommand.h>
 #include <App/Telnet/Commands/RebootCommand.h>
@@ -36,12 +38,13 @@ namespace App {
   static BatInfoCommand_ sBatInfoCmd;
   static ConfigCommand_ sConfigCmd;
   static FetchCommand_ sFetchCmd;
+  static FirmwareUpdateCommand_ sFirmwareUpdateCmd;
+  static BootPartitionCommand_ sBootPartitionCmd;
   static ResetCommand_ sResetCmd;
   static RebootCommand_ sRebootCmd;
   static LogoutCommand_ sLogoutCmd;
   static ExitCommand_ sExitCmd;
-  static NotFoundCommand_ sNotFoundCmd;
-  
+  static NotFoundCommand_ sNotFoundCmd; 
 
   constexpr uint16_t kBufferSize = sizeof(Telnet_::Instance().mInputBuffer);
 
@@ -100,6 +103,8 @@ namespace App {
       RegisterCommand(&sBatInfoCmd);
       RegisterCommand(&sConfigCmd);
       RegisterCommand(&sFetchCmd);
+      RegisterCommand(&sFirmwareUpdateCmd);
+      RegisterCommand(&sBootPartitionCmd);
       RegisterCommand(&sResetCmd);
       RegisterCommand(&sRebootCmd);
       RegisterCommand(&sLogoutCmd);
@@ -197,6 +202,24 @@ namespace App {
             WritePrompt();
             continue;
           } 
+          if (mWaitingConfirmation) {
+            bool tConfirmed = false;
+            if (!ParseYesNo(mInputBuffer, tConfirmed)) {
+              mClient.print(F("\r\n" COLOR_YELLOW "  Please answer 'y' or 'n' (or 'cancel')" COLOR_WHITE "\r\n"));
+              mInputPos = 0;
+              memset(mInputBuffer, 0, sizeof(mInputBuffer));
+              WritePrompt();
+              continue;
+            }
+            auto tCallback = mConfirmCallback;
+            mWaitingConfirmation = false;
+            mConfirmCallback = nullptr;
+            mInputPos = 0;
+            memset(mInputBuffer, 0, sizeof(mInputBuffer));
+            if (tCallback) tCallback(tConfirmed, mClient);
+            WritePrompt();
+            continue;
+          }
           char tCmdName[128] = "";
           strncpy(tCmdName, mInputBuffer, sizeof(tCmdName) - 1);
           char *tSpace = strchr(tCmdName, ' ');
@@ -270,7 +293,50 @@ namespace App {
 
   const char *Telnet_::GetCurrentPrompt() {
     if (!IsAuthenticated() && mAuthRequired) return mWaitingPassword ? "Password: " : "Username: ";
+    if (mWaitingConfirmation) return mConfirmPrompt;
     return "$ ";
+  }
+
+  bool Telnet_::ParseYesNo(const char *tInput, bool &tValue) const {
+    if (!tInput) return false;
+    while (*tInput && isWhitespace((int)*tInput)) tInput++;
+    if (*tInput == '\0') return false;
+    if (*tInput == 'y' || *tInput == 'Y') {
+      tValue = true;
+      return true;
+    }
+    if (*tInput == 'n' || *tInput == 'N') {
+      tValue = false;
+      return true;
+    }
+    if (*tInput == 'c' || *tInput == 'C') {
+      tValue = false;
+      return true;
+    }
+    if (strcasecmp(tInput, "yes") == 0) {
+      tValue = true;
+      return true;
+    }
+    if (strcasecmp(tInput, "no") == 0) {
+      tValue = false;
+      return true;
+    }
+    if (strcasecmp(tInput, "cancel") == 0 || strcasecmp(tInput, "abort") == 0) {
+      tValue = false;
+      return true;
+    }
+    return false;
+  }
+
+  void Telnet_::RequestConfirmation(const char *tPrompt, FConfirmCallback tCallback) {
+    Guard tLock;
+    if (!tPrompt || !tPrompt[0]) tPrompt = "Confirm (y/n): ";
+    snprintf(mConfirmPrompt, sizeof(mConfirmPrompt), "  %s", tPrompt);
+    mConfirmCallback = std::move(tCallback);
+    mWaitingConfirmation = true;
+    mInputPos = 0;
+    memset(mInputBuffer, 0, sizeof(mInputBuffer));
+    WritePrompt();
   }
 
   void Telnet_::WritePrompt() {

@@ -25,7 +25,17 @@ class Application {
         while (!xLOG_S && (millis() - tStart) < 5e3) vTaskDelay(10 / portTICK_PERIOD_MS);
         vTaskDelay(100 / portTICK_PERIOD_MS);
         xLOG_PL();
-        xLOG_S.flush();
+        xLOG_FLUSH();
+      #endif
+
+      #if !PRODUCTION
+        {
+          const esp_partition_t *tRunning = esp_ota_get_running_partition();
+          const esp_partition_t *tBoot = esp_ota_get_boot_partition();
+          if (tRunning) xLOG("Running partition → %s @ 0x%08x", tRunning->label, (unsigned)tRunning->address);
+          if (tBoot) xLOG("Boot partition → %s @ 0x%08x", tBoot->label, (unsigned)tBoot->address);
+          xLOG_FLUSH();
+        }
       #endif
       if (psramFound()) heap_caps_malloc_extmem_enable(256);
       if (!mMutex) mMutex = xSemaphoreCreateRecursiveMutex();
@@ -65,6 +75,15 @@ class Application {
           sButtonTaskStarted = true;
         }
       #endif
+      {
+        STG.Init(false);
+        if (STG.Exists(FIRMWARE_DIR)) {
+          STG.DeleteFile(FIRMWARE_PATH);
+          STG.DeleteFile(FIRMWARE_SHA_PATH);
+          if (!STG.RemoveDir(FIRMWARE_DIR)) xLOG("FW update cleanup failed → could not remove /update");
+        }
+        STG.End();
+      }
       if (UTL.WasWokenByButton()) MaintenanceMode();
       else PhotoFrameMode();
     }

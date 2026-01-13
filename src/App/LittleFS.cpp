@@ -212,7 +212,10 @@ namespace App {
 
   bool LittleFS_::DeleteFile(const char *tPath) {
     Guard tLock;
-    bool tOk = LittleFS.remove(tPath);
+    char tNormalizedPath[128];
+    strncpy(tNormalizedPath, NormalizePath(tPath), sizeof(tNormalizedPath) - 1);
+    tNormalizedPath[sizeof(tNormalizedPath) - 1] = '\0';
+    bool tOk = LittleFS.remove(tNormalizedPath);
     if (tOk) xLOG("File deleted → %s", tPath);
     else xLOG("Error deleted file → %s", tPath);
     return tOk;
@@ -232,7 +235,10 @@ namespace App {
 
   bool LittleFS_::DeleteDir(const char *tPath) {
     Guard tLock;
-    bool tOk = LittleFS.rmdir(tPath);
+    char tNormalizedPath[128];
+    strncpy(tNormalizedPath, NormalizePath(tPath), sizeof(tNormalizedPath) - 1);
+    tNormalizedPath[sizeof(tNormalizedPath) - 1] = '\0';
+    bool tOk = LittleFS.rmdir(tNormalizedPath);
     if (tOk) xLOG("Directory deleted → %s", tPath);
     else xLOG("Error deleted directory → %s", tPath);
     return tOk;
