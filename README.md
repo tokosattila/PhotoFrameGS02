@@ -11,7 +11,7 @@ E-ink digital picture frame with remote image updates via FTP and configuration 
 | *Photo Frame with Image* | *Hardware backside* | *Backside covered* |
 
 | <img src="docs/images/pic04.jpg" width="360px" alt="Telnet" /> | <img src="docs/images/pic05.jpg" width="360px" alt="FTP" /> |
-|:---:|:---:|:---:|
+|:---:|:---:|
 | *Telnet* | *FTP* |
 
 ## 🔧 Hardware
