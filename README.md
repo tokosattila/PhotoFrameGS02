@@ -229,35 +229,50 @@ fallback_enabled = true      ; smart fallback if images empty
 
 ## 📡 Telnet Commands
 
-| Command | Description |
-|---------|-------------|
-| `help` | Show available commands |
-| `clear` | Clear terminal screen |
-| `list [path]` | List directories and files |
-| `cat <filename>` | Show file content |
-| `date` | Show system date and time |
-| `date rtc` | Show RTC date and time |
-| `date rtc set YYYY.MM.DD HH:MM:SS` | Set RTC date and time |
-| `date rtc sync-from-ntp` | Sync RTC from NTP server |
-| `date rtc sync-to-system` | Sync system time from RTC |
-| `timestamp` | Show current Unix timestamp |
-| `nvsinfo` | Show NVS usage info |
-| `meminfo` | Show memory usage (heap, PSRAM) |
-| `sketchinfo` | Show sketch/firmware info |
-| `fsinfo` | Show filesystem usage (SD + LittleFS) |
-| `netinfo` | Show network info (IP, MAC) |
-| `batinfo` | Show battery voltage and percentage |
-| `config <key> [value]` | Get or set config value |
-| `fetch <url> [filename]` | Download image (max. 400kB, type: *.jpg, *.jpeg) |
-| `fwupdate [status\|verify\|run]` | Verify/apply firmware update from `/update/` |
-| `fwupdate` | Show update status |
-| `fwupdate verify` | Verify firmware.bin/firmware.sha256 |
-| `fwupdate run` | Perform update (asks y/n) |
-| `bootpart [status\|ota0\|ota1]` | Show or set active OTA boot slot |
-| `reset config` | Factory reset configuration |
-| `reboot` | Restart device |
-| `logout` | Logout telnet session |
-| `exit` | Exit telnet connection |
+### SYSTEM
+
+- help – command list
+- clear – clear screen
+- reboot – restart
+- reset config – factory reset
+- exit – disconnect
+- logout – logout (re-auth required)
+
+### INFORMATION
+
+- meminfo – RAM usage (heap, PSRAM)
+- netinfo – IP/MAC/DNS
+- fsinfo – storage usage (SD + LittleFS)
+- sketchinfo – firmware info (size + running/boot partitions)
+- nvsinfo – NVS usage
+- batinfo – battery info
+- date – current time
+  - date rtc – RTC time
+  - date rtc set YYYY.MM.DD HH:MM:SS – set RTC time
+  - date rtc sync-from-ntp – sync RTC from NTP
+  - date rtc sync-to-system – sync system time from RTC
+- timestamp – Unix epoch
+
+### FILES
+
+- list [path] – show all files
+- cat <filename> – view content
+
+### CONFIGURATION
+
+- config <key> – get configuration
+- config <key> [value] – set configuration
+
+### DOWNLOAD
+
+- fetch <url> [filename] – HTTP/HTTPS download (max 400kB, .jpg/.jpeg only)
+
+### FIRMWARE (OTA)
+
+- fwupdate – show update status from /update/
+- fwupdate verify – verify firmware.bin/firmware.sha256
+- fwupdate run – perform update (asks y/n, then reboots)
+- bootpart [status|ota0|ota1] – show/set boot OTA slot
 
 ## 🧩 Firmware (OTA)
 

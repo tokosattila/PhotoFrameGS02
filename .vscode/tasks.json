@@ -5,6 +5,9 @@
 			"label": "PlatformIO Build",
 			"type": "shell",
 			"command": "platformio",
+			"windows": {
+				"command": "${env:USERPROFILE}\\.platformio\\penv\\Scripts\\platformio.exe"
+			},
 			"args": [
 				"run",
 				"-e",
@@ -22,6 +25,9 @@
 			"label": "PlatformIO Test",
 			"type": "shell",
 			"command": "platformio",
+			"windows": {
+				"command": "${env:USERPROFILE}\\.platformio\\penv\\Scripts\\platformio.exe"
+			},
 			"args": [
 				"test",
 				"-e",
