@@ -10,12 +10,13 @@ E-ink digital picture frame with remote image updates via FTP and configuration 
 |:---:|:---:|:---:|
 | *Photo Frame with Image* | *Hardware backside* | *Backside covered* |
 
-| <img src="docs/images/pic04.jpg" width="360px" alt="Telnet" /> | <img src="docs/images/pic05.jpg" width="360px" alt="FTP" /> |
+| <img src="docs/images/pic04.jpg" width="370px" alt="Telnet" /> | <img src="docs/images/pic05.jpg" width="370px" alt="FTP" /> |
 |:---:|:---:|
 | *Telnet* | *FTP* |
 
 ## 🔧 Hardware
 
+|
 | Component | Specification |
 |-----------|--------------|
 | **Board** | LilyGo T5 4.7" E-Paper Plus |
@@ -26,6 +27,7 @@ E-ink digital picture frame with remote image updates via FTP and configuration 
 | **RTC** | PCF8563 (I2C, battery backup) |
 | **Storage** | SD Card (SPI) + LittleFS (internal) |
 | **Battery** | Li-Ion 18650 (optional) |
+| <img src="docs/LilyGoT54.7E-PaperPlus-Pins.png" width="370px" alt="PIN" /> |
 
 ## 🔄 Operating Modes
 
@@ -212,7 +214,7 @@ ftp_username = admin
 ftp_password = 123456789
 
 [storage]
-default_file_system = sdcard ; 1=LittleFS, 2=SDCard
+default_file_system = sdcard ; sdcard | littlefs
 fallback_enabled = true      ; smart fallback if images empty
 ```
 
@@ -234,7 +236,7 @@ fallback_enabled = true      ; smart fallback if images empty
 | `meminfo` | Show memory usage (heap, PSRAM) |
 | `sketchinfo` | Show sketch/firmware info |
 | `fsinfo` | Show filesystem usage (SD + LittleFS) |
-| `netinfo` | Show network info (IP, MAC, RSSI) |
+| `netinfo` | Show network info (IP, MAC) |
 | `batinfo` | Show battery voltage and percentage |
 | `config <key> [value]` | Get or set config value |
 | `fetch <url> [filename]` | Download image (max. 400kB, type: *.jpg, *.jpeg) |
