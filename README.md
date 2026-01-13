@@ -18,7 +18,7 @@ E-ink digital picture frame with remote image updates via FTP and configuration 
 
 <table width="100%">
 <tr>
-<td align="center" style="padding:0!important">
+<td align="center" style="padding:10px!important">
 
 | Component | Specification |
 |-----------|--------------|
