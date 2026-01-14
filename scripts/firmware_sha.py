@@ -27,7 +27,7 @@ def _post_build_sha(source, target, env):
         f.write(digest + '\n')
     print('Generated SHA256:', digest)
 
-    data_dir = os.path.join(env['PROJECT_DIR'], 'firmware', 'update')
+    data_dir = os.path.join(env['PROJECT_DIR'], 'firmware')
     os.makedirs(data_dir, exist_ok=True)
     shutil.copy2(bin_path, os.path.join(data_dir, 'firmware.bin'))
     shutil.copy2(sha_path, os.path.join(data_dir, 'firmware.sha256'))
