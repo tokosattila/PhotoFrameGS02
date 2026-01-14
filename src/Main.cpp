@@ -75,15 +75,7 @@ class Application {
           sButtonTaskStarted = true;
         }
       #endif
-      {
-        STG.Init(false);
-        if (STG.Exists(FIRMWARE_DIR)) {
-          STG.DeleteFile(FIRMWARE_PATH);
-          STG.DeleteFile(FIRMWARE_SHA_PATH);
-          if (!STG.RemoveDir(FIRMWARE_DIR)) xLOG("FW update cleanup failed → could not remove /update");
-        }
-        STG.End();
-      }
+      FWU.CleanupUpdateDirOnBoot();
       if (UTL.WasWokenByButton()) MaintenanceMode();
       else PhotoFrameMode();
     }

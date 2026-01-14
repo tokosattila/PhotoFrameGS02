@@ -141,13 +141,19 @@ namespace App {
 
   unsigned long NTP_::GetCurrentEpoch() {
     Guard tLock;
-    if (!UpdateTime()) return 0;
-    if (mCurrentEpoch == 0) return 0;
-    unsigned long tBase = mCurrentEpoch + ((millis() - mLastUpdate) / 1000UL);
+    unsigned long tBase = GetCurrentEpochUTC();
+    if (tBase == 0) return 0;
     unsigned long tOffset = mCfg.GMTOffset;
     bool tDst = IsDST(tBase + tOffset);
     if (tDst) tOffset += SECONDS_PER_HOUR;
     return tBase + tOffset;
+  }
+
+  unsigned long NTP_::GetCurrentEpochUTC() {
+    Guard tLock;
+    if (!UpdateTime()) return 0;
+    if (mCurrentEpoch == 0) return 0;
+    return mCurrentEpoch + ((millis() - mLastUpdate) / 1000UL);
   }
 
   unsigned long NTP_::EpochTime() {

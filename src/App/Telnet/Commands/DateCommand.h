@@ -34,18 +34,32 @@ namespace App {
                "date rtc sync-to-system          " COLOR_YELLOW "- sync system time from RTC" COLOR_WHITE;
       }
     private:
+      static time_t ToLocalTime(time_t tUtc) {
+        const SNTPConfig tCfg = CFG.Get<SNTPConfig>();
+        return (time_t)((unsigned long)tUtc + (unsigned long)tCfg.GMTOffset);
+      }
+
       bool HandleRTCDateTime(WiFiClient &tClient) {
         RTC.Init(false);
         if (!RTC.IsAvailable()) {
           tClient.print(F(COLOR_RED "\r\n  No RTC detected\r\n\r\n" COLOR_WHITE));
           return false;
         }
-        tClient.print(F(COLOR_GREEN "\r\n  RTC DateTime:\r\n" COLOR_WHITE));
+        tClient.print(F(COLOR_GREEN "\r\n  RTC DateTime (local):\r\n" COLOR_WHITE));
+        unsigned long tEpoch = RTC.GetEpoch();
+        if (tEpoch == 0) {
+          tClient.print(F(COLOR_RED "\r\n  Error: RTC read failed\r\n\r\n" COLOR_WHITE));
+          return false;
+        }
+        time_t tNowUtc = (time_t)tEpoch;
+        time_t tNowLocal = ToLocalTime(tNowUtc);
+        struct tm tTimeInfo;
+        gmtime_r(&tNowLocal, &tTimeInfo);
         char tBuffer[16];
-        RTC.GetDate(tBuffer, sizeof(tBuffer));
+        strftime(tBuffer, sizeof(tBuffer), "%Y.%m.%d", &tTimeInfo);
         tClient.print(F("\r\n  Date: "));
         tClient.print(tBuffer);
-        RTC.GetTime(tBuffer, sizeof(tBuffer));
+        strftime(tBuffer, sizeof(tBuffer), "%H:%M:%S", &tTimeInfo);
         tClient.print(F("\r\n  Time: "));
         tClient.print(tBuffer);
         tClient.print(F("\r\n\r\n"));
@@ -94,16 +108,33 @@ namespace App {
         tDateTime.Minute = tMin;
         tDateTime.Second = tSec;
         tClient.print(F("\r\n\r\n  Setting RTC datetime...\r\n"));
-        if (RTC.SetDateTime(tDateTime)) {
+        // Treat user input as LOCAL time, store RTC as UTC internally.
+        unsigned long tLocalEpoch = 0;
+        {
+          // Same algorithm as RTCTime_::DateTimeToEpoch (duplicated here to avoid changing RTCTime_ API)
+          unsigned long tDays = 0;
+          for (uint16_t y = 1970; y < tDateTime.Year; y++) {
+            tDays += (y % 4 == 0 && (y % 100 != 0 || y % 400 == 0)) ? 366 : 365;
+          }
+          static const uint8_t tDaysInMonth[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+          for (uint8_t m = 1; m < tDateTime.Month; m++) {
+            tDays += tDaysInMonth[m - 1];
+            if (m == 2 && (tDateTime.Year % 4 == 0 && (tDateTime.Year % 100 != 0 || tDateTime.Year % 400 == 0))) tDays++;
+          }
+          tDays += tDateTime.Day - 1;
+          tLocalEpoch = tDays * 86400UL + tDateTime.Hour * 3600UL + tDateTime.Minute * 60UL + tDateTime.Second;
+        }
+        const SNTPConfig tCfg = CFG.Get<SNTPConfig>();
+        unsigned long tUtcEpoch = (tLocalEpoch >= (unsigned long)tCfg.GMTOffset) ? (tLocalEpoch - (unsigned long)tCfg.GMTOffset) : 0UL;
+        if (tUtcEpoch == 0) {
+          tClient.print(F(COLOR_RED "  Failed to convert local time to UTC\r\n\r\n" COLOR_WHITE));
+          return false;
+        }
+        if (RTC.SetFromEpoch(tUtcEpoch)) {
           char tBuffer[16];
           tClient.print(F("\r\n  RTC datetime set!\r\n"));
-          tClient.print(F(COLOR_GREEN "\r\n  New RTC DateTime: \r\n" COLOR_WHITE));
-          RTC.GetDate(tBuffer, sizeof(tBuffer));
-          tClient.print(F("\r\n  New Date: "));
-          tClient.print(tBuffer);
-          RTC.GetTime(tBuffer, sizeof(tBuffer));
-          tClient.print(F("\r\n  New Time: "));
-          tClient.print(tBuffer);
+          tClient.print(F(COLOR_GREEN "\r\n  New RTC DateTime (local): \r\n" COLOR_WHITE));
+          HandleRTCDateTime(tClient);
           tClient.print(F("\r\n\r\n  Syncing system time from RTC...\r\n"));
           if (RTC.SyncToSystem()) {
             tClient.print(F("\r\n  System time synced!\r\n"));
@@ -159,19 +190,8 @@ namespace App {
         }
         tClient.print(F("\r\n  Syncing system time from RTC...\r\n\r\n"));
         if (RTC.SyncToSystem()) {
-          struct tm tTimeInfo;
-          time_t tNow;
-          time(&tNow);
-          localtime_r(&tNow, &tTimeInfo);
-          char tBuffer[16];
-          strftime(tBuffer, sizeof(tBuffer), "%Y.%m.%d", &tTimeInfo);
           tClient.print(F(COLOR_GREEN "  System time synced!\r\n\r\n" COLOR_WHITE));
-          tClient.print(F("  New Date: "));
-          tClient.print(tBuffer);
-          strftime(tBuffer, sizeof(tBuffer), "%H:%M:%S", &tTimeInfo);
-          tClient.print(F("\r\n  New Time: "));
-          tClient.print(tBuffer);
-          tClient.print(F("\r\n\r\n"));
+          HandleSystemDateTime(tClient);
           return true;
         } else {
           tClient.print(F(COLOR_RED "  Sync failed!\r\n\r\n" COLOR_WHITE));
@@ -179,11 +199,12 @@ namespace App {
         }
       }
       bool HandleSystemDateTime(WiFiClient &tClient) {
+        time_t tNowUtc;
+        time(&tNowUtc);
+        time_t tNowLocal = ToLocalTime(tNowUtc);
         struct tm tTimeInfo;
-        time_t tNow;
-        time(&tNow);
-        localtime_r(&tNow, &tTimeInfo);
-        tClient.print(F(COLOR_GREEN "\r\n  System DateTime:\r\n" COLOR_WHITE));
+        gmtime_r(&tNowLocal, &tTimeInfo);
+        tClient.print(F(COLOR_GREEN "\r\n  System DateTime (local):\r\n" COLOR_WHITE));
         char tBuffer[16];
         strftime(tBuffer, sizeof(tBuffer), "%Y.%m.%d", &tTimeInfo);
         tClient.print(F("\r\n  Date: "));

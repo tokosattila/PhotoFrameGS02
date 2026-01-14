@@ -55,7 +55,7 @@ E-ink digital picture frame with remote image updates via FTP and configuration 
 - **NTP Time Sync** — Automatic time synchronization with RTC backup
 - **FTP Server** — Upload/manage images wirelessly (SD Card or LittleFS)
 - **Telnet Console** — Remote monitoring, configuration & commands
-- **Firmware OTA (Dual Slot)** — Update firmware via `/update/` (ota_0/ota_1) with boot-slot control
+- **Firmware OTA (Dual Slot)** — Update firmware via `/firmware/` (ota_0/ota_1) with boot-slot control
 - **Battery Monitoring** — Auto low-power mode with voltage display
 - **Grayscale Rendering** — 16-level dithering with brightness/contrast/gamma control
 - **Deep Sleep Wake-up** — Timer-based or button-triggered (EXT1)
@@ -229,56 +229,41 @@ fallback_enabled = true      ; smart fallback if images empty
 
 ## 📡 Telnet Commands
 
-### SYSTEM
-
-- help – command list
-- clear – clear screen
-- reboot – restart
-- reset config – factory reset
-- exit – disconnect
-- logout – logout (re-auth required)
-
-### INFORMATION
-
-- meminfo – RAM usage (heap, PSRAM)
-- netinfo – IP/MAC/DNS
-- fsinfo – storage usage (SD + LittleFS)
-- sketchinfo – firmware info (size + running/boot partitions)
-- nvsinfo – NVS usage
-- batinfo – battery info
-- date – current time
-  - date rtc – RTC time
-  - date rtc set YYYY.MM.DD HH:MM:SS – set RTC time
-  - date rtc sync-from-ntp – sync RTC from NTP
-  - date rtc sync-to-system – sync system time from RTC
-- timestamp – Unix epoch
-
-### FILES
-
-- list [path] – show all files
-- cat <filename> – view content
-
-### CONFIGURATION
-
-- config <key> – get configuration
-- config <key> [value] – set configuration
-
-### DOWNLOAD
-
-- fetch <url> [filename] – HTTP/HTTPS download (max 400kB, .jpg/.jpeg only)
-
-### FIRMWARE (OTA)
-
-- fwupdate – show update status from /update/
-- fwupdate verify – verify firmware.bin/firmware.sha256
-- fwupdate run – perform update (asks y/n, then reboots)
-- bootpart [status|ota0|ota1] – show/set boot OTA slot
+| Command | Description |
+|---------|-------------|
+| `help` | Show available commands |
+| `clear` | Clear terminal screen |
+| `list [path]` | List directories and files |
+| `cat <filename>` | Show file content |
+| `date` | Show system date and time |
+| `date rtc` | Show RTC date and time |
+| `date rtc set YYYY.MM.DD HH:MM:SS` | Set RTC date and time |
+| `date rtc sync-from-ntp` | Sync RTC from NTP server |
+| `date rtc sync-to-system` | Sync system time from RTC |
+| `timestamp` | Show current Unix timestamp |
+| `nvsinfo` | Show NVS usage info |
+| `meminfo` | Show memory usage (heap, PSRAM) |
+| `sketchinfo` | Show sketch/firmware info |
+| `fsinfo` | Show filesystem usage (SD + LittleFS) |
+| `netinfo` | Show network info (IP, MAC) |
+| `batinfo` | Show battery voltage and percentage |
+| `config <key> [value]` | Get or set config value |
+| `fetch <url> [filename]` | Download image (max. 400kB, type: *.jpg, *.jpeg) |
+| `fwupdate [status\|verify\|run]` | Verify/apply firmware update from `/firmware/` |
+| `fwupdate` | Show update status |
+| `fwupdate verify` | Verify firmware.bin/firmware.sha256 |
+| `fwupdate run` | Perform update (asks y/n) |
+| `bootpart [status\|ota0\|ota1]` | Show or set active OTA boot slot |
+| `reset config` | Factory reset configuration |
+| `reboot` | Restart device |
+| `logout` | Logout telnet session |
+| `exit` | Exit telnet connection |
 
 ## 🧩 Firmware (OTA)
 
 This project uses a dual-slot OTA layout (`ota_0` + `ota_1`) controlled by the `otadata` partition.
 
-- **Applying update**: upload `firmware.bin` and `firmware.sha256` into `/update/` on the active storage, then run `fwupdate verify` and `fwupdate run`.
+- **Applying update**: upload `firmware.bin` and `firmware.sha256` into `/firmware/` on the active storage, then run `fwupdate verify` and `fwupdate run`.
 - **Which slot is running**: use `bootpart status` (shows Running/Boot partitions).
 - **Force boot slot**: use `bootpart ota0` or `bootpart ota1`, then `reboot`.
 - **USB upload note**: a plain USB upload typically writes the firmware at `0x10000` (often `ota_0`). If the device still boots the other slot, set it explicitly with `bootpart`.

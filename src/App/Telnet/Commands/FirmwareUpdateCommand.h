@@ -79,13 +79,13 @@ namespace App {
           return true;
         }
         if (!FWU.Init()) {
-          tClient.printf("\r\n" COLOR_RED "  Error: %s" COLOR_WHITE "\r\n\r\n", FWU.GetLastError() ? FWU.GetLastError() : "init failed");
+          tClient.printf("\r\n" COLOR_RED "\r\n  Error: %s" COLOR_WHITE "\r\n\r\n", FWU.GetLastError() ? FWU.GetLastError() : "init failed");
           return true;
         }
         if (!FWU.UpdateAvailable()) {
           const char *tError = FWU.GetLastError();
-          if (tError) tClient.printf(COLOR_RED "  Error: %s" COLOR_WHITE "\r\n\r\n", tError);
-          else tClient.print(F(COLOR_RED "  Error: No firmware update found" COLOR_WHITE "\r\n\r\n"));
+          if (tError) tClient.printf(COLOR_RED "\r\n  Error: %s" COLOR_WHITE "\r\n\r\n", tError);
+          else tClient.print(F(COLOR_RED "\r\n  Error: No firmware update found" COLOR_WHITE "\r\n\r\n"));
           return true;
         }
         if (strcasecmp(tSubCommand, "verify") == 0) {
@@ -118,7 +118,7 @@ namespace App {
             return;
           }
           tConfirmClient.print(F("\r\n" COLOR_GREEN "  Update successful." COLOR_WHITE "\r\n"));
-          tConfirmClient.print(F(COLOR_YELLOW "  Rebooting in 3 seconds..." COLOR_WHITE "\r\n"));
+          tConfirmClient.print(F("\r\n" COLOR_YELLOW "  Rebooting in 3 seconds..." COLOR_WHITE "\r\n"));
           tConfirmClient.flush();
           vTaskDelay((3 * DELAY_ONE_SEC_MS) / portTICK_PERIOD_MS);
           esp_restart();

@@ -20,6 +20,7 @@ namespace App {
       void GetTime(char *tOutputBuffer, uint8_t tBufferSize, char tFormat = ' ');
       void GetDate(char *tOutputBuffer, uint8_t tBufferSize, char tFormat = ' ');
       unsigned long GetCurrentEpoch();
+      unsigned long GetCurrentEpochUTC();
       String Time(char format = ' ');
       String Date(char format = ' ');
       bool SyncSystemTime();

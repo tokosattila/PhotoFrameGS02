@@ -33,11 +33,6 @@ namespace App {
 
   bool Firmware_::Init() {
     Guard tGuard;
-    Storage_::Guard tStorageGuard;
-    if (!STG.IsMounted()) {
-      SetError("Storage not mounted");
-      return false;
-    }
     return EnsureUpdateBuffer();
   }
 
@@ -173,9 +168,9 @@ namespace App {
     if (tLog) {
       const esp_partition_t *tRunning = esp_ota_get_running_partition();
       const esp_partition_t *tBoot = esp_ota_get_boot_partition();
-      if (tRunning) tLog->printf("Running partition: %s @ 0x%08x, size=0x%x\r\n", tRunning->label, (unsigned)tRunning->address, (unsigned)tRunning->size);
-      if (tBoot) tLog->printf("Boot partition: %s @ 0x%08x\r\n", tBoot->label, (unsigned)tBoot->address);
-      tLog->printf("Update target: %s @ 0x%08x, size=0x%x\r\n", tNextPartition->label, (unsigned)tNextPartition->address, (unsigned)tNextPartition->size);
+      if (tRunning) tLog->printf("\r\n  Running partition: %s @ 0x%08x, size = 0x%x\r\n", tRunning->label, (unsigned)tRunning->address, (unsigned)tRunning->size);
+      if (tBoot) tLog->printf("  Boot partition: %s @ 0x%08x\r\n\r\n", tBoot->label, (unsigned)tBoot->address);
+      tLog->printf("  Update target: %s @ 0x%08x, size = 0x%x\r\n\r\n", tNextPartition->label, (unsigned)tNextPartition->address, (unsigned)tNextPartition->size);
     }
     const char *tFirmwarePath = STG.NormalizePath(mPath);
     File tFirmwareFile = STG.OpenFile(tFirmwarePath, FILE_READ);
@@ -190,15 +185,14 @@ namespace App {
       return false;
     }
     if (tLog) {
-      tLog->print("Starting update, size = ");
-      tLog->println(tSize);
+      tLog->printf("  Starting update, size = %u\r\n\r\n", (unsigned)tSize);
     }
     esp_ota_handle_t tUpdateHandle = 0;
     esp_err_t tErr = esp_ota_begin(tNextPartition, tSize, &tUpdateHandle);
     if (tErr != ESP_OK) {
       tFirmwareFile.close();
       char tError[128];
-      snprintf(tError, sizeof(tError), "Ota begin failed (err=%d)", (int)tErr);
+      snprintf(tError, sizeof(tError), "  Ota begin failed (error = %d)", (int)tErr);
       SetError(tError);
       return false;
     }
@@ -218,7 +212,7 @@ namespace App {
         tFirmwareFile.close();
         esp_ota_abort(tUpdateHandle);
         char tError[128];
-        snprintf(tError, sizeof(tError), "Ota write failed (err=%d)", (int)tErr);
+        snprintf(tError, sizeof(tError), "Ota write failed (error = %d)", (int)tErr);
         SetError(tError);
         return false;
       }
@@ -234,7 +228,7 @@ namespace App {
     if (tErr != ESP_OK) {
       tFirmwareFile.close();
       char tError[128];
-      snprintf(tError, sizeof(tError), "Ota end failed (err=%d)", (int)tErr);
+      snprintf(tError, sizeof(tError), "Ota end failed (error = %d)", (int)tErr);
       SetError(tError);
       return false;
     }
@@ -242,19 +236,18 @@ namespace App {
     if (tErr != ESP_OK) {
       tFirmwareFile.close();
       char tError[128];
-      snprintf(tError, sizeof(tError), "Set boot partition failed (err=%d)", (int)tErr);
+      snprintf(tError, sizeof(tError), "Set boot partition failed (error = %d)", (int)tErr);
       SetError(tError);
       return false;
     }
     if (tLog) {
       const esp_partition_t *tBoot = esp_ota_get_boot_partition();
       if (tBoot) {
-        tLog->printf("New boot partition: %s @ 0x%08x\r\n", tBoot->label, (unsigned)tBoot->address);
+        tLog->printf("\r\n  New boot partition: %s @ 0x%08x\r\n", tBoot->label, (unsigned)tBoot->address);
       }
     }
     tFirmwareFile.close();
     CleanupUpdateDirIfExists(tLog);
-    if (tLog) tLog->println("Update successful. Reboot required.");
     return true;
   }
 
@@ -271,6 +264,14 @@ namespace App {
     return CleanupUpdateDir(tLog);
   }
 
+  bool Firmware_::CleanupUpdateDirOnBoot(Stream *tLog) {
+    Guard tGuard;
+    STG.Init(false);
+    bool tOk = CleanupUpdateDirIfExists(tLog);
+    STG.End();
+    return tOk;
+  }
+
   bool Firmware_::CleanupUpdateDir(Stream *tLog) {
     Storage_::Guard tStorageGuard;
     if (!STG.IsMounted()) {
@@ -283,8 +284,8 @@ namespace App {
     bool tAllOk = true;
     File tDir = STG.OpenFile(tUpdateDir, FILE_READ);
     if (!tDir || !tDir.isDirectory()) {
-      if (tLog) tLog->println("Warning: failed to open /update directory");
-      SetError("Failed to open /update directory");
+      if (tLog) tLog->println("  Warning: failed to open /firmware directory");
+      SetError("Failed to open /firmware directory");
       return false;
     }
     struct SEntry {
@@ -314,14 +315,14 @@ namespace App {
     }
     if (tEntry) {
       tAllOk = false;
-      if (tLog) tLog->println("Warning: /update has too many entries to clean in one pass");
+      if (tLog) tLog->println("  Warning: /firmware has too many entries to clean in one pass");
     }
     tDir.close();
     for (size_t i = 0; i < tEntryCount; ++i) {
       const char *tPath = tEntries[i].path;
       if (!tPath || tPath[0] == '\0') {
         tAllOk = false;
-        if (tLog) tLog->println("Warning: failed to delete: <unknown>");
+        if (tLog) tLog->println("  Warning: failed to delete: <unknown>");
         continue;
       }
       bool tDeleted = false;
@@ -333,16 +334,16 @@ namespace App {
       if (!tDeleted) {
         tAllOk = false;
         if (tLog) {
-          tLog->print("Warning: failed to delete: ");
+          tLog->print("  Warning: failed to delete: ");
           tLog->println(tPath);
         }
       }
     }
     if (!STG.RemoveDir(tUpdateDir)) {
       tAllOk = false;
-      if (tLog) tLog->println("Warning: failed to remove /update directory (not empty?)");
+      if (tLog) tLog->println("  Warning: failed to remove /firmware directory (not empty?)");
     }
-    if (!tAllOk) SetError("Failed to remove /update directory");
+    if (!tAllOk) SetError("Failed to remove /firmware directory");
     return tAllOk;
   }
 

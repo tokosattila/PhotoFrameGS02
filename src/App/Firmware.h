@@ -18,6 +18,7 @@ namespace App {
       bool VerifySha256(const char *tShaPath = nullptr);
       bool PerformUpdate(Stream *tLogStream = nullptr);
       bool CleanupUpdateDirIfExists(Stream *tLogStream = nullptr);
+      bool CleanupUpdateDirOnBoot(Stream *tLogStream = nullptr);
       const char *GetLastError() const;
     private:
       Firmware_();

@@ -111,9 +111,9 @@ namespace App {
       return tBuffer;
     }
     if (tAsDateTime) {
-      time_t tTime = (time_t)tEpoch + (mCfg.Ntp.GMTOffset * 3600UL);
+      time_t tTime = (time_t)(tEpoch + (unsigned long)mCfg.Ntp.GMTOffset);
       struct tm tTm;
-      localtime_r(&tTime, &tTm);
+      gmtime_r(&tTime, &tTm);
       snprintf(tBuffer, tLength, "%04d.%02d.%02d %02d:%02d:%02d", tTm.tm_year + 1900, tTm.tm_mon + 1, tTm.tm_mday, tTm.tm_hour, tTm.tm_min, tTm.tm_sec);
       return tBuffer;
     }

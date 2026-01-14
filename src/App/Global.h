@@ -51,7 +51,7 @@
 
 namespace App {
 
-  #define PRODUCTION false
+  #define PRODUCTION true
   
   #define DEFINE_TAG(tTag) static constexpr const char *TAG = tTag
 
@@ -255,9 +255,9 @@ namespace App {
   constexpr const char *IMAGES_DIR = "images";
   constexpr const char *CONFIG_FILE = "/config.ini";
 
-  constexpr const char *FIRMWARE_DIR = "/update";
-  constexpr const char *FIRMWARE_PATH = "/update/firmware.bin";
-  constexpr const char *FIRMWARE_SHA_PATH = "/update/firmware.sha256";
+  constexpr const char *FIRMWARE_DIR = "/firmware";
+  constexpr const char *FIRMWARE_PATH = "/firmware/firmware.bin";
+  constexpr const char *FIRMWARE_SHA_PATH = "/firmware/firmware.sha256";
 
   constexpr EFileSystemType DEFAULT_FILE_SYSTEM = EFileSystemType::SDCard;
   constexpr bool STORAGE_FALLBACK_ENABLED = true;

@@ -159,7 +159,7 @@ namespace App {
 
   bool RTCTime_::SyncFromNTP() {
     Guard tLock;
-    unsigned long tEpoch = NTP.GetCurrentEpoch();
+    unsigned long tEpoch = NTP.GetCurrentEpochUTC();
     if (tEpoch == 0) {
       xLOG("NTP time not available");
       return false;
