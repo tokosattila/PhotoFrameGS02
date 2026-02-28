@@ -51,15 +51,19 @@ namespace App {
   bool Utils_::IsSD(const char *tTarget) {
     return strcasecmp(tTarget, "sd") == 0 || strcasecmp(tTarget, "sdcard") == 0;
   }
+  
   bool Utils_::IsLFS(const char *tTarget) {
     return strcasecmp(tTarget, "lfs") == 0 || strcasecmp(tTarget, "littlefs") == 0;
   }
+
   bool Utils_::IsValidTarget(const char *tTarget) {
     return IsSD(tTarget) || IsLFS(tTarget);
   }
+
   bool Utils_::IsSameTarget(const char *tA, const char *tB) {
     return (IsSD(tA) && IsSD(tB)) || (IsLFS(tA) && IsLFS(tB));
   }
+
   bool Utils_::GlobMatch(const char *tPattern, const char *tText) {
     while (*tPattern) {
       if (*tPattern == '*') {
@@ -77,6 +81,7 @@ namespace App {
     }
     return *tText == '\0';
   }
+
   bool Utils_::SplitPathAndFile(const char *tSpec, char *tDir, size_t tDirSize, char *tFile, size_t tFileSize) {
     if (!tSpec || *tSpec == '\0') return false;
     const char *tEnd = tSpec + strlen(tSpec);
