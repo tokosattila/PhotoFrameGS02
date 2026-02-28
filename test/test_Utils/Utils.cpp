@@ -10,6 +10,13 @@
 #include <cstdio>
 #include <cerrno>
 #include <cmath>
+#include <cctype>
+
+#ifdef _WIN32
+  #define strcasecmp _stricmp
+#else
+  #include <strings.h>
+#endif
 
 // ============================================================================
 // Standalone implementations for testing (extracted from Utils.cpp)
@@ -254,6 +261,284 @@ void test_EpochToReadableDuration_zero_length() {
 }
 
 // ============================================================================
+// Standalone: SecondsUntilHour (calculation core, no RTC dependency)
+// ============================================================================
+
+uint64_t SecondsUntilHour(uint8_t tTargetHour, uint8_t tNowHour, uint8_t tNowMinute, uint8_t tNowSecond) {
+  uint32_t tNowSec = tNowHour * SECONDS_PER_HOUR + tNowMinute * SECONDS_PER_MINUTE + tNowSecond;
+  uint32_t tTargetSec = tTargetHour * SECONDS_PER_HOUR;
+  if (tTargetSec <= tNowSec) tTargetSec += SECONDS_PER_DAY;
+  return tTargetSec - tNowSec;
+}
+
+// ============================================================================
+// SecondsUntilHour Tests
+// ============================================================================
+
+void test_SecondsUntilHour_target_in_future() {
+  TEST_ASSERT_EQUAL_UINT32(6 * 3600, (uint32_t)SecondsUntilHour(10, 4, 0, 0));
+  TEST_ASSERT_EQUAL_UINT32(3600, (uint32_t)SecondsUntilHour(15, 14, 0, 0));
+}
+
+void test_SecondsUntilHour_target_passed_wraps() {
+  TEST_ASSERT_EQUAL_UINT32(20 * 3600, (uint32_t)SecondsUntilHour(6, 10, 0, 0));
+  TEST_ASSERT_EQUAL_UINT32(23 * 3600, (uint32_t)SecondsUntilHour(0, 1, 0, 0));
+}
+
+void test_SecondsUntilHour_same_hour_wraps() {
+  TEST_ASSERT_EQUAL_UINT32(SECONDS_PER_DAY - 1800, (uint32_t)SecondsUntilHour(6, 6, 30, 0));
+  TEST_ASSERT_EQUAL_UINT32(SECONDS_PER_DAY, (uint32_t)SecondsUntilHour(6, 6, 0, 0));
+}
+
+void test_SecondsUntilHour_midnight_edge() {
+  TEST_ASSERT_EQUAL_UINT32(1, (uint32_t)SecondsUntilHour(0, 23, 59, 59));
+  TEST_ASSERT_EQUAL_UINT32(SECONDS_PER_DAY, (uint32_t)SecondsUntilHour(0, 0, 0, 0));
+}
+
+void test_SecondsUntilHour_hour_23() {
+  TEST_ASSERT_EQUAL_UINT32(3600, (uint32_t)SecondsUntilHour(23, 22, 0, 0));
+  TEST_ASSERT_EQUAL_UINT32(23 * 3600 + 1800, (uint32_t)SecondsUntilHour(23, 23, 30, 0));
+}
+
+void test_SecondsUntilHour_with_minutes_seconds() {
+  TEST_ASSERT_EQUAL_UINT32(5 * 3600 + 1800, (uint32_t)SecondsUntilHour(10, 4, 30, 0));
+  TEST_ASSERT_EQUAL_UINT32(5 * 3600 + 1800 - 45, (uint32_t)SecondsUntilHour(10, 4, 30, 45));
+}
+
+// ============================================================================
+// Standalone: GlobMatch (case-insensitive glob, no hardware dependency)
+// ============================================================================
+
+bool GlobMatch(const char *tPattern, const char *tText) {
+  while (*tPattern) {
+    if (*tPattern == '*') {
+      ++tPattern;
+      if (!*tPattern) return true;
+      while (*tText) {
+        if (GlobMatch(tPattern, tText)) return true;
+        ++tText;
+      }
+      return false;
+    }
+    if (tolower((unsigned char)*tPattern) != tolower((unsigned char)*tText)) return false;
+    ++tPattern;
+    ++tText;
+  }
+  return *tText == '\0';
+}
+
+// ============================================================================
+// GlobMatch Tests
+// ============================================================================
+
+void test_GlobMatch_exact() {
+  TEST_ASSERT_TRUE(GlobMatch("hello.jpg", "hello.jpg"));
+  TEST_ASSERT_FALSE(GlobMatch("hello.jpg", "hello.png"));
+}
+
+void test_GlobMatch_star_suffix() {
+  TEST_ASSERT_TRUE(GlobMatch("*.jpg", "photo.jpg"));
+  TEST_ASSERT_TRUE(GlobMatch("*.jpg", "a.jpg"));
+  TEST_ASSERT_FALSE(GlobMatch("*.jpg", "photo.png"));
+}
+
+void test_GlobMatch_star_prefix() {
+  TEST_ASSERT_TRUE(GlobMatch("photo*", "photo.jpg"));
+  TEST_ASSERT_TRUE(GlobMatch("photo*", "photo123.png"));
+  TEST_ASSERT_FALSE(GlobMatch("photo*", "image.jpg"));
+}
+
+void test_GlobMatch_star_middle() {
+  TEST_ASSERT_TRUE(GlobMatch("p*.jpg", "photo.jpg"));
+  TEST_ASSERT_TRUE(GlobMatch("p*.jpg", "p.jpg"));
+  TEST_ASSERT_FALSE(GlobMatch("p*.png", "photo.jpg"));
+}
+
+void test_GlobMatch_star_only() {
+  TEST_ASSERT_TRUE(GlobMatch("*", "anything"));
+  TEST_ASSERT_TRUE(GlobMatch("*", ""));
+}
+
+void test_GlobMatch_case_insensitive() {
+  TEST_ASSERT_TRUE(GlobMatch("*.JPG", "photo.jpg"));
+  TEST_ASSERT_TRUE(GlobMatch("PHOTO*", "photo.jpg"));
+  TEST_ASSERT_TRUE(GlobMatch("*.Jpg", "IMAGE.jPg"));
+}
+
+void test_GlobMatch_no_match() {
+  TEST_ASSERT_FALSE(GlobMatch("abc", "abcd"));
+  TEST_ASSERT_FALSE(GlobMatch("abcd", "abc"));
+  TEST_ASSERT_FALSE(GlobMatch("", "text"));
+}
+
+void test_GlobMatch_empty() {
+  TEST_ASSERT_TRUE(GlobMatch("", ""));
+  TEST_ASSERT_FALSE(GlobMatch("", "x"));
+}
+
+void test_GlobMatch_multiple_stars() {
+  TEST_ASSERT_TRUE(GlobMatch("*o*", "photo.jpg"));
+  TEST_ASSERT_TRUE(GlobMatch("*h*j*", "photo.jpg"));
+  TEST_ASSERT_FALSE(GlobMatch("*z*", "photo.jpg"));
+}
+
+// ============================================================================
+// Standalone: IsSD / IsLFS / IsValidTarget / IsSameTarget
+// ============================================================================
+
+bool IsSD(const char *tTarget) {
+  return strcasecmp(tTarget, "sd") == 0 || strcasecmp(tTarget, "sdcard") == 0;
+}
+bool IsLFS(const char *tTarget) {
+  return strcasecmp(tTarget, "lfs") == 0 || strcasecmp(tTarget, "littlefs") == 0;
+}
+bool IsValidTarget(const char *tTarget) {
+  return IsSD(tTarget) || IsLFS(tTarget);
+}
+bool IsSameTarget(const char *tA, const char *tB) {
+  return (IsSD(tA) && IsSD(tB)) || (IsLFS(tA) && IsLFS(tB));
+}
+
+// ============================================================================
+// IsSD / IsLFS / IsValidTarget / IsSameTarget Tests
+// ============================================================================
+
+void test_IsSD() {
+  TEST_ASSERT_TRUE(IsSD("sd"));
+  TEST_ASSERT_TRUE(IsSD("SD"));
+  TEST_ASSERT_TRUE(IsSD("sdcard"));
+  TEST_ASSERT_TRUE(IsSD("SDCard"));
+  TEST_ASSERT_FALSE(IsSD("lfs"));
+  TEST_ASSERT_FALSE(IsSD("sd2"));
+  TEST_ASSERT_FALSE(IsSD(""));
+}
+
+void test_IsLFS() {
+  TEST_ASSERT_TRUE(IsLFS("lfs"));
+  TEST_ASSERT_TRUE(IsLFS("LFS"));
+  TEST_ASSERT_TRUE(IsLFS("littlefs"));
+  TEST_ASSERT_TRUE(IsLFS("LittleFS"));
+  TEST_ASSERT_FALSE(IsLFS("sd"));
+  TEST_ASSERT_FALSE(IsLFS("lfs2"));
+  TEST_ASSERT_FALSE(IsLFS(""));
+}
+
+void test_IsValidTarget() {
+  TEST_ASSERT_TRUE(IsValidTarget("sd"));
+  TEST_ASSERT_TRUE(IsValidTarget("lfs"));
+  TEST_ASSERT_TRUE(IsValidTarget("sdcard"));
+  TEST_ASSERT_TRUE(IsValidTarget("littlefs"));
+  TEST_ASSERT_FALSE(IsValidTarget("usb"));
+  TEST_ASSERT_FALSE(IsValidTarget(""));
+}
+
+void test_IsSameTarget() {
+  TEST_ASSERT_TRUE(IsSameTarget("sd", "sdcard"));
+  TEST_ASSERT_TRUE(IsSameTarget("lfs", "littlefs"));
+  TEST_ASSERT_TRUE(IsSameTarget("SD", "sd"));
+  TEST_ASSERT_FALSE(IsSameTarget("sd", "lfs"));
+  TEST_ASSERT_FALSE(IsSameTarget("lfs", "sdcard"));
+}
+
+// ============================================================================
+// Standalone: SplitPathAndFile
+// ============================================================================
+
+static const char *kImagesDir = "images";
+
+bool SplitPathAndFile(const char *tSpec, char *tDir, size_t tDirSize, char *tFile, size_t tFileSize) {
+  if (!tSpec || *tSpec == '\0') return false;
+  const char *tEnd = tSpec + strlen(tSpec);
+  while (tEnd > tSpec && (*(tEnd - 1) == ' ' || *(tEnd - 1) == '\t')) --tEnd;
+  if (tEnd <= tSpec) return false;
+  if (*tSpec == '/') {
+    const char *tLastSlash = tSpec;
+    for (const char *tC = tSpec + 1; tC < tEnd; ++tC) {
+      if (*tC == '/') tLastSlash = tC;
+    }
+    const char *tAfter = tLastSlash + 1;
+    size_t tAfterLen = tEnd - tAfter;
+    if (tAfterLen == 0) return false;
+    size_t tDirLen = tLastSlash - tSpec;
+    if (tDirLen == 0) {
+      tDir[0] = '/';
+      tDir[1] = '\0';
+    } else {
+      if (tDirLen >= tDirSize) tDirLen = tDirSize - 1;
+      strncpy(tDir, tSpec, tDirLen);
+      tDir[tDirLen] = '\0';
+    }
+    if (tAfterLen >= tFileSize) tAfterLen = tFileSize - 1;
+    strncpy(tFile, tAfter, tAfterLen);
+    tFile[tAfterLen] = '\0';
+  } else {
+    snprintf(tDir, tDirSize, "/%s", kImagesDir);
+    size_t tLen = tEnd - tSpec;
+    if (tLen >= tFileSize) tLen = tFileSize - 1;
+    strncpy(tFile, tSpec, tLen);
+    tFile[tLen] = '\0';
+  }
+  return true;
+}
+
+// ============================================================================
+// SplitPathAndFile Tests
+// ============================================================================
+
+void test_SplitPathAndFile_absolute_path() {
+  char tDir[64], tFile[64];
+  TEST_ASSERT_TRUE(SplitPathAndFile("/images/photo.jpg", tDir, sizeof(tDir), tFile, sizeof(tFile)));
+  TEST_ASSERT_EQUAL_STRING("/images", tDir);
+  TEST_ASSERT_EQUAL_STRING("photo.jpg", tFile);
+}
+
+void test_SplitPathAndFile_root_file() {
+  char tDir[64], tFile[64];
+  TEST_ASSERT_TRUE(SplitPathAndFile("/config.ini", tDir, sizeof(tDir), tFile, sizeof(tFile)));
+  TEST_ASSERT_EQUAL_STRING("/", tDir);
+  TEST_ASSERT_EQUAL_STRING("config.ini", tFile);
+}
+
+void test_SplitPathAndFile_deep_path() {
+  char tDir[64], tFile[64];
+  TEST_ASSERT_TRUE(SplitPathAndFile("/a/b/c/file.txt", tDir, sizeof(tDir), tFile, sizeof(tFile)));
+  TEST_ASSERT_EQUAL_STRING("/a/b/c", tDir);
+  TEST_ASSERT_EQUAL_STRING("file.txt", tFile);
+}
+
+void test_SplitPathAndFile_relative_defaults_images() {
+  char tDir[64], tFile[64];
+  TEST_ASSERT_TRUE(SplitPathAndFile("photo.jpg", tDir, sizeof(tDir), tFile, sizeof(tFile)));
+  TEST_ASSERT_EQUAL_STRING("/images", tDir);
+  TEST_ASSERT_EQUAL_STRING("photo.jpg", tFile);
+}
+
+void test_SplitPathAndFile_trailing_space() {
+  char tDir[64], tFile[64];
+  TEST_ASSERT_TRUE(SplitPathAndFile("photo.jpg   ", tDir, sizeof(tDir), tFile, sizeof(tFile)));
+  TEST_ASSERT_EQUAL_STRING("/images", tDir);
+  TEST_ASSERT_EQUAL_STRING("photo.jpg", tFile);
+}
+
+void test_SplitPathAndFile_null_empty() {
+  char tDir[64], tFile[64];
+  TEST_ASSERT_FALSE(SplitPathAndFile(nullptr, tDir, sizeof(tDir), tFile, sizeof(tFile)));
+  TEST_ASSERT_FALSE(SplitPathAndFile("", tDir, sizeof(tDir), tFile, sizeof(tFile)));
+}
+
+void test_SplitPathAndFile_dir_only() {
+  char tDir[64], tFile[64];
+  TEST_ASSERT_FALSE(SplitPathAndFile("/images/", tDir, sizeof(tDir), tFile, sizeof(tFile)));
+}
+
+void test_SplitPathAndFile_glob_pattern() {
+  char tDir[64], tFile[64];
+  TEST_ASSERT_TRUE(SplitPathAndFile("/images/*.jpg", tDir, sizeof(tDir), tFile, sizeof(tFile)));
+  TEST_ASSERT_EQUAL_STRING("/images", tDir);
+  TEST_ASSERT_EQUAL_STRING("*.jpg", tFile);
+}
+
+// ============================================================================
 // Test Runner
 // ============================================================================
 
@@ -291,6 +576,41 @@ int main(int argc, char **argv) {
   RUN_TEST(test_EpochToReadableDuration_days);
   RUN_TEST(test_EpochToReadableDuration_null_buffer);
   RUN_TEST(test_EpochToReadableDuration_zero_length);
+  
+  // SecondsUntilHour tests
+  RUN_TEST(test_SecondsUntilHour_target_in_future);
+  RUN_TEST(test_SecondsUntilHour_target_passed_wraps);
+  RUN_TEST(test_SecondsUntilHour_same_hour_wraps);
+  RUN_TEST(test_SecondsUntilHour_midnight_edge);
+  RUN_TEST(test_SecondsUntilHour_hour_23);
+  RUN_TEST(test_SecondsUntilHour_with_minutes_seconds);
+  
+  // GlobMatch tests
+  RUN_TEST(test_GlobMatch_exact);
+  RUN_TEST(test_GlobMatch_star_suffix);
+  RUN_TEST(test_GlobMatch_star_prefix);
+  RUN_TEST(test_GlobMatch_star_middle);
+  RUN_TEST(test_GlobMatch_star_only);
+  RUN_TEST(test_GlobMatch_case_insensitive);
+  RUN_TEST(test_GlobMatch_no_match);
+  RUN_TEST(test_GlobMatch_empty);
+  RUN_TEST(test_GlobMatch_multiple_stars);
+  
+  // IsSD / IsLFS / IsValidTarget / IsSameTarget tests
+  RUN_TEST(test_IsSD);
+  RUN_TEST(test_IsLFS);
+  RUN_TEST(test_IsValidTarget);
+  RUN_TEST(test_IsSameTarget);
+  
+  // SplitPathAndFile tests
+  RUN_TEST(test_SplitPathAndFile_absolute_path);
+  RUN_TEST(test_SplitPathAndFile_root_file);
+  RUN_TEST(test_SplitPathAndFile_deep_path);
+  RUN_TEST(test_SplitPathAndFile_relative_defaults_images);
+  RUN_TEST(test_SplitPathAndFile_trailing_space);
+  RUN_TEST(test_SplitPathAndFile_null_empty);
+  RUN_TEST(test_SplitPathAndFile_dir_only);
+  RUN_TEST(test_SplitPathAndFile_glob_pattern);
   
   return UNITY_END();
 }

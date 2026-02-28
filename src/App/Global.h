@@ -212,6 +212,7 @@ namespace App {
   struct STimerConfig {
     ETimerWakeUp WakeUp;
     EDevicePins WakeUpPin;
+    uint8_t WakeUpHour = 6;
     STimerConfig() = default;
   };
 

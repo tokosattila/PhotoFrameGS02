@@ -50,6 +50,7 @@ E-ink digital picture frame with remote image updates via FTP and configuration 
 
 - **Dual Storage Support** — SD Card (primary) + LittleFS (internal flash)
 - **Smart Storage Fallback** — Auto-switch to secondary storage if images folder is empty
+- **Cross-Storage File Operations** — Copy files between SD Card and LittleFS, delete with glob/batch support
 - **RTC Backup** — PCF8563 maintains time during deep sleep
 - **WiFi Connectivity** — AP mode for setup, STA mode for network access
 - **NTP Time Sync** — Automatic time synchronization with RTC backup
@@ -58,6 +59,7 @@ E-ink digital picture frame with remote image updates via FTP and configuration 
 - **Firmware OTA (Dual Slot)** — Update firmware via `/firmware/` (ota_0/ota_1) with boot-slot control
 - **Battery Monitoring** — Auto low-power mode with voltage display
 - **Grayscale Rendering** — 16-level dithering with brightness/contrast/gamma control
+- **Scheduled Wake-up** — Timer-based deep sleep with configurable wake-up hour (0–23)
 - **Deep Sleep Wake-up** — Timer-based or button-triggered (EXT1)
 - **mDNS Support** — Access device via hostname.local
 
@@ -89,7 +91,9 @@ src/
 │   │       ├── CatCommand.h
 │   │       ├── ClearCommand.h
 │   │       ├── ConfigCommand.h
+│   │       ├── CopyCommand.h    # Cross-storage file copy
 │   │       ├── DateCommand.h    # System & RTC date/time
+│   │       ├── DeleteCommand.h  # File delete with confirmation
 │   │       ├── ExitCommand.h
 │   │       ├── FetchCommand.h
 │   │       ├── FileSystemInfoCommand.h
@@ -105,7 +109,7 @@ src/
 │   │       ├── ResetCommand.h
 │   │       ├── SketchInfoCommand.h
 │   │       └── TimeStampCommand.h
-│   └── Utils.cpp/h             # System utilities
+│   └── Utils.cpp/h             # System utilities, file ops, glob matching
 ├── Fonts/                      # OpenSans bitmap fonts (6-26pt)
 │   └── opensans*.h             # 26 font variants
 └── Images/
@@ -208,6 +212,7 @@ mdns_hostname = photoframegs02
 
 [timer]
 wake_up = 5                 ; 1=10sec, 2=1min, 3=1hour, 4=12hour, 5=Daily, 6=Weekly, 7=Monthly
+wake_up_hour = 6            ; target hour (0-23) for Daily/Weekly/Monthly wake-up
 
 [telnet]
 telnet_enable = true
@@ -233,7 +238,13 @@ fallback_enabled = true      ; smart fallback if images empty
 |---------|-------------|
 | `help` | Show available commands |
 | `clear` | Clear terminal screen |
-| `list [path]` | List directories and files |
+| `list` | List files on active storage |
+| `list sd\|sdcard` | List SD Card content |
+| `list lfs\|littlefs\|fallback` | List LittleFS content |
+| `copy sd lfs [/path/]<filespec>` | Copy files from SD Card to LittleFS |
+| `copy lfs sd [/path/]<filespec>` | Copy files from LittleFS to SD Card |
+| `delete sd [/path/]<filespec>` | Delete files from SD Card (with confirmation) |
+| `delete lfs [/path/]<filespec>` | Delete files from LittleFS (with confirmation) |
 | `cat <filename>` | Show file content |
 | `date` | Show system date and time |
 | `date rtc` | Show RTC date and time |
@@ -258,6 +269,36 @@ fallback_enabled = true      ; smart fallback if images empty
 | `reboot` | Restart device |
 | `logout` | Logout telnet session |
 | `exit` | Exit telnet connection |
+
+### File Operations
+
+The `copy` and `delete` commands support flexible file specification:
+
+| Syntax | Example | Description |
+|--------|---------|-------------|
+| Single file | `copy sd lfs photo.jpg` | Copy one file (defaults to `/images/`) |
+| Absolute path | `copy sd lfs /images/photo.jpg` | Copy with explicit path |
+| Glob pattern | `copy sd lfs *.jpg` | Copy all matching files |
+| Comma-separated | `delete sd a.jpg,b.jpg,c.jpg` | Batch operation on multiple files |
+| Mixed | `copy lfs sd /data/*.bin` | Glob with absolute directory |
+
+> **⚠️ Note:** The `delete` command asks for confirmation (`y/n`) before removing files. Storage aliases are interchangeable: `sd` = `sdcard`, `lfs` = `littlefs` = `fallback`.
+
+### Wake-up Schedule
+
+The `wake_up_hour` setting (0–23) controls when the device wakes from deep sleep for the **Daily**, **Weekly** and **Monthly** timer modes. The device calculates the exact seconds remaining until the target hour using the RTC clock.
+
+| Timer Mode | Behavior |
+|------------|----------|
+| 10sec / 1min / 1hour / 12hour | Fixed interval, `wake_up_hour` ignored |
+| **Daily** | Wakes at the configured hour every day |
+| **Weekly** | Wakes at the configured hour + 6 days |
+| **Monthly** | Wakes at the configured hour + 29 days |
+
+```
+config wake_up_hour 8       # Set wake-up to 08:00
+config wake_up 5            # Set timer to Daily mode
+```
 
 ## 🧩 Firmware (OTA)
 
@@ -296,6 +337,7 @@ This project uses a dual-slot OTA layout (`ota_0` + `ota_1`) controlled by the `
 - **Deep Sleep Current**: ~10µA (with RTC backup)
 - **Wake-up Sources**: 
   - Timer (configurable: 10sec to monthly)
+  - Scheduled hour (0–23) for Daily, Weekly and Monthly modes
   - Button press (GPIO21, EXT1 wakeup)
 - **RTC Backup**: PCF8563 maintains accurate time during sleep
 - **Low Battery**: Auto-shutdown at configurable voltage threshold

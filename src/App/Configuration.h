@@ -80,6 +80,7 @@ namespace App {
       static constexpr const char *kNvsConMdnsEnable = "con.mdns.en";
       static constexpr const char *kNvsConMdnsName = "con.mdns.name";
       static constexpr const char *kNvsTimerWake = "tmr.wake";
+      static constexpr const char *kNvsTimerWakeHour = "tmr.wake.hr";
       static constexpr const char *kNvsTelnetEnable = "tln.en";
       static constexpr const char *kNvsTelnetPort = "tln.port";
       static constexpr const char *kNvsTelnetUsername = "tln.username";
@@ -90,7 +91,6 @@ namespace App {
       static constexpr const char *kNvsFtpPort = "ftp.port";
       static constexpr const char *kNvsFtpUsername = "ftp.username";
       static constexpr const char *kNvsFtpPassword = "ftp.password";
-      // Note: Storage config uses compile-time constants (DEFAULT_FILE_SYSTEM, STORAGE_FALLBACK_ENABLED)
       static const std::vector<SConfigKeyMappingEntry> &GetKeyMapping();
       static SAppConfig GetDefaultConfig();
       static void ApplyINIValue(SAppConfig &tConfig, const char *tSection, const SConfigKeyMappingEntry &tEntry, const char *tValue);

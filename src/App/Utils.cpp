@@ -48,6 +48,112 @@ namespace App {
     return static_cast<uint32_t>(tVal);
   }
 
+  bool Utils_::IsSD(const char *tTarget) {
+    return strcasecmp(tTarget, "sd") == 0 || strcasecmp(tTarget, "sdcard") == 0;
+  }
+  bool Utils_::IsLFS(const char *tTarget) {
+    return strcasecmp(tTarget, "lfs") == 0 || strcasecmp(tTarget, "littlefs") == 0;
+  }
+  bool Utils_::IsValidTarget(const char *tTarget) {
+    return IsSD(tTarget) || IsLFS(tTarget);
+  }
+  bool Utils_::IsSameTarget(const char *tA, const char *tB) {
+    return (IsSD(tA) && IsSD(tB)) || (IsLFS(tA) && IsLFS(tB));
+  }
+  bool Utils_::GlobMatch(const char *tPattern, const char *tText) {
+    while (*tPattern) {
+      if (*tPattern == '*') {
+        ++tPattern;
+        if (!*tPattern) return true;
+        while (*tText) {
+          if (GlobMatch(tPattern, tText)) return true;
+          ++tText;
+        }
+        return false;
+      }
+      if (tolower((unsigned char)*tPattern) != tolower((unsigned char)*tText)) return false;
+      ++tPattern;
+      ++tText;
+    }
+    return *tText == '\0';
+  }
+  bool Utils_::SplitPathAndFile(const char *tSpec, char *tDir, size_t tDirSize, char *tFile, size_t tFileSize) {
+    if (!tSpec || *tSpec == '\0') return false;
+    const char *tEnd = tSpec + strlen(tSpec);
+    while (tEnd > tSpec && (*(tEnd - 1) == ' ' || *(tEnd - 1) == '\t')) --tEnd;
+    if (tEnd <= tSpec) return false;
+    if (*tSpec == '/') {
+      const char *tLastSlash = tSpec;
+      for (const char *tC = tSpec + 1; tC < tEnd; ++tC) {
+        if (*tC == '/') tLastSlash = tC;
+      }
+      const char *tAfter = tLastSlash + 1;
+      size_t tAfterLen = tEnd - tAfter;
+      if (tAfterLen == 0) return false;
+      size_t tDirLen = tLastSlash - tSpec;
+      if (tDirLen == 0) {
+        tDir[0] = '/';
+        tDir[1] = '\0';
+      } else {
+        if (tDirLen >= tDirSize) tDirLen = tDirSize - 1;
+        strncpy(tDir, tSpec, tDirLen);
+        tDir[tDirLen] = '\0';
+      }
+      if (tAfterLen >= tFileSize) tAfterLen = tFileSize - 1;
+      strncpy(tFile, tAfter, tAfterLen);
+      tFile[tAfterLen] = '\0';
+    } else {
+      snprintf(tDir, tDirSize, "/%s", IMAGES_DIR);
+      size_t tLen = tEnd - tSpec;
+      if (tLen >= tFileSize) tLen = tFileSize - 1;
+      strncpy(tFile, tSpec, tLen);
+      tFile[tLen] = '\0';
+    }
+    return tFile[0] != '\0';
+  }
+
+  void Utils_::CollectMatchingFiles(const char *tDir, const char *tPattern, bool tIsSD, std::vector<String> &tFiles) {
+    File tRoot = tIsSD ? SD.open(tDir) : LittleFS.open(tDir);
+    if (!tRoot || !tRoot.isDirectory()) return;
+    File tEntry = tRoot.openNextFile();
+    while (tEntry) {
+      if (!tEntry.isDirectory()) {
+        const char *tName = tEntry.name();
+        const char *tSlash = strrchr(tName, '/');
+        if (tSlash) tName = tSlash + 1;
+        if (GlobMatch(tPattern, tName)) tFiles.push_back(String(tName));
+      }
+      tEntry = tRoot.openNextFile();
+    }
+    tRoot.close();
+  }
+
+  void Utils_::ResolveFileSpec(const char *tDir, const char *tSpec, bool tIsSD, std::vector<String> &tFiles) {
+    bool tHasGlob = (strchr(tSpec, '*') != nullptr);
+    bool tHasComma = (strchr(tSpec, ',') != nullptr);
+    if (!tHasGlob && !tHasComma) {
+      tFiles.push_back(String(tSpec));
+      return;
+    }
+    if (tHasComma) {
+      char tBuf[256] = "";
+      strncpy(tBuf, tSpec, sizeof(tBuf) - 1);
+      char *tToken = strtok(tBuf, ",");
+      while (tToken) {
+        while (*tToken == ' ') ++tToken;
+        if (*tToken != '\0') {
+          char *tE = tToken + strlen(tToken) - 1;
+          while (tE > tToken && *tE == ' ') *tE-- = '\0';
+          if (strchr(tToken, '*')) CollectMatchingFiles(tDir, tToken, tIsSD, tFiles);
+          else tFiles.push_back(String(tToken));
+        }
+        tToken = strtok(nullptr, ",");
+      }
+      return;
+    }
+    CollectMatchingFiles(tDir, tSpec, tIsSD, tFiles);
+  }
+
   void Utils_::Init() {
     ReloadConfig();
   }
@@ -423,9 +529,19 @@ namespace App {
     return tCause == ESP_SLEEP_WAKEUP_EXT1;
   }
 
+  uint64_t Utils_::SecondsUntilHour(uint8_t tTargetHour) {
+    SRTCDateTime tNow {};
+    if (!RTC.GetDateTime(tNow)) return SECONDS_PER_DAY;
+    uint32_t tNowSec = tNow.Hour * SECONDS_PER_HOUR + tNow.Minute * SECONDS_PER_MINUTE + tNow.Second;
+    uint32_t tTargetSec = tTargetHour * SECONDS_PER_HOUR;
+    if (tTargetSec <= tNowSec) tTargetSec += SECONDS_PER_DAY;
+    return tTargetSec - tNowSec;
+  }
+
   void Utils_::SleepAndWakeup() {
     constexpr uint64_t tSecToUs = 1000000ULL;
     uint64_t tDelaySec = 0;
+    uint8_t tHour = mCfg.Timer.WakeUpHour % 24;
     switch (mCfg.Timer.WakeUp) {
       case ETimerWakeUp::Seconds:
         tDelaySec = 10;
@@ -440,16 +556,16 @@ namespace App {
         tDelaySec = 12 * SECONDS_PER_HOUR;
         break;
       case ETimerWakeUp::Daily:
-        tDelaySec = 24 * SECONDS_PER_HOUR;
+        tDelaySec = SecondsUntilHour(tHour);
         break;
       case ETimerWakeUp::Weekly:
-        tDelaySec = 7 * 24 * SECONDS_PER_HOUR;
+        tDelaySec = SecondsUntilHour(tHour) + 6 * SECONDS_PER_DAY;
         break;
       case ETimerWakeUp::Monthly:
-        tDelaySec = 30 * 24 * SECONDS_PER_HOUR;
+        tDelaySec = SecondsUntilHour(tHour) + 29 * SECONDS_PER_DAY;
         break;
       default:
-        tDelaySec = 24 * SECONDS_PER_HOUR;
+        tDelaySec = SecondsUntilHour(tHour);
         break;
     }
     const char *tUnit = "sec";
@@ -457,7 +573,6 @@ namespace App {
     if (tDisplay >= 7 * SECONDS_PER_DAY) { 
       tDisplay /= SECONDS_PER_DAY; 
       tUnit = "day";   
-      tDisplay /= 7; 
     } else 
     if (tDisplay >= SECONDS_PER_DAY) { 
       tDisplay /= SECONDS_PER_DAY; 
@@ -472,6 +587,7 @@ namespace App {
       tUnit = "min";
     }
     xLOG("Going to deep sleep...");
+    xLOG("Wake-up hour → %02u:00", tHour);
     xLOG("Next wake-up → %llu %s\n\n", tDisplay, tUnit);
     uint8_t tWakePin = static_cast<uint8_t>(mCfg.Timer.WakeUpPin);
     esp_sleep_enable_timer_wakeup(tDelaySec * tSecToUs);

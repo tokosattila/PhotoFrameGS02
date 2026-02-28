@@ -31,6 +31,7 @@ namespace App {
       {kNvsConMdnsEnable, "mdns_enable", "mdns", EConfigType::BOOL},
       {kNvsConMdnsName, "mdns_hostname", "mdns", EConfigType::STRING},
       {kNvsTimerWake, "wake_up", "timer", EConfigType::UCHAR},
+      {kNvsTimerWakeHour, "wake_up_hour", "timer", EConfigType::UCHAR},
       {kNvsTelnetEnable, "telnet_enable", "telnet", EConfigType::BOOL},
       {kNvsTelnetPort, "telnet_port", "telnet", EConfigType::UCHAR},
       {kNvsTelnetUsername, "telnet_username", "telnet", EConfigType::STRING},
@@ -166,6 +167,7 @@ namespace App {
     tDefaultConfig.Connection.MdnsEnable = false;
     tDefaultConfig.Connection.MdnsName = "photoframegs02";
     tDefaultConfig.Timer.WakeUp = ETimerWakeUp::Daily;
+    tDefaultConfig.Timer.WakeUpHour = 6;
     tDefaultConfig.Timer.WakeUpPin = static_cast<EDevicePins>(WAKE_UP_PIN);
     tDefaultConfig.Telnet.Enable = true;
     tDefaultConfig.Telnet.TelnetPort = Port(23);
@@ -288,6 +290,7 @@ namespace App {
     STimerConfig tCfg {};
     AccessConfig(true, [&]() {
       tCfg.WakeUp = static_cast<ETimerWakeUp>(mConfig.getUChar(kNvsTimerWake, static_cast<uint8_t>(ETimerWakeUp::Daily)));
+      tCfg.WakeUpHour = mConfig.getUChar(kNvsTimerWakeHour, 6);
       tCfg.WakeUpPin = static_cast<EDevicePins>(WAKE_UP_PIN);
     });
     return tCfg;
@@ -487,9 +490,12 @@ namespace App {
             case EConfigType::BOOL:
               tSuccess = mConfig.putBool(tEntry.NvsKey, (strcasecmp(tValue, "true") == 0 || atoi(tValue) != 0));
               break;
-            case EConfigType::UCHAR:
-              tSuccess = mConfig.putUChar(tEntry.NvsKey, static_cast<uint8_t>(atoi(tValue)));
+            case EConfigType::UCHAR: {
+              uint8_t tVal = static_cast<uint8_t>(atoi(tValue));
+              if (strcmp(tEntry.NvsKey, kNvsTimerWakeHour) == 0) tVal %= 24;
+              tSuccess = mConfig.putUChar(tEntry.NvsKey, tVal);
               break;
+            }
             case EConfigType::USHORT:
               tSuccess = mConfig.putUShort(tEntry.NvsKey, static_cast<uint16_t>(atoi(tValue)));
               break;
@@ -585,6 +591,7 @@ namespace App {
       else if (strcmp(tEntry.NvsKey, kNvsConMdnsName) == 0) tConfig.Connection.MdnsName = String(tValue);
     } else if (strcasecmp(tSection, "timer") == 0) {
       if (strcmp(tEntry.NvsKey, kNvsTimerWake) == 0) tConfig.Timer.WakeUp = static_cast<ETimerWakeUp>(atoi(tValue));
+      else if (strcmp(tEntry.NvsKey, kNvsTimerWakeHour) == 0) tConfig.Timer.WakeUpHour = static_cast<uint8_t>(atoi(tValue)) % 24;
     } else if (strcasecmp(tSection, "telnet") == 0) {
       if (strcmp(tEntry.NvsKey, kNvsTelnetEnable) == 0) tConfig.Telnet.Enable = (strcasecmp(tValue, "true") == 0 || atoi(tValue) != 0);
       else if (strcmp(tEntry.NvsKey, kNvsTelnetPort) == 0) tConfig.Telnet.TelnetPort = Port(static_cast<uint8_t>(atoi(tValue)));
@@ -673,6 +680,7 @@ namespace App {
       tSuccess = tSuccess && mConfig.putBool(kNvsConMdnsEnable, tConfig.Connection.MdnsEnable);
       tSuccess = tSuccess && mConfig.putString(kNvsConMdnsName, tConfig.Connection.MdnsName);
       tSuccess = tSuccess && mConfig.putUChar(kNvsTimerWake, static_cast<uint8_t>(tConfig.Timer.WakeUp));
+      tSuccess = tSuccess && mConfig.putUChar(kNvsTimerWakeHour, tConfig.Timer.WakeUpHour);
       tSuccess = tSuccess && mConfig.putBool(kNvsTelnetEnable, tConfig.Telnet.Enable);
       tSuccess = tSuccess && mConfig.putUChar(kNvsTelnetPort, tConfig.Telnet.TelnetPort.Get());
       tSuccess = tSuccess && mConfig.putString(kNvsTelnetUsername, tConfig.Telnet.Username);

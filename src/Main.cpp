@@ -27,7 +27,6 @@ class Application {
         xLOG_PL();
         xLOG_FLUSH();
       #endif
-
       #if !PRODUCTION
         {
           const esp_partition_t *tRunning = esp_ota_get_running_partition();

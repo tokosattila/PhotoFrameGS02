@@ -40,10 +40,19 @@ namespace App {
       const char *PrependSlash(const char *tPath, char *tOutBuffer, size_t tBufSize);
       void SleepLowBattery();
       void SleepAndWakeup();
+      uint64_t SecondsUntilHour(uint8_t tTargetHour);
       bool MeasureBattery();
       static bool WasWokenByButton();
       static bool SecureStrcmp(const char *tA, const char *tB);
       static uint32_t SafeAtoul(const char *tStr, uint32_t tMinVal, uint32_t tMaxVal, uint32_t tDefaultVal);
+      static bool IsSD(const char *tTarget);
+      static bool IsLFS(const char *tTarget);
+      static bool IsValidTarget(const char *tTarget);
+      static bool IsSameTarget(const char *tA, const char *tB);
+      static bool GlobMatch(const char *tPattern, const char *tText);
+      static bool SplitPathAndFile(const char *tSpec, char *tDir, size_t tDirSize, char *tFile, size_t tFileSize);
+      static void CollectMatchingFiles(const char *tDir, const char *tPattern, bool tIsSD, std::vector<String> &tFiles);
+      static void ResolveFileSpec(const char *tDir, const char *tSpec, bool tIsSD, std::vector<String> &tFiles);
     private:
       Utils_();
       Utils_(const Utils_&) = delete;

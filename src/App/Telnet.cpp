@@ -2,6 +2,8 @@
 #include <App/Telnet/Commands/HelpCommand.h>
 #include <App/Telnet/Commands/ClearCommand.h>
 #include <App/Telnet/Commands/ListCommand.h>
+#include <App/Telnet/Commands/CopyCommand.h>
+#include <App/Telnet/Commands/DeleteCommand.h>
 #include <App/Telnet/Commands/CatCommand.h>
 #include <App/Telnet/Commands/DateCommand.h>
 #include <App/Telnet/Commands/TimeStampCommand.h>
@@ -27,6 +29,8 @@ namespace App {
   static HelpCommand_ sHelpCmd;
   static ClearCommand_ sClearCmd;
   static ListCommand_ sListCmd;
+  static CopyCommand_ sCopyCmd;
+  static DeleteCommand_ sDeleteCmd;
   static CatCommand_ sCatCmd;
   static DateCommand_ sDateCmd;
   static TimeStampCommand_ sTimeStampCmd;
@@ -92,6 +96,8 @@ namespace App {
       RegisterCommand(&sHelpCmd);
       RegisterCommand(&sClearCmd);
       RegisterCommand(&sListCmd);
+      RegisterCommand(&sCopyCmd);
+      RegisterCommand(&sDeleteCmd);
       RegisterCommand(&sCatCmd);
       RegisterCommand(&sDateCmd);
       RegisterCommand(&sTimeStampCmd);
