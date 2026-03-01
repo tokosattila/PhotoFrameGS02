@@ -114,10 +114,30 @@ namespace App {
           tClient.printf(COLOR_RED "  Error: %s not found\r\n" COLOR_WHITE, tFileName);
           return false;
         }
-        File tDst = tSrcSD ? LFS.OpenFile(tPath, FILE_WRITE, true) : SDC.OpenFile(tPath, FILE_WRITE, true);
+        char tDstPath[256] = "";
+        strncpy(tDstPath, tPath, sizeof(tDstPath) - 1);
+        bool tDstExists = tSrcSD ? LFS.Exists(tDstPath) : SDC.Exists(tDstPath);
+        if (tDstExists) {
+          tClient.printf(COLOR_YELLOW "  %s already exists. (o)verwrite / (r)ename / (s)kip? " COLOR_WHITE, tFileName);
+          char tChoice = WaitForChar(tClient);
+          tClient.printf("%c\r\n", tChoice);
+          if (tChoice == 's' || tChoice == 'S') {
+            tClient.printf(COLOR_YELLOW "  Skipped: %s\r\n" COLOR_WHITE, tFileName);
+            tSrc.close();
+            return true;
+          }
+          if (tChoice == 'r' || tChoice == 'R') {
+            if (!GenerateUniqueName(tDir, tFileName, tDstPath, sizeof(tDstPath), !tSrcSD)) {
+              tClient.printf(COLOR_RED "  Error: Cannot generate unique name for %s\r\n" COLOR_WHITE, tFileName);
+              tSrc.close();
+              return false;
+            }  
+          }
+        }
+        File tDst = tSrcSD ? LFS.OpenFile(tDstPath, FILE_WRITE, true) : SDC.OpenFile(tDstPath, FILE_WRITE, true);
         if (!tDst) {
           tSrc.close();
-          tClient.printf(COLOR_RED "  Error: Cannot create %s\r\n" COLOR_WHITE, tFileName);
+          tClient.printf(COLOR_RED "  Error: Cannot create %s\r\n" COLOR_WHITE, tDstPath);
           return false;
         }
         size_t tTotal = tSrc.size();
@@ -140,10 +160,46 @@ namespace App {
         if (tOk && tWritten == tTotal) {
           char tSize[16] = "";
           UTL.ByteToReadableSize(tTotal, tSize, sizeof(tSize));
-          tClient.printf(COLOR_GREEN "  OK: %s [%s]\r\n" COLOR_WHITE, tFileName, tSize);
+          const char *tDstName = strrchr(tDstPath, '/');
+          tDstName = tDstName ? tDstName + 1 : tDstPath;
+          tClient.printf(COLOR_GREEN "  OK: %s [%s]\r\n" COLOR_WHITE, tDstName, tSize);
           return true;
         }
         tClient.printf(COLOR_RED "  Error: %s (%u/%u bytes)\r\n" COLOR_WHITE, tFileName, (unsigned)tWritten, (unsigned)tTotal);
+        return false;
+      }
+      char WaitForChar(WiFiClient &tClient) {
+        unsigned long tStart = millis();
+        while (tClient.connected() && (millis() - tStart) < 30000) {
+          if (tClient.available()) {
+            char tC = tClient.read();
+            while (tClient.available()) tClient.read();
+            return tC;
+          }
+          vTaskDelay(50 / portTICK_PERIOD_MS);
+        }
+        return 's';
+      }
+      bool GenerateUniqueName(const char *tDir, const char *tFileName, char *tOutPath, size_t tOutSize, bool tIsSD) {
+        const char *tDot = strrchr(tFileName, '.');
+        char tBase[128] = "";
+        char tExt[32] = "";
+        if (tDot) {
+          size_t tBaseLen = tDot - tFileName;
+          if (tBaseLen >= sizeof(tBase)) tBaseLen = sizeof(tBase) - 1;
+          strncpy(tBase, tFileName, tBaseLen);
+          tBase[tBaseLen] = '\0';
+          strncpy(tExt, tDot, sizeof(tExt) - 1);
+          tExt[sizeof(tExt) - 1] = '\0';
+        } else {
+          strncpy(tBase, tFileName, sizeof(tBase) - 1);
+          tBase[sizeof(tBase) - 1] = '\0';
+        }
+        for (uint16_t tIdx = 1; tIdx < 1000; ++tIdx) {
+          snprintf(tOutPath, tOutSize, "%s/%s_%u%s", tDir, tBase, (unsigned)tIdx, tExt);
+          bool tExists = tIsSD ? SDC.Exists(tOutPath) : LFS.Exists(tOutPath);
+          if (!tExists) return true;
+        }
         return false;
       }
       void PrintUsage(WiFiClient &tClient) {
