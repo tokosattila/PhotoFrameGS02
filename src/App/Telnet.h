@@ -44,6 +44,15 @@ namespace App {
       uint8_t mInputPos = 0;
       bool mWaitingConfirmation = false;
       char mConfirmPrompt[96] = "Confirm (y/n): ";
+      uint8_t mFailedAttempts = 0;
+      uint8_t mLockoutLevel = 0;
+      uint32_t mLockoutUntil = 0;
+      static constexpr uint8_t kMaxAttemptsPerLevel = 3;
+      static constexpr uint32_t kLockoutDurations[] = {30000, 3600000, 86400000};
+      static constexpr uint8_t kMaxLockoutLevel = 2;
+      bool IsLockedOut();
+      void ApplyLockout();
+      void ResetLockout();
       static void Lock();
       static void Unlock();
       void ClearScreen();

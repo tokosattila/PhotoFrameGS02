@@ -67,6 +67,9 @@ namespace App {
     mAuthTimestamp = 0;
     mInputPos = 0;
     memset(mInputBuffer, 0, sizeof(mInputBuffer));
+    mFailedAttempts = 0;
+    mLockoutLevel = 0;
+    mLockoutUntil = 0;
     mCommands.reserve(20);
   }
 
@@ -166,6 +169,12 @@ namespace App {
         mInputPos = 0;
         memset(mInputBuffer, 0, sizeof(mInputBuffer));
         if (!IsAuthenticated() && mAuthRequired) {
+          if (IsLockedOut()) {
+            uint32_t tRemain = (mLockoutUntil - millis()) / 1000;
+            mClient.printf(COLOR_RED "\r\nLocked out. Try again in %lu seconds.\r\n" COLOR_WHITE, (unsigned long)tRemain);
+            mClient.stop();
+            return;
+          }
           mClient.printf("%s TELNET %s\r\n\r\n" COLOR_YELLOW "Authentication required!" COLOR_WHITE "\r\n\r\nUsername: ", mCfg.Device.Name.c_str(), mCfg.Device.Version.c_str());
           mWaitingPassword = false;
         } else {
@@ -191,9 +200,20 @@ namespace App {
               if (UTL.SecureStrcmp(mInputBuffer, mCfg.Telnet.Username.c_str())) {
                 mClient.print(F("Password: "));
                 mWaitingPassword = true;
-              } else mClient.print(F("\r\n" COLOR_RED "Invalid username." COLOR_WHITE "\r\n\r\nUsername: "));
+              } else {
+                mFailedAttempts++;
+                if (mFailedAttempts >= kMaxAttemptsPerLevel) {
+                  ApplyLockout();
+                  uint32_t tRemain = (mLockoutUntil - millis()) / 1000;
+                  mClient.printf("\r\n" COLOR_RED "Invalid password.\r\n\r\nToo many failed attempts, locked for %lu seconds." COLOR_WHITE "\r\n", (unsigned long)tRemain);
+                  mClient.stop();
+                  return;
+                }
+                mClient.print(F("\r\n" COLOR_RED "Invalid username." COLOR_WHITE "\r\n\r\nUsername: "));
+              }
             } else {
               if (UTL.SecureStrcmp(mInputBuffer, mCfg.Telnet.Password.c_str())) {
+                ResetLockout();
                 SaveSessionTimestamp();
                 ClearScreen();
                 mInputPos = 0;
@@ -201,7 +221,17 @@ namespace App {
                 mClient.printf("%s TELNET\r\n\r\n" COLOR_YELLOW "Welcome! Type 'help' for commands." COLOR_WHITE "\r\n\r\n$ ", mCfg.Device.Name.c_str());
                 mWaitingPassword = false;
                 break;
-              } else mClient.print(F("\r\n" COLOR_RED "Invalid password." COLOR_WHITE "\r\n\r\nPassword: "));
+              } else {
+                mFailedAttempts++;
+                if (mFailedAttempts >= kMaxAttemptsPerLevel) {
+                  ApplyLockout();
+                  uint32_t tRemain = (mLockoutUntil - millis()) / 1000;
+                  mClient.printf("\r\n" COLOR_RED "Invalid password.\r\n\r\nToo many failed attempts, locked for %lu seconds." COLOR_WHITE "\r\n", (unsigned long)tRemain);
+                  mClient.stop();
+                  return;
+                }
+                mClient.print(F("\r\n" COLOR_RED "Invalid password." COLOR_WHITE "\r\n\r\nPassword: "));
+              }
             }
             mInputPos = 0;
             memset(mInputBuffer, 0, sizeof(mInputBuffer));
@@ -365,6 +395,32 @@ namespace App {
     if (!CFG.SaveSession(mAuthTimestamp)) {
       xLOG("Warning: Failed to clear session timestamp");
     }
+  }
+
+  constexpr uint32_t Telnet_::kLockoutDurations[];
+
+  bool Telnet_::IsLockedOut() {
+    if (mLockoutUntil == 0) return false;
+    if (millis() >= mLockoutUntil) {
+      mLockoutUntil = 0;
+      mFailedAttempts = 0;
+      return false;
+    }
+    return true;
+  }
+
+  void Telnet_::ApplyLockout() {
+    uint32_t tDuration = kLockoutDurations[mLockoutLevel];
+    mLockoutUntil = millis() + tDuration;
+    xLOG("Brute-force lockout level %u → %lu sec", (unsigned)(mLockoutLevel + 1), (unsigned long)(tDuration / 1000));
+    if (mLockoutLevel < kMaxLockoutLevel) mLockoutLevel++;
+    mFailedAttempts = 0;
+  }
+
+  void Telnet_::ResetLockout() {
+    mFailedAttempts = 0;
+    mLockoutLevel = 0;
+    mLockoutUntil = 0;
   }
 
 }

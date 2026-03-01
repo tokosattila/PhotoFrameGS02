@@ -56,6 +56,7 @@ E-ink digital picture frame with remote image updates via FTP and configuration 
 - **NTP Time Sync** — Automatic time synchronization with RTC backup
 - **FTP Server** — Upload/manage images wirelessly (SD Card or LittleFS)
 - **Telnet Console** — Remote monitoring, configuration & commands
+- **Telnet Authentication Guard** — Session timeout + progressive brute-force lockout (30s → 1h → 1 day)
 - **Firmware OTA (Dual Slot)** — Update firmware via `/firmware/` (ota_0/ota_1) with boot-slot control
 - **Battery Monitoring** — Auto low-power mode with voltage display
 - **Grayscale Rendering** — 16-level dithering with brightness/contrast/gamma control
@@ -270,6 +271,16 @@ fallback_enabled = true      ; smart fallback if images empty
 | `logout` | Logout telnet session |
 | `exit` | Exit telnet connection |
 
+### Authentication & Brute-force Protection
+
+Telnet access is protected with username/password authentication and session timeout (`telnet_session`).
+
+- Failed login attempts are counted (invalid username and invalid password both count)
+- After **3 failed attempts**: lockout for **30 seconds**
+- Next 3 failed attempts (after lockout expiry): lockout for **1 hour**
+- Next 3 failed attempts (after lockout expiry): lockout for **1 day**
+- Successful login resets the lockout state to the initial level
+
 ### File Operations
 
 The `copy` and `delete` commands support flexible file specification:
@@ -282,7 +293,11 @@ The `copy` and `delete` commands support flexible file specification:
 | Comma-separated | `delete sd a.jpg,b.jpg,c.jpg` | Batch operation on multiple files |
 | Mixed | `copy lfs sd /data/*.bin` | Glob with absolute directory |
 
-> **⚠️ Note:** The `delete` command asks for confirmation (`y/n`) before removing files. Storage aliases are interchangeable: `sd` = `sdcard`, `lfs` = `littlefs` = `fallback`.
+> **⚠️ Notes:**
+> - The `delete` command asks for confirmation (`y/n`) before removing files.
+> - If a target file already exists during `copy`, the command asks: **(o)verwrite / (r)ename / (s)kip**.
+> - `rename` creates an indexed filename (for example: `photo_1.jpg`, `photo_2.jpg`, ...).
+> - Storage aliases are interchangeable: `sd` = `sdcard`, `lfs` = `littlefs` = `fallback`.
 
 ### Wake-up Schedule
 

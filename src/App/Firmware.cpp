@@ -357,6 +357,6 @@ namespace App {
     mUpdateBuffer = tUpdateBuffer;
     mUpdateBufferSize = mUpdateBufferDefaultSize;
     return true;
-  }  
+  }
 
 } 
