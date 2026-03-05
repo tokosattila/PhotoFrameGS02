@@ -156,8 +156,8 @@ namespace App {
     tDefaultConfig.Connection.ApIp = "192.168.4.1";
     tDefaultConfig.Connection.ApGateway = "192.168.4.1";
     tDefaultConfig.Connection.ApSubnet = "255.255.255.0";
-    tDefaultConfig.Connection.StaSsid = "Szeklerman";
-    tDefaultConfig.Connection.StaPassword = "tokosmagor2012";
+    tDefaultConfig.Connection.StaSsid = "SSID";
+    tDefaultConfig.Connection.StaPassword = "PASSWORD";
     tDefaultConfig.Connection.StaIpEnable = false;
     tDefaultConfig.Connection.StaIp = "192.168.0.83";
     tDefaultConfig.Connection.StaGateway = "192.168.0.1";
