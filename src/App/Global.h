@@ -206,6 +206,7 @@ namespace App {
     String ImagesDir;
     String ImageExt;
     String CurrentFile;
+    unsigned long ImageUpdatedAt = 0;
     SDisplayConfig() = default;
   };
 

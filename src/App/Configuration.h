@@ -36,6 +36,7 @@ namespace App {
       const char *GetConfig(const char *tKey);
       bool SetConfig(const char *tKey, const char *tValue);
       bool SaveImageName(const char *tValue);
+      uint32_t GetImageUpdatedAt();
       bool SaveSession(uint32_t tValue);
       uint32_t GetSession();
       const char *PrepareAllConfigToINI();
@@ -59,6 +60,7 @@ namespace App {
       static constexpr const char *kNvsDisplayContrast = "dsp.jpg.cntrst";
       static constexpr const char *kNvsDisplayGamma = "dsp.jpg.gmm";
       static constexpr const char *kNvsDisplayFile = "dsp.file";
+      static constexpr const char *kNvsDisplayImageUpdatedAt = "dsp.file.upd";
       static constexpr const char *kNvsTimeServer = "tme.server";
       static constexpr const char *kNvsTimePort = "tme.port";
       static constexpr const char *kNvsTimeGmtOffset = "tme.gmt.offset";

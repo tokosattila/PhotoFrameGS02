@@ -1,4 +1,5 @@
 #include <App/Configuration.h>
+#include <App/RTCTime.h>
 
 namespace App {
 
@@ -146,6 +147,7 @@ namespace App {
     tDefaultConfig.Display.ImagesDir = IMAGES_DIR;
     tDefaultConfig.Display.ImageExt = IMAGE_EXT;
     tDefaultConfig.Display.CurrentFile = "";
+    tDefaultConfig.Display.ImageUpdatedAt = 0;
     tDefaultConfig.Ntp.Server = "ro.pool.ntp.org";
     tDefaultConfig.Ntp.NtpPort = Port(123);
     tDefaultConfig.Ntp.GMTOffset = 2 * 60 * 60;
@@ -282,6 +284,7 @@ namespace App {
       tCfg.ImagesDir = IMAGES_DIR;
       tCfg.ImageExt = IMAGE_EXT;
       tCfg.CurrentFile = mConfig.getString(kNvsDisplayFile, "");
+      tCfg.ImageUpdatedAt = mConfig.getULong(kNvsDisplayImageUpdatedAt, 0);
     });
     return tCfg;
   }
@@ -342,11 +345,22 @@ namespace App {
   bool Configuration_::SaveImageName(const char *tValue) {
     if (!tValue) return false;
     bool tSuccess = false;
+    uint32_t tEpoch = static_cast<uint32_t>(time(nullptr));
+    if (tEpoch == 0) tEpoch = RTC.GetEpoch();
     AccessConfig(false, [&]() {
       tSuccess = mConfig.putString(kNvsDisplayFile, tValue);
+      if (tSuccess) tSuccess = mConfig.putULong(kNvsDisplayImageUpdatedAt, tEpoch);
     });
     if (!tSuccess) xLOG("Failed to save image name: %s", (tValue && tValue[0]) ? tValue : "<empty>");
     return tSuccess;
+  }
+
+  uint32_t Configuration_::GetImageUpdatedAt() {
+    uint32_t tValue = 0;
+    AccessConfig(true, [&]() {
+      tValue = mConfig.getULong(kNvsDisplayImageUpdatedAt, 0);
+    });
+    return tValue;
   }
 
   bool Configuration_::SaveSession(uint32_t tValue) {
@@ -659,6 +673,7 @@ namespace App {
       tSuccess = tSuccess && mConfig.putUChar(kNvsDisplayContrast, tConfig.Display.JpgContrast.Get());
       tSuccess = tSuccess && mConfig.putUChar(kNvsDisplayGamma, tConfig.Display.JpgGamma.Get());
       if (tSuccess && tConfig.Display.CurrentFile.length() > 0) tSuccess = mConfig.putString(kNvsDisplayFile, tConfig.Display.CurrentFile);
+      tSuccess = tSuccess && mConfig.putULong(kNvsDisplayImageUpdatedAt, tConfig.Display.ImageUpdatedAt);
       tSuccess = tSuccess && mConfig.putString(kNvsTimeServer, tConfig.Ntp.Server);
       tSuccess = tSuccess && mConfig.putUShort(kNvsTimePort, tConfig.Ntp.NtpPort.Get());
       tSuccess = tSuccess && mConfig.putInt(kNvsTimeGmtOffset, tConfig.Ntp.GMTOffset);
