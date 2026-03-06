@@ -535,9 +535,11 @@ namespace App {
   }
 
   uint64_t Utils_::SecondsUntilHour(uint8_t tTargetHour) {
-    SRTCDateTime tNow {};
-    if (!RTC.GetDateTime(tNow)) return SECONDS_PER_DAY;
-    uint32_t tNowSec = tNow.Hour * SECONDS_PER_HOUR + tNow.Minute * SECONDS_PER_MINUTE + tNow.Second;
+    uint32_t tEpochUtc = static_cast<uint32_t>(time(nullptr));
+    if (tEpochUtc < 1735689600UL) tEpochUtc = static_cast<uint32_t>(RTC.GetEpoch());
+    if (tEpochUtc < 1735689600UL) return SECONDS_PER_DAY;
+    unsigned long tLocalEpoch = static_cast<unsigned long>(tEpochUtc) + mCfg.Ntp.GMTOffset;
+    uint32_t tNowSec = static_cast<uint32_t>(tLocalEpoch % SECONDS_PER_DAY);
     uint32_t tTargetSec = tTargetHour * SECONDS_PER_HOUR;
     if (tTargetSec <= tNowSec) tTargetSec += SECONDS_PER_DAY;
     return tTargetSec - tNowSec;

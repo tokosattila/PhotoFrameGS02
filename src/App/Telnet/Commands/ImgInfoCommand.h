@@ -26,7 +26,7 @@ namespace App {
         BuildImagePath(tDisplayCfg, tImagePath, sizeof(tImagePath));
         uint32_t tLastUpdate = CFG.GetImageUpdatedAt();
         uint32_t tNowUtc = static_cast<uint32_t>(time(nullptr));
-        if (tNowUtc == 0) tNowUtc = RTC.GetEpoch();
+        if (tNowUtc < 1735689600UL) tNowUtc = static_cast<uint32_t>(RTC.GetEpoch());
         uint32_t tNextUpdate = 0;
         if (tNowUtc > 0) tNextUpdate = tNowUtc + CalculateDelaySeconds(tTimerCfg);
         char tLastUpdateText[32] = "";
@@ -35,8 +35,7 @@ namespace App {
         else UTL.EpochToReadableFormat(tLastUpdate, true, tLastUpdateText, sizeof(tLastUpdateText));
         if (tNextUpdate == 0) snprintf(tNextUpdateText, sizeof(tNextUpdateText), "N/A");
         else UTL.EpochToReadableFormat(tNextUpdate, true, tNextUpdateText, sizeof(tNextUpdateText));
-        tClient.print(F(COLOR_GREEN "\r\n  Image Info:\r\n" COLOR_WHITE));
-        tClient.printf("\r\n  Current image: %s", tImagePath);
+        tClient.printf(COLOR_WHITE "\r\n  Current image: %s", tImagePath);
         tClient.printf("\r\n  Last update:   %s", tLastUpdateText);
         tClient.printf("\r\n  Next update:   %s\r\n\r\n", tNextUpdateText);
         return true;
