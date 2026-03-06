@@ -4,7 +4,6 @@
 #include <App/Telnet/Commands/ListCommand.h>
 #include <App/Telnet/Commands/CopyCommand.h>
 #include <App/Telnet/Commands/DeleteCommand.h>
-#include <App/Telnet/Commands/ImgInfoCommand.h>
 #include <App/Telnet/Commands/CatCommand.h>
 #include <App/Telnet/Commands/DateCommand.h>
 #include <App/Telnet/Commands/TimeStampCommand.h>
@@ -14,6 +13,7 @@
 #include <App/Telnet/Commands/FileSystemInfoCommand.h>
 #include <App/Telnet/Commands/NetInfoCommand.h>
 #include <App/Telnet/Commands/BatInfoCommand.h>
+#include <App/Telnet/Commands/ImgInfoCommand.h>
 #include <App/Telnet/Commands/ConfigCommand.h>
 #include <App/Telnet/Commands/FetchCommand.h>
 #include <App/Telnet/Commands/FirmwareUpdateCommand.h>
@@ -32,7 +32,6 @@ namespace App {
   static ListCommand_ sListCmd;
   static CopyCommand_ sCopyCmd;
   static DeleteCommand_ sDeleteCmd;
-  static ImgInfoCommand_ sImgInfoCmd;
   static CatCommand_ sCatCmd;
   static DateCommand_ sDateCmd;
   static TimeStampCommand_ sTimeStampCmd;
@@ -42,6 +41,7 @@ namespace App {
   static FileSystemInfoCommand_ sFileSystemInfoCmd;
   static NetInfoCommand_ sNetInfoCmd;
   static BatInfoCommand_ sBatInfoCmd;
+  static ImgInfoCommand_ sImgInfoCmd;
   static ConfigCommand_ sConfigCmd;
   static FetchCommand_ sFetchCmd;
   static FirmwareUpdateCommand_ sFirmwareUpdateCmd;
@@ -103,7 +103,6 @@ namespace App {
       RegisterCommand(&sListCmd);
       RegisterCommand(&sCopyCmd);
       RegisterCommand(&sDeleteCmd);
-      RegisterCommand(&sImgInfoCmd);
       RegisterCommand(&sCatCmd);
       RegisterCommand(&sDateCmd);
       RegisterCommand(&sTimeStampCmd);
@@ -113,6 +112,7 @@ namespace App {
       RegisterCommand(&sFileSystemInfoCmd);
       RegisterCommand(&sNetInfoCmd);
       RegisterCommand(&sBatInfoCmd);
+      RegisterCommand(&sImgInfoCmd);
       RegisterCommand(&sConfigCmd);
       RegisterCommand(&sFetchCmd);
       RegisterCommand(&sFirmwareUpdateCmd);
