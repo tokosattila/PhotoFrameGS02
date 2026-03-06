@@ -4,6 +4,7 @@
 #include <App/Telnet/Commands/ListCommand.h>
 #include <App/Telnet/Commands/CopyCommand.h>
 #include <App/Telnet/Commands/DeleteCommand.h>
+#include <App/Telnet/Commands/ImgInfoCommand.h>
 #include <App/Telnet/Commands/CatCommand.h>
 #include <App/Telnet/Commands/DateCommand.h>
 #include <App/Telnet/Commands/TimeStampCommand.h>
@@ -31,6 +32,7 @@ namespace App {
   static ListCommand_ sListCmd;
   static CopyCommand_ sCopyCmd;
   static DeleteCommand_ sDeleteCmd;
+  static ImgInfoCommand_ sImgInfoCmd;
   static CatCommand_ sCatCmd;
   static DateCommand_ sDateCmd;
   static TimeStampCommand_ sTimeStampCmd;
@@ -101,6 +103,7 @@ namespace App {
       RegisterCommand(&sListCmd);
       RegisterCommand(&sCopyCmd);
       RegisterCommand(&sDeleteCmd);
+      RegisterCommand(&sImgInfoCmd);
       RegisterCommand(&sCatCmd);
       RegisterCommand(&sDateCmd);
       RegisterCommand(&sTimeStampCmd);
@@ -205,7 +208,7 @@ namespace App {
                 if (mFailedAttempts >= kMaxAttemptsPerLevel) {
                   ApplyLockout();
                   uint32_t tRemain = (mLockoutUntil - millis()) / 1000;
-                  mClient.printf("\r\n" COLOR_RED "Invalid password.\r\n\r\nToo many failed attempts, locked for %lu seconds." COLOR_WHITE "\r\n", (unsigned long)tRemain);
+                  mClient.printf("\r\n" COLOR_RED "Invalid username.\r\n\r\nToo many failed attempts, locked for %lu seconds." COLOR_WHITE "\r\n", (unsigned long)tRemain);
                   mClient.stop();
                   return;
                 }

@@ -100,6 +100,7 @@ src/
 │   │       ├── FileSystemInfoCommand.h
 │   │       ├── FirmwareUpdateCommand.h
 │   │       ├── HelpCommand.h
+│   │       ├── ImgInfoCommand.h
 │   │       ├── ListCommand.h
 │   │       ├── LogoutCommand.h
 │   │       ├── MemInfoCommand.h
@@ -233,6 +234,9 @@ default_file_system = sdcard ; sdcard | littlefs
 fallback_enabled = true      ; smart fallback if images empty
 ```
 
+> `image_updated_at` is an internal metadata value stored in NVS (`dsp.file.upd`).
+> It is intentionally not part of `config.ini` and cannot be queried or modified via `config`.
+
 ## 📡 Telnet Commands
 
 | Command | Description |
@@ -246,6 +250,7 @@ fallback_enabled = true      ; smart fallback if images empty
 | `copy lfs sd [/path/]<filespec>` | Copy files from LittleFS to SD Card |
 | `delete sd [/path/]<filespec>` | Delete files from SD Card (with confirmation) |
 | `delete lfs [/path/]<filespec>` | Delete files from LittleFS (with confirmation) |
+| `imginfo` | Show current image path, last image update time, and next scheduled refresh |
 | `cat <filename>` | Show file content |
 | `date` | Show system date and time |
 | `date rtc` | Show RTC date and time |

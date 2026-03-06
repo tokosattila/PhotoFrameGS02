@@ -56,6 +56,25 @@ bool ParseLine(char *tLine, char *tSection, char *tKey, char *tValue) {
   return false;
 }
 
+bool IsPublicConfigKey(const char *tKey) {
+  if (!tKey || !tKey[0]) return false;
+  static const char *kPublicKeys[] = {
+    "appname", "version", "jpg_brightness", "jpg_contrast", "jpg_gamma", "image_file",
+    "ntp_server", "ntp_port", "ntp_gmt_offset", "ntp_update",
+    "ap_enable", "ap_ssid", "ap_password", "ap_ip", "ap_gateway", "ap_subnet",
+    "sta_ssid", "sta_password", "sta_enable", "sta_ip", "sta_gateway", "sta_subnet", "sta_dns1", "sta_dns2",
+    "mdns_enable", "mdns_hostname",
+    "wake_up", "wake_up_hour",
+    "telnet_enable", "telnet_port", "telnet_username", "telnet_password", "telnet_session",
+    "ftp_enable", "ftp_port", "ftp_username", "ftp_password",
+    "default_file_system", "fallback_enabled"
+  };
+  for (size_t i = 0; i < sizeof(kPublicKeys) / sizeof(kPublicKeys[0]); i++) {
+    if (strcmp(kPublicKeys[i], tKey) == 0) return true;
+  }
+  return false;
+}
+
 // ============================================================================
 // TrimValue Tests
 // ============================================================================
@@ -309,6 +328,12 @@ void test_ParseLine_no_equals_sign() {
   TEST_ASSERT_FALSE(ParseLine(line, section, key, value));
 }
 
+void test_PublicConfigKeys_image_updated_at_not_exposed() {
+  TEST_ASSERT_FALSE(IsPublicConfigKey("image_updated_at"));
+  TEST_ASSERT_FALSE(IsPublicConfigKey("dsp.file.upd"));
+  TEST_ASSERT_TRUE(IsPublicConfigKey("image_file"));
+}
+
 // ============================================================================
 // Test Runner
 // ============================================================================
@@ -357,6 +382,7 @@ int main(int argc, char **argv) {
   // ParseLine - Edge cases
   RUN_TEST(test_ParseLine_null_input);
   RUN_TEST(test_ParseLine_no_equals_sign);
+  RUN_TEST(test_PublicConfigKeys_image_updated_at_not_exposed);
   
   return UNITY_END();
 }
