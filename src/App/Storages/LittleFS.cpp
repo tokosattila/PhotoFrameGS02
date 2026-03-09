@@ -1,4 +1,4 @@
-#include <App/LittleFS.h>
+#include <App/Storages/LittleFS.h>
 
 namespace App {
 
@@ -109,7 +109,7 @@ namespace App {
           const char *tName = GetFileName(tFile.name());
           if (IsFile(tName)) {
             char tBuffer[16];
-            UTL.ByteToReadableSize(tFile.size(), tBuffer, sizeof(tBuffer));
+            UTL.ByteToReadableSize((uint64_t)tFile.size(), tBuffer, sizeof(tBuffer));
             AppendToBuffer("  ", 2);
             AppendToBuffer(tName, strlen(tName));
             AppendToBuffer(" [", 2);
@@ -129,7 +129,7 @@ namespace App {
       const char *tShort = GetFileName(tFileEntry.name());
       if (IsFile(tShort)) {
         char tBuffer[16];
-        UTL.ByteToReadableSize(tFileEntry.size(), tBuffer, sizeof(tBuffer));
+        UTL.ByteToReadableSize((uint64_t)tFileEntry.size(), tBuffer, sizeof(tBuffer));
         AppendToBuffer(tShort, strlen(tShort));
         AppendToBuffer(" [", 2);
         AppendToBuffer(tBuffer, strlen(tBuffer));
@@ -411,7 +411,7 @@ namespace App {
     if (tSize > sizeof(mFileBuffer)) {
       tFile.close();
       char tSizeBuffer[16];
-      UTL.ByteToReadableSize((uint32_t)tSize, tSizeBuffer, sizeof(tSizeBuffer));
+      UTL.ByteToReadableSize((uint64_t)tSize, tSizeBuffer, sizeof(tSizeBuffer));
       snprintf(mFileBuffer, sizeof(mFileBuffer), "  Error: File too large (%s).\r\n", tSizeBuffer);
       return mFileBuffer;
     }

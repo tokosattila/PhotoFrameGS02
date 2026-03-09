@@ -9,15 +9,20 @@ using namespace App;
 SET_LOOP_TASK_STACK_SIZE(LOOP_TASK_STACK_SIZE);
 
 class Application {
+
   DEFINE_TAG("APP");
   friend class AutoGuard<Application>;
-  inline static bool sButtonTaskStarted = false;
+  static bool sButtonTaskStarted;
+
   public:
+
     using Guard = AutoGuard<Application>;
+
     static Application &Instance() {
       static Application tInstance;
       return tInstance;
     };
+
     void Init() {     
       #if !PRODUCTION
         xLOG_B(BAUDRATE);
@@ -78,32 +83,41 @@ class Application {
       if (UTL.WasWokenByButton()) MaintenanceMode();
       else PhotoFrameMode();
     }
+
     void Run() {
       vTaskDelay(portMAX_DELAY);
     }
+
   private:
+
     Application() = default;
     SemaphoreHandle_t mMutex = nullptr;
     SAppConfig mCfg {};
+
     static void Lock() {
       if (Instance().mMutex) xSemaphoreTakeRecursive(Instance().mMutex, portMAX_DELAY);
     }
+
     static void Unlock() {
       if (Instance().mMutex) xSemaphoreGiveRecursive(Instance().mMutex);
     }
+
     void ReloadConfig() {
       Guard tLock;
       mCfg = CFG.Get<SAppConfig>();
     }
+
     void ShowDefaultImage() {
       DSP.PrintImage(0, 0, DefaultImageWidth, DefaultImageHeight, DefaultImage);
       DSP.ClearDisplay();
       DSP.Update();
     }
+
     void SaveNextImage(const char *tNextImage) {
       if (!CFG.SaveImageName(tNextImage)) xLOG("Failed to save → next image name");
       else xLOG("Next image → %s", tNextImage);
     }
+
     bool TryDisplayImage(const char *tImage) {
       if (!tImage || *tImage == '\0') return false;
       char tFullPath[128] = "";
@@ -112,6 +126,7 @@ class Application {
       xLOG("Trying image → %s", tImage);
       return DSP.PrintJpg(0, 0, tImage);
     }
+
     void PhotoFrameMode() {
       ReloadConfig();
       UTL.PrintInfo("Device starts in → Photo Frame Mode", EUtilsInfoType::Single);
@@ -140,6 +155,7 @@ class Application {
         while (true) vTaskDelay(1e3 / portTICK_PERIOD_MS);
       #endif
     }
+
     void MaintenanceMode() {
       UTL.SetCPUFrequency(ECPUFrequency::F240MHz);
       ReloadConfig();
@@ -246,6 +262,7 @@ class Application {
       UTL.PrintMemoryInfo();
       while (true) vTaskDelay(DELAY_ONE_SEC_MS / portTICK_PERIOD_MS);
     }
+
     void LowBatteryMode() {
       UTL.PrintInfo("Device starts in → Low Battery Mode", EUtilsInfoType::Single);
       LFS.Init(true);
@@ -295,25 +312,31 @@ class Application {
         while (true) vTaskDelay(1e3 / portTICK_PERIOD_MS);
       #endif     
     }
+
     static void ButtonTask(void *tParameter) {
       while (true) {
         BTN.HandleEvents();
         vTaskDelay(DELAY_ULTRA_SHORT_MS / portTICK_PERIOD_MS);
       }
     }
+
     static void TelnetTask(void *tParameter) {
       while (true) {
         if (CON.HasActiveWifiClient()) TLN.HandleEvents();
         vTaskDelay(DELAY_ULTRA_SHORT_MS / portTICK_PERIOD_MS);
       }
-    }   
+    }  
+
     static void FTPTask(void *tParameter) {
       while (true) {
         if (CON.HasActiveWifiClient()) FTP.HandleEvents();
         vTaskDelay(DELAY_ULTRA_SHORT_MS / portTICK_PERIOD_MS);
       }
     }
+    
 };
+
+bool Application::sButtonTaskStarted = false;
 
 #define APP Application::Instance()
 

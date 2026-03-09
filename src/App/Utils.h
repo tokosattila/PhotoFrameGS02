@@ -28,7 +28,7 @@ namespace App {
       static void DisableBT();
       static void DisableTouchPad();
       static void DisableBrownout();
-      static void ByteToReadableSize(uint32_t tBytes, char *tBuffer, size_t tLength);
+      static void ByteToReadableSize(uint64_t tBytes, char *tBuffer, size_t tLength);
       const char *EpochToReadableFormat(unsigned long tEpoch, bool tAsDateTime, char *tBuffer, size_t tLength);
       void PrintBootInfo();
       void PrintWakeupReason();

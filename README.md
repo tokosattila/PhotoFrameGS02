@@ -64,6 +64,11 @@ E-ink digital picture frame with remote image updates via FTP and configuration 
 - **Deep Sleep Wake-up** — Timer-based or button-triggered (EXT1)
 - **mDNS Support** — Access device via hostname.local
 
+## Image Orientation Limitation
+
+Due to a missing rotation function in the current display driver, software image rotation is not available.
+Images must be prepared and saved in vertical (portrait) orientation before upload.
+
 ## 📁 Project Structure
 
 ```

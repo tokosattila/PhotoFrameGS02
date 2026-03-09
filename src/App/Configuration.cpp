@@ -137,8 +137,8 @@ namespace App {
     tDefaultConfig.Device.Version = "v1.0";
     tDefaultConfig.Device.ConfigFile = CONFIG_FILE;
     tDefaultConfig.Device.BatteryPin = BATTERY_PIN;
-    tDefaultConfig.Device.SettingPin = SETTING_PIN;
     tDefaultConfig.Device.ResetPin = RESET_PIN;
+    tDefaultConfig.Device.SettingPin = SETTING_PIN;
     tDefaultConfig.Display.Width = DISPLAY_WIDTH;
     tDefaultConfig.Display.Height = DISPLAY_HEIGHT;
     tDefaultConfig.Display.JpgBrightness = Percentage(25);
@@ -170,7 +170,6 @@ namespace App {
     tDefaultConfig.Connection.MdnsName = "photoframegs02";
     tDefaultConfig.Timer.WakeUp = ETimerWakeUp::Daily;
     tDefaultConfig.Timer.WakeUpHour = 6;
-    tDefaultConfig.Timer.WakeUpPin = static_cast<EDevicePins>(WAKE_UP_PIN);
     tDefaultConfig.Telnet.Enable = true;
     tDefaultConfig.Telnet.TelnetPort = Port(23);
     tDefaultConfig.Telnet.Username = "admin";
@@ -233,8 +232,8 @@ namespace App {
       tCfg.Version = mConfig.getString(kNvsDeviceVersion, "v1.0");
       tCfg.ConfigFile = CONFIG_FILE;
       tCfg.BatteryPin = BATTERY_PIN;
-      tCfg.SettingPin = SETTING_PIN;
       tCfg.ResetPin = RESET_PIN;
+      tCfg.SettingPin = SETTING_PIN;
     });
     return tCfg;
   }
@@ -294,7 +293,6 @@ namespace App {
     AccessConfig(true, [&]() {
       tCfg.WakeUp = static_cast<ETimerWakeUp>(mConfig.getUChar(kNvsTimerWake, static_cast<uint8_t>(ETimerWakeUp::Daily)));
       tCfg.WakeUpHour = mConfig.getUChar(kNvsTimerWakeHour, 6);
-      tCfg.WakeUpPin = static_cast<EDevicePins>(WAKE_UP_PIN);
     });
     return tCfg;
   }
@@ -468,13 +466,12 @@ namespace App {
           case EConfigType::GLOBAL_INT:
             if (strcmp(tEntry.IniKey, "config_file") == 0) tempValue = CONFIG_FILE;
             else if (strcmp(tEntry.IniKey, "battery_pin") == 0) tempValue = String(BATTERY_PIN);
-            else if (strcmp(tEntry.IniKey, "setting_pin") == 0) tempValue = String(SETTING_PIN);
             else if (strcmp(tEntry.IniKey, "reset_pin") == 0) tempValue = String(RESET_PIN);
+            else if (strcmp(tEntry.IniKey, "setting_pin") == 0) tempValue = String(SETTING_PIN);
             else if (strcmp(tEntry.IniKey, "display_width") == 0) tempValue = String(DISPLAY_WIDTH);
             else if (strcmp(tEntry.IniKey, "display_height") == 0) tempValue = String(DISPLAY_HEIGHT);
             else if (strcmp(tEntry.IniKey, "image_ext") == 0) tempValue = String(IMAGE_EXT);
             else if (strcmp(tEntry.IniKey, "images_dir") == 0) tempValue = String(IMAGES_DIR);
-            else if (strcmp(tEntry.IniKey, "wake_pin") == 0) tempValue = String(WAKE_UP_PIN);
             else if (strcmp(tEntry.IniKey, "default_file_system") == 0) tempValue = (DEFAULT_FILE_SYSTEM == EFileSystemType::SDCard) ? "sdcard" : "littlefs";
             else if (strcmp(tEntry.IniKey, "fallback_enabled") == 0) tempValue = STORAGE_FALLBACK_ENABLED ? "true" : "false";
             break;

@@ -201,16 +201,21 @@ namespace App {
     xLOG("Brownout detector disabled!");
   }
 
-  void Utils_::ByteToReadableSize(uint32_t tBytes, char *tBuffer, size_t tLength) {
-    if (tBytes < 1024) snprintf(tBuffer, tLength, "%u B", tBytes);
-    else if (tBytes < 1024UL * 1024UL) {
-      float tSizeKB = tBytes / 1024.0f;
-      if (fabs(tSizeKB - (int)tSizeKB) < 0.01f) snprintf(tBuffer, tLength, "%d KB", (int)tSizeKB);
+  void Utils_::ByteToReadableSize(uint64_t tBytes, char *tBuffer, size_t tLength) {
+    if (tBytes < 1024ULL) {
+      snprintf(tBuffer, tLength, "%llu B", static_cast<unsigned long long>(tBytes));
+    } else if (tBytes < 1024ULL * 1024ULL) {
+      float tSizeKB = static_cast<float>(tBytes) / 1024.0f;
+      if (fabs(tSizeKB - static_cast<int>(tSizeKB)) < 0.01f) snprintf(tBuffer, tLength, "%d KB", static_cast<int>(tSizeKB));
       else snprintf(tBuffer, tLength, "%.2f KB", tSizeKB);
-    } else {
-      float tSizeMB = tBytes / (1024.0f * 1024.0f);
-      if (fabs(tSizeMB - (int)tSizeMB) < 0.01f) snprintf(tBuffer, tLength, "%d MB", (int)tSizeMB);
+    } else if (tBytes < 1024ULL * 1024ULL * 1024ULL) {
+      float tSizeMB = static_cast<float>(tBytes) / (1024.0f * 1024.0f);
+      if (fabs(tSizeMB - static_cast<int>(tSizeMB)) < 0.01f) snprintf(tBuffer, tLength, "%d MB", static_cast<int>(tSizeMB));
       else snprintf(tBuffer, tLength, "%.2f MB", tSizeMB);
+    } else {
+      float tSizeGB = static_cast<float>(tBytes) / (1024.0f * 1024.0f * 1024.0f);
+      if (fabs(tSizeGB - static_cast<int>(tSizeGB)) < 0.01f) snprintf(tBuffer, tLength, "%d GB", static_cast<int>(tSizeGB));
+      else snprintf(tBuffer, tLength, "%.2f GB", tSizeGB);
     }
   }
 
@@ -596,9 +601,9 @@ namespace App {
     xLOG("Going to deep sleep...");
     xLOG("Wake-up hour → %02u:00", tHour);
     xLOG("Next wake-up → %llu %s\n\n", tDisplay, tUnit);
-    uint8_t tWakePin = static_cast<uint8_t>(mCfg.Timer.WakeUpPin);
+    uint8_t tSettingPin = static_cast<uint8_t>(mCfg.Device.SettingPin);
     esp_sleep_enable_timer_wakeup(tDelaySec * tSecToUs);
-    esp_sleep_enable_ext1_wakeup(1ULL << tWakePin, ESP_EXT1_WAKEUP_ANY_LOW);
+    esp_sleep_enable_ext1_wakeup(1ULL << tSettingPin, ESP_EXT1_WAKEUP_ANY_LOW);
     esp_deep_sleep_start();
   }  
 

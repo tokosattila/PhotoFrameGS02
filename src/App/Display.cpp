@@ -207,7 +207,7 @@ namespace App {
       } else xLOG("Failed to open file for JPEG decoding → %s", tFullPath);
       xSemaphoreGive(tData->Done);
       vTaskDelete(nullptr);
-    }, "JpgDecode", 32 * 1024, tTaskData, 5, nullptr);
+    }, "JpgDecode", JPEG_DECODE_TASK_STACK_SIZE, tTaskData, 5, nullptr);
     constexpr TickType_t kJpegTimeoutMs = 30000;
     bool tSuccess = false;
     if (xSemaphoreTake(tDoneSemaphore, pdMS_TO_TICKS(kJpegTimeoutMs)) == pdTRUE) {
