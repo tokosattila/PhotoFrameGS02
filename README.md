@@ -1,20 +1,25 @@
-# Photo Frame GS02 (Grayscale E-ink)
+# Photo Frame GS02 (Grayscale E-Ink)
 
-E-ink digital picture frame with remote image updates via FTP and configuration settings adjustable through Telnet. Features deep sleep mode with RTC backup for extended battery life.
+Grayscale e-ink digital photo frame with autonomous slideshow operation, deep sleep scheduling, RTC backup, and remote maintenance through Telnet and FTP.
 
-> **📌 Note:** This project is designed for the newer **LilyGo T5 4.7" E-Paper Plus** (ESP32-S3). For the older **LilyGo T5 4.7" E-Paper** (WROVER-E) version, check out [PhotoFrameGS01](https://github.com/tokosattila/PhotoFrameGS01.git).
+> **📌 Note:** This project targets the **LilyGo T5 4.7 inch E-Paper Plus** (ESP32-S3). For the color variant based on the **Waveshare ESP32-S3-PhotoPainter 7.3 inch E6**, see [PhotoFrameCL01](https://github.com/tokosattila/PhotoFrameCL01.git). For the older **LilyGo T5 4.7 inch E-Paper** (WROVER-E) version, see [PhotoFrameGS01](https://github.com/tokosattila/PhotoFrameGS01.git).
 
-## 📸 Gallery
+The project is designed around three goals:
+1. Low-power autonomous image display with deep sleep.
+2. Reliable maintenance workflows through Telnet and FTP.
+3. Robust field operation with NVS-backed configuration, dual OTA partitions, and storage fallback.
 
-| <img src="docs/images/pic01.jpg" width="240px" alt="Photo Frame Display" /> | <img src="docs/images/pic02.jpg" width="240px" alt="Photo Frame Hardware" /> | <img src="docs/images/pic03.jpg" width="240px" alt="Photo Frame Back Side" /> |
+## 1. Photo
+
+| <img src="docs/images/pic01.jpg" width="260px" alt="Photo Frame Display" /> | <img src="docs/images/pic02.jpg" width="260px" alt="Photo Frame Hardware" /> | <img src="docs/images/pic03.jpg" width="260px" alt="Photo Frame Back Side" /> |
 |:---:|:---:|:---:|
-| *Photo Frame with Image* | *Hardware backside* | *Backside covered* |
+| *Photo frame with image* | *Hardware back side* | *Back cover installed* |
 
-| <img src="docs/images/pic04.jpg" width="370px" alt="Telnet" /> | <img src="docs/images/pic05.jpg" width="370px" alt="FTP" /> |
+| <img src="docs/images/pic04.jpg" width="390px" alt="Telnet" /> | <img src="docs/images/pic05.jpg" width="390px" alt="FTP" /> |
 |:---:|:---:|
 | *Telnet* | *FTP* |
 
-## 🔧 Hardware
+## 2. Hardware
 
 <table width="100%">
 <tr>
@@ -22,157 +27,109 @@ E-ink digital picture frame with remote image updates via FTP and configuration 
 
 | Component | Specification |
 |-----------|--------------|
-| **Board** | LilyGo T5 4.7" E-Paper Plus |
+| **Board** | LilyGo T5 4.7 inch E-Paper Plus |
 | **MCU** | ESP32-S3 |
-| **Display** | ED047TC1 (960×540, 16 grayscale) |
+| **Display** | 4.7 inch ED047TC1, 16-level grayscale e-paper, 960x540px |
 | **Flash** | 16MB |
 | **PSRAM** | 8MB |
-| **RTC** | PCF8563 (I2C, battery backup) |
-| **Storage** | SD Card (SPI) + LittleFS (internal) |
+| **RTC** | PCF8563 I2C RTC chip |
+| **Storage** | SD Card SPI + LittleFS |
 | **Battery** | Li-Ion 18650 (optional) |
 
 </td>
-<td align="center"> 
-<img src="docs/LilyGoT54.7E-PaperPlus-Pins.png" width="370px" alt="PIN" />
+<td align="center">
+<img src="docs/LilyGoT54.7E-PaperPlus-Pins.png" width="370px" alt="Board Pinout" />
 </td>
 </tr>
 </table>
 
-## 🔄 Operating Modes
+## 3. System Architecture
 
-| Mode | Description |
-|------|-------------|
-| **Photo Frame Mode** | JPEG slideshow from SD Card or LittleFS with grayscale rendering, deep sleep between wake intervals (10sec to monthly) |
-| **Maintenance Mode** | Button-triggered mode for configuration & remote management |
-| **Low Battery Mode** | Auto shutdown with battery icon display |
+The runtime is organized into focused modules under `src/App`:
 
-## ✨ Features
+- `Configuration_`: NVS persistence, INI roundtrip, and defaults.
+- `Storage_`: unified SD/LittleFS abstraction with fallback policy.
+- `Display_`: grayscale rendering pipeline, JPEG tuning, and drawing primitives.
+- `Connection_`: AP/STA networking and optional mDNS.
+- `Firmware_`: OTA verification and partition switching.
+- `NTP_` + `RTC_`: time synchronization and clock persistence.
+- `FTP_`: remote file transfer and media management.
+- `Telnet_`: authenticated command console with lockout policy.
+- `LogManager_`: file-based event logger with per-level structured output, daily file rotation, and runtime enable/disable control via NVS config.
+- `Button_`: button logic.
+- `Utils_`: sleep/wakeup logic, CPU frequency switching, diagnostics.
 
-- **Dual Storage Support** — SD Card (primary) + LittleFS (internal flash)
-- **Smart Storage Fallback** — Auto-switch to secondary storage if images folder is empty
-- **Cross-Storage File Operations** — Copy files between SD Card and LittleFS, delete with glob/batch support
-- **RTC Backup** — PCF8563 maintains time during deep sleep
-- **WiFi Connectivity** — AP mode for setup, STA mode for network access
-- **NTP Time Sync** — Automatic time synchronization with RTC backup
-- **FTP Server** — Upload/manage images wirelessly (SD Card or LittleFS)
-- **Telnet Console** — Remote monitoring, configuration & commands
-- **Telnet Authentication Guard** — Session timeout + progressive brute-force lockout (30s → 1h → 1 day)
-- **Firmware OTA (Dual Slot)** — Update firmware via `/firmware/` (ota_0/ota_1) with boot-slot control
-- **Battery Monitoring** — Auto low-power mode with voltage display
-- **Grayscale Rendering** — 16-level dithering with brightness/contrast/gamma control
-- **Scheduled Wake-up** — Timer-based deep sleep with configurable wake-up hour (0–23)
-- **Deep Sleep Wake-up** — Timer-based or button-triggered (EXT1)
-- **mDNS Support** — Access device via hostname.local
+The application entrypoint in `src/Main.cpp` orchestrates initialization and mode routing.
 
-## ⚠️ Image Orientation Limitation
+## 4. Boot Sequence and Operating Modes
 
-Due to a missing rotation function in the current display driver, software image rotation is not available.
-Images must be prepared and saved in vertical (portrait) orientation before upload.
+### 4.1 Boot Sequence
 
-## 📁 Project Structure
+Startup flow (high level):
 
-```
-src/
-├── Main.cpp                    # Application entry point
-├── App/
-│   ├── Button.cpp/h            # Debounced button handling
-│   ├── Configuration.cpp/h     # INI config management
-│   ├── Connection.cpp/h        # WiFi management (AP/STA)
-│   ├── Display.cpp/h           # E-Paper driver wrapper
-│   ├── Firmware.cpp/h          # Firmware manager
-│   ├── FTP.cpp/h               # FTP server
-│   ├── Global.h                # Global definitions & macros
-│   ├── LittleFS.cpp/h          # LittleFS operations
-│   ├── NTP.cpp/h               # NTP time sync
-│   ├── RTC.cpp/h           # PCF8563 RTC driver
-│   ├── SDCard.cpp/h            # SD Card operations (SPI)
-│   ├── Storage.cpp/h           # Storage manager with fallback
-│   ├── Telnet.cpp/h            # Telnet console
-│   ├── Telnet/
-│   │   ├── Command.h           # Base command interface
-│   │   └── Commands/           # Telnet command implementations
-│   │       ├── BatInfoCommand.h
-│   │       ├── BootPartitionCommand.h
-│   │       ├── CallBackCommand.h
-│   │       ├── CatCommand.h
-│   │       ├── ClearCommand.h
-│   │       ├── ConfigCommand.h
-│   │       ├── CopyCommand.h    # Cross-storage file copy
-│   │       ├── DateCommand.h    # System & RTC date/time
-│   │       ├── DeleteCommand.h  # File delete with confirmation
-│   │       ├── ExitCommand.h
-│   │       ├── FetchCommand.h
-│   │       ├── FileSystemInfoCommand.h
-│   │       ├── FirmwareUpdateCommand.h
-│   │       ├── HelpCommand.h
-│   │       ├── ImgInfoCommand.h
-│   │       ├── ListCommand.h
-│   │       ├── LogoutCommand.h
-│   │       ├── MemInfoCommand.h
-│   │       ├── NotFoundCommand.h
-│   │       ├── NetInfoCommand.h
-│   │       ├── NvsInfoCommand.h
-│   │       ├── RebootCommand.h
-│   │       ├── ResetCommand.h
-│   │       ├── SketchInfoCommand.h
-│   │       └── TimeStampCommand.h
-│   ├── Fonts/                  # OpenSans bitmap fonts (6-26pt)
-│   │   └── opensans*.h         # 26 font variants
-│   ├── Images/
-│   │   └── DefaultImage.h      # Default fallback image
-│   └── Utils.cpp/h             # System utilities, file ops, glob matching
+1. Initialize config from NVS and load defaults on first boot.
+2. Initialize utility/peripheral stack.
+3. Validate wake source in production deep-sleep boot paths.
+4. Check battery state.
+5. Route to maintenance or photo-frame mode based on wake and button logic.
 
-lib/
-├── ArduinoHttpClient/          # HTTP client for image fetch
-├── JPEGDEC/                    # JPEG decoder
-├── LilyGoEPD47/                # E-Paper driver
-├── SimpleFTPServer/            # FTP server (SD + LittleFS)
-└── Unity/                      # Unit testing framework
+### 4.2 Photo Frame Mode
 
-test/
-├── mocks/                      # Mock classes for testing
-│   ├── MockString.h
-│   └── MockWiFiClient.h
-├── test_Button/                # Button unit tests
-├── test_ConfigCommand/         # Config command parsing tests
-├── test_Configuration/         # Configuration parser tests
-├── test_DateCommand/           # Date/RTC command parsing tests
-├── test_ESP32/                 # Hardware-specific ESP32 tests
-├── test_FetchCommand/          # Fetch command tests
-├── test_NTP/                   # NTP time utility tests
-├── test_RTC/                   # RTC time functions tests
-├── test_SDCard/                # SD Card path/file utilities
-├── test_Storage/               # Storage fallback logic tests
-├── test_Telnet/                # Telnet command tests
-├── test_Utils/                 # Utility function tests
-└── test_Wrappers/              # Type wrapper tests
-```
+Purpose: autonomous slideshow operation with minimal power draw.
 
-## 🛠️ Build
+Core behavior:
 
-### Requirements
-- [PlatformIO](https://platformio.org/)
-- ESP32-S3 toolchain (arduino-esp32 >= 2.0.3)
+- Mount storage.
+- Initialize `LogManager_` and write boot and battery events.
+- Resolve current image from persisted config.
+- Render JPEG with active grayscale tuning.
+- Persist next image pointer.
+- Log halt state and enter deep sleep.
 
-### Commands
-```bash
-# Build
-pio run
+If the current image is missing or unreadable, a built-in fallback image is shown.
 
-# Upload firmware
-pio run -t upload
+### 4.3 Maintenance Mode
 
-# Upload filesystem (LittleFS)
-pio run -t uploadfs
+Purpose: online maintenance via Telnet and FTP.
 
-# Run tests (native)
-pio test -e native
+Core behavior:
 
-# Monitor serial
-pio device monitor
-```
+- Bring up WiFi according to AP/STA configuration.
+- Start Telnet and/or FTP services.
+- Display connection hints on e-ink screen.
+- Support remote config, file, and firmware operations.
+- Track activity and enforce inactivity timeout for safe auto-exit.
 
-## ⚙️ Configuration
+### 4.4 Low Battery Mode
+
+Purpose: protect battery and avoid unstable operation.
+
+Core behavior:
+
+- Show low-battery warning screen.
+- Power down non-essential peripherals.
+- Enter low-power sleep path.
+
+## 5. Configuration
+
+Configuration is NVS-backed and synchronized with `config.ini`.
+
+On first boot, defaults are created and persisted by the configuration subsystem.
+
+Configuration domains include:
+
+- Device identity and version fields.
+- Display tuning (`jpg_brightness`, `jpg_contrast`, `jpg_gamma`) and active image pointer.
+- WiFi AP/STA profiles and optional static IP.
+- mDNS hostname settings.
+- NTP, RTC, and wake scheduling.
+- Telnet/FTP service enable flags, credentials, and session timing.
+- Storage default selection and fallback behavior.
+- LogManager runtime enable flag (`log_enabled`).
+
+Factory reset clears persisted configuration and restarts the device.
+
+### 5.1 `config.ini` Example
 
 Place `config.ini` in SD Card or LittleFS root (`/config.ini`):
 
@@ -182,16 +139,17 @@ appname = PHOTO FRAME GS02
 version = v1.0
 
 [display]
-jpg_brightness = 25         ; 0-100%
-jpg_contrast = 75           ; 0-100%
-jpg_gamma = 125             ; gamma correction
-image_file =                ; current image file
+jpg_brightness = 25
+jpg_contrast = 75
+jpg_gamma = 125
+image_file =
 
 [ntp]
 ntp_server = pool.ntp.org
 ntp_port = 123
-ntp_gmt_offset = 7200       ;GMT+2 in seconds
-ntp_update = 60000          ; update interval ms
+ntp_gmt_offset = 7200
+ntp_low_power_sync_enable = true
+ntp_low_power_sync_interval = 604800
 
 [ap mode]
 ap_enable = true
@@ -218,15 +176,15 @@ mdns_enable = false
 mdns_hostname = photoframegs02
 
 [timer]
-wake_up = 5                 ; 1=10sec, 2=1min, 3=1hour, 4=12hour, 5=Daily, 6=Weekly, 7=Monthly
-wake_up_hour = 6            ; target hour (0-23) for Daily/Weekly/Monthly wake-up
+wake_up = 5
+wake_up_hour = 6
 
 [telnet]
 telnet_enable = true
 telnet_port = 23
 telnet_username = admin
 telnet_password = 123456789
-telnet_session = 3600000    ; session timeout ms
+telnet_session = 3600000
 
 [ftp]
 ftp_enable = true
@@ -235,14 +193,159 @@ ftp_username = admin
 ftp_password = 123456789
 
 [storage]
-default_file_system = sdcard ; sdcard | littlefs
-fallback_enabled = true      ; smart fallback if images empty
+default_file_system = sdcard
+fallback_enabled = true
 ```
 
-> `image_updated_at` is an internal metadata value stored in NVS (`dsp.file.upd`).
-> It is intentionally not part of `config.ini` and cannot be queried or modified via `config`.
+`image_updated_at` is internal metadata stored in NVS (`dsp.file.upd`), intentionally excluded from `config.ini` and from the `config` command.
 
-## 📡 Telnet Commands
+### 5.2 NTP Automatic Synchronization
+
+NTP automatic time synchronization can be controlled with `ntp_low_power_sync_enable` (boolean, default: `true`) and `ntp_low_power_sync_interval` (seconds, default: 604800 = 1 week).
+
+- `ntp_low_power_sync_enable = true`: Enable periodic NTP sync in maintenance mode or during active WiFi sessions.
+- `ntp_low_power_sync_interval = 604800`: Sync interval in seconds (e.g., 86400 = daily, 604800 = weekly, 2592000 = monthly).
+
+Manual sync is always available via Telnet: `date rtc sync-from-ntp`.
+
+## 6. Power, Sleep, and Wake Mechanisms
+
+### 6.1 Wake Scheduling
+
+Timer modes are enum-based and support:
+
+- Minutes
+- Hourly
+- Half-day
+- Daily
+- Weekly
+- Monthly
+
+For Daily/Weekly/Monthly, `wake_up_hour` (0-23) is respected; shorter interval modes ignore hour targeting.
+
+### 6.2 Deep Sleep Strategy
+
+Photo Frame mode calculates sleep target and enters deep sleep after render completion.
+
+Wake sources include timer and button-triggered wake logic.
+
+### 6.3 Battery and Safe Fallback
+
+If low battery is detected, firmware switches to protective flow:
+
+- warning screen,
+- reduced activity,
+- low-power sleep path.
+
+## 7. Session and Security Model
+
+Maintenance access is centered around Telnet authentication plus network reachability.
+
+Security behavior:
+
+- Username/password login is required for Telnet commands.
+- Session timeout is controlled by `telnet_session`.
+- Failed login attempts trigger progressive lockout.
+
+Lockout levels:
+
+- After 3 failed attempts: 30 seconds.
+- Next level: 1 hour.
+- Next level: 1 day.
+- Successful login resets lockout state.
+
+## 8. Maintenance Inactivity Mechanism
+
+Maintenance loop tracks Telnet and FTP activity.
+
+When inactivity reaches `MAINTENANCE_INACTIVITY_TIMEOUT_MS` (currently 5 minutes), firmware restarts and returns to normal boot path.
+
+This avoids leaving the device permanently in maintenance mode.
+
+## 9. Storage and Media Pipeline
+
+`Storage_` provides a single interface above SD Card and LittleFS.
+
+Behavior:
+
+- Use configured primary storage when available.
+- If unavailable/empty and fallback is enabled, switch to secondary storage.
+- Keep image directory operations consistent across both backends.
+- Provide list/read/write/delete/copy flows used by Telnet and FTP.
+
+Supported operational patterns:
+
+- Single file copy/delete.
+- Glob pattern operations.
+- Comma-separated batch operations.
+- Cross-storage copy with conflict handling (`overwrite`, `rename`, `skip`).
+
+## 10. Display Rendering Pipeline
+
+`Display_` wraps grayscale e-paper drawing and rendering policies.
+
+Main responsibilities:
+
+- JPEG decode and render for 16-level grayscale panel output.
+- Apply brightness, contrast, and gamma tuning.
+- Draw text/status screens.
+- Control update and power-off sequence for e-paper lifecycle.
+
+Known limitation:
+
+- Runtime image rotation is not available in current driver stack.
+- Images must be prepared in portrait orientation before upload.
+
+## 11. Networking and Time Services
+
+### 11.1 Connectivity
+
+`Connection_` supports AP and STA operation with optional static IP.
+
+Capabilities:
+
+- AP mode for local maintenance access.
+- STA mode for network-integrated usage.
+- Optional mDNS hostname publishing (`hostname.local`).
+
+### 11.2 Time Management
+
+`NTP_` and `RTC_` cooperate to keep time stable across sleep cycles.
+
+- NTP sync updates system clock.
+- RTC persists time while sleeping.
+- Wake scheduling uses RTC/system time calculations.
+
+## 12. Firmware Update (OTA) and Partitioning
+
+Partition design (`partitions.csv`):
+
+- `ota_0` and `ota_1` app slots.
+- `otadata` active boot metadata.
+- `littlefs` data partition.
+- `nvs` configuration partition.
+
+OTA workflow:
+
+1. Upload `firmware.bin` and `firmware.sha256` to `/firmware/`.
+2. Run `fwupdate verify`.
+3. Run `fwupdate run`.
+4. Reboot into selected target slot.
+
+Boot slot controls:
+
+- `bootpart status`
+- `bootpart ota0`
+- `bootpart ota1`
+
+USB upload note:
+
+- Plain USB upload usually writes firmware to `0x10000` (typically `ota_0`).
+- If the device boots from the other slot, set target explicitly with `bootpart ota0` or `bootpart ota1`, then reboot.
+
+## 13. Telnet and FTP Maintenance Interface
+
+### 13.1 Telnet Command Set
 
 | Command | Description |
 |---------|-------------|
@@ -255,7 +358,7 @@ fallback_enabled = true      ; smart fallback if images empty
 | `copy lfs sd [/path/]<filespec>` | Copy files from LittleFS to SD Card |
 | `delete sd [/path/]<filespec>` | Delete files from SD Card (with confirmation) |
 | `delete lfs [/path/]<filespec>` | Delete files from LittleFS (with confirmation) |
-| `imginfo` | Show current image path, last image update time, and next scheduled refresh |
+| `imginfo` | Show current image path, last update time, next scheduled refresh |
 | `cat <filename>` | Show file content |
 | `date` | Show system date and time |
 | `date rtc` | Show RTC date and time |
@@ -264,110 +367,114 @@ fallback_enabled = true      ; smart fallback if images empty
 | `date rtc sync-to-system` | Sync system time from RTC |
 | `timestamp` | Show current Unix timestamp |
 | `nvsinfo` | Show NVS usage info |
-| `meminfo` | Show memory usage (heap, PSRAM) |
-| `sketchinfo` | Show sketch/firmware info |
+| `meminfo` | Show memory usage |
+| `sketchinfo` | Show firmware info |
 | `fsinfo` | Show filesystem usage (SD + LittleFS) |
-| `netinfo` | Show network info (IP, MAC) |
+| `netinfo` | Show network info |
 | `batinfo` | Show battery voltage and percentage |
 | `config <key> [value]` | Get or set config value |
-| `fetch <url> [filename]` | Download image (max. 400kB, type: *.jpg, *.jpeg) |
+| `fetch <url> [filename]` | Download image (max 400kB, jpg/jpeg) |
+| `log [status\|info\|flush]` | LogManager status/levels/flush |
 | `fwupdate [status\|verify\|run]` | Verify/apply firmware update from `/firmware/` |
-| `fwupdate` | Show update status |
-| `fwupdate verify` | Verify firmware.bin/firmware.sha256 |
-| `fwupdate run` | Perform update (asks y/n) |
 | `bootpart [status\|ota0\|ota1]` | Show or set active OTA boot slot |
 | `reset config` | Factory reset configuration |
 | `reboot` | Restart device |
-| `logout` | Logout telnet session |
-| `exit` | Exit telnet connection |
+| `logout` | Logout Telnet session |
+| `exit` | Exit Telnet connection |
 
-### Authentication & Brute-force Protection
-
-Telnet access is protected with username/password authentication and session timeout (`telnet_session`).
-
-- Failed login attempts are counted (invalid username and invalid password both count)
-- After **3 failed attempts**: lockout for **30 seconds**
-- Next 3 failed attempts (after lockout expiry): lockout for **1 hour**
-- Next 3 failed attempts (after lockout expiry): lockout for **1 day**
-- Successful login resets the lockout state to the initial level
-
-### File Operations
-
-The `copy` and `delete` commands support flexible file specification:
+### 13.2 File Operation Syntax
 
 | Syntax | Example | Description |
 |--------|---------|-------------|
-| Single file | `copy sd lfs photo.jpg` | Copy one file (defaults to `/images/`) |
-| Absolute path | `copy sd lfs /images/photo.jpg` | Copy with explicit path |
-| Glob pattern | `copy sd lfs *.jpg` | Copy all matching files |
-| Comma-separated | `delete sd a.jpg,b.jpg,c.jpg` | Batch operation on multiple files |
-| Mixed | `copy lfs sd /data/*.bin` | Glob with absolute directory |
+| Single file | `copy sd lfs photo.jpg` | Defaults to `/images/` |
+| Absolute path | `copy sd lfs /images/photo.jpg` | Explicit path |
+| Glob pattern | `copy sd lfs *.jpg` | Pattern copy |
+| Comma-separated | `delete sd a.jpg,b.jpg,c.jpg` | Batch operation |
+| Mixed | `copy lfs sd /firmware/*.bin` | Path + glob |
 
-> **⚠️ Notes:**
-> - The `delete` command asks for confirmation (`y/n`) before removing files.
-> - If a target file already exists during `copy`, the command asks: **(o)verwrite / (r)ename / (s)kip**.
-> - `rename` creates an indexed filename (for example: `photo_1.jpg`, `photo_2.jpg`, ...).
-> - Storage aliases are interchangeable: `sd` = `sdcard`, `lfs` = `littlefs` = `fallback`.
+Notes:
 
-### Wake-up Schedule
+- `delete` requires `y/n` confirmation.
+- `copy` conflict options: `(o)verwrite`, `(r)ename`, `(s)kip`.
+- Rename creates indexed names (for example `photo_1.jpg`, `photo_2.jpg`).
+- Aliases: `sd = sdcard`, `lfs = littlefs = fallback`.
 
-The `wake_up_hour` setting (0–23) controls when the device wakes from deep sleep for the **Daily**, **Weekly** and **Monthly** timer modes. The device calculates the exact seconds remaining until the target hour using the RTC clock.
+### 13.3 FTP Scope
 
-| Timer Mode | Behavior |
-|------------|----------|
-| 10sec / 1min / 1hour / 12hour | Fixed interval, `wake_up_hour` ignored |
-| **Daily** | Wakes at the configured hour every day |
-| **Weekly** | Wakes at the configured hour + 6 days |
-| **Monthly** | Wakes at the configured hour + 29 days |
+FTP is intended for bulk media and firmware file transfer.
 
+Typical usage:
+
+- Upload images to storage.
+- Upload OTA artifacts to `/firmware/`.
+- Verify remote file state before running maintenance commands.
+
+## 14. Logging (Detailed)
+
+Log files are written in date-based hierarchy with rollover:
+
+- `logs/YYYY/MM/DD/YYYYMMDD.log`
+- rollover on same day: `YYYYMMDD_1.log`, `YYYYMMDD_2.log`, ...
+- rollover threshold: 512 KB per file
+
+Runtime behavior:
+
+- Enabled/disabled by NVS-backed config (`log_enabled`).
+- Initialized after storage mount.
+- Tracks boot/halt and subsystem events.
+- Telnet support: `log status`, `log info`, `log flush`.
+
+## 15. Build and Deployment
+
+Project uses PlatformIO (`platformio.ini`) with `photo_frame_gs_02` environment.
+
+Requirements:
+
+- [PlatformIO](https://platformio.org/)
+- `arduino-esp32 >= 2.0.3`
+
+Typical commands:
+
+```bash
+pio run -e photo_frame_gs_02
+pio run -e photo_frame_gs_02 -t upload
+pio run -e photo_frame_gs_02 -t uploadfs
+pio test -e native
+pio device monitor
 ```
-config wake_up_hour 8       # Set wake-up to 08:00
-config wake_up 5            # Set timer to Daily mode
-```
 
-## 🧩 Firmware (OTA)
+## 16. Tooling and Utility Scripts
 
-This project uses a dual-slot OTA layout (`ota_0` + `ota_1`) controlled by the `otadata` partition.
+`scripts/` contains support tools for default content, assets, and firmware helper workflows:
 
-- **Applying update**: upload `firmware.bin` and `firmware.sha256` into `/firmware/` on the active storage, then run `fwupdate verify` and `fwupdate run`.
-- **Which slot is running**: use `bootpart status` (shows Running/Boot partitions).
-- **Force boot slot**: use `bootpart ota0` or `bootpart ota1`, then `reboot`.
-- **USB upload note**: a plain USB upload typically writes the firmware at `0x10000` (often `ota_0`). If the device still boots the other slot, set it explicitly with `bootpart`.
+- `default.h` / `default.png`: bundled fallback visual asset source.
+- `imgconvert.py`: image conversion/preparation helper.
+- `fontconvert.py`: font conversion helper.
+- `firmware_sha.py`: firmware hash helper used by OTA packaging.
 
-## 🔌 Pin Configuration
+## 17. Dependencies
+
+- [LilyGoEPD47](https://github.com/Xinyuan-LilyGO/LilyGo-EPD47)
+- [JPEGDEC](https://github.com/bitbank2/JPEGDEC)
+- [SimpleFTPServer](https://github.com/xreef/SimpleFTPServer)
+- [ArduinoHttpClient](https://github.com/arduino-libraries/ArduinoHttpClient)
+- [Unity](https://github.com/ThrowTheSwitch/Unity)
+
+## 18. Pin Configuration
 
 | Pin | Function | Description |
 |-----|----------|-------------|
-| GPIO21 | Button 1 | Wake from deep sleep, Enter maintenance mode |
+| GPIO21 | Button 1 | Wake from deep sleep, enter maintenance mode |
 | GPIO48 | Button 2 | Factory reset (hold 30 sec) |
 | GPIO14 | Battery ADC | Battery voltage measurement |
-| GPIO18 | RTC SDA (I2C) | PCF8563 real-time clock data line |
-| GPIO17 | RTC SCL (I2C) | PCF8563 real-time clock clock line |
-| GPIO16 | SD MISO | SD Card data out (Master In Slave Out) |
-| GPIO15 | SD MOSI | SD Card data in (Master Out Slave In) |
-| GPIO11 | SD SCK | SD Card serial clock |
-| GPIO42 | SD CS | SD Card chip select |
+| GPIO18 | RTC SDA | PCF8563 data line |
+| GPIO17 | RTC SCL | PCF8563 clock line |
+| GPIO16 | SD MISO | SD data out |
+| GPIO15 | SD MOSI | SD data in |
+| GPIO11 | SD SCK | SD clock |
+| GPIO42 | SD CS | SD chip select |
 
-## 📦 Dependencies
-
-- [LilyGoEPD47](https://github.com/Xinyuan-LilyGO/LilyGo-EPD47) — E-Paper driver
-- [JPEGDEC](https://github.com/bitbank2/JPEGDEC) — JPEG decoder
-- [SimpleFTPServer](https://github.com/xreef/SimpleFTPServer) — FTP server
-- [ArduinoHttpClient](https://github.com/arduino-libraries/ArduinoHttpClient) — HTTP client
-- [Unity](https://github.com/ThrowTheSwitch/Unity) — Unit testing
-
-## 🔋 Power Management
-
-- **Photo Frame Mode**: Display image → deep sleep → wake by timer or button
-- **Deep Sleep Current**: ~10µA (with RTC backup)
-- **Wake-up Sources**: 
-  - Timer (configurable: 10sec to monthly)
-  - Scheduled hour (0–23) for Daily, Weekly and Monthly modes
-  - Button press (GPIO21, EXT1 wakeup)
-- **RTC Backup**: PCF8563 maintains accurate time during sleep
-- **Low Battery**: Auto-shutdown at configurable voltage threshold
-
-## 📄 License
+## License
 
 MIT License
 
