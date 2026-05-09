@@ -24,6 +24,8 @@ namespace App {
       String Time(char format = ' ');
       String Date(char format = ' ');
       bool SyncSystemTime();
+      bool SyncSystemTimeIfNeeded();
+      void ApplyTimeZone();
       void PrintDateTimeInfo();
     private:
       NTP_();

@@ -84,7 +84,7 @@ src/
 │   ├── Global.h                # Global definitions & macros
 │   ├── LittleFS.cpp/h          # LittleFS operations
 │   ├── NTP.cpp/h               # NTP time sync
-│   ├── RTCTime.cpp/h           # PCF8563 RTC driver
+│   ├── RTC.cpp/h           # PCF8563 RTC driver
 │   ├── SDCard.cpp/h            # SD Card operations (SPI)
 │   ├── Storage.cpp/h           # Storage manager with fallback
 │   ├── Telnet.cpp/h            # Telnet console
@@ -116,11 +116,11 @@ src/
 │   │       ├── ResetCommand.h
 │   │       ├── SketchInfoCommand.h
 │   │       └── TimeStampCommand.h
+│   ├── Fonts/                  # OpenSans bitmap fonts (6-26pt)
+│   │   └── opensans*.h         # 26 font variants
+│   ├── Images/
+│   │   └── DefaultImage.h      # Default fallback image
 │   └── Utils.cpp/h             # System utilities, file ops, glob matching
-├── Fonts/                      # OpenSans bitmap fonts (6-26pt)
-│   └── opensans*.h             # 26 font variants
-└── Images/
-    └── DefaultImage.h          # Default fallback image
 
 lib/
 ├── ArduinoHttpClient/          # HTTP client for image fetch
@@ -140,7 +140,7 @@ test/
 ├── test_ESP32/                 # Hardware-specific ESP32 tests
 ├── test_FetchCommand/          # Fetch command tests
 ├── test_NTP/                   # NTP time utility tests
-├── test_RTCTime/               # RTC time functions tests
+├── test_RTC/                   # RTC time functions tests
 ├── test_SDCard/                # SD Card path/file utilities
 ├── test_Storage/               # Storage fallback logic tests
 ├── test_Telnet/                # Telnet command tests
@@ -371,4 +371,4 @@ This project uses a dual-slot OTA layout (`ota_0` + `ota_1`) controlled by the `
 
 MIT License
 
-Copyright (c) 2025-2026 Szeklerman
+Copyright (c) 2024-2026 Szeklerman

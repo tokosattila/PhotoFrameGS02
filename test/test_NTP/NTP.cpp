@@ -1,16 +1,7 @@
-/**
- * @file NTP.cpp
- * @brief Unit tests for NTP time functions (pure C++ logic, no hardware)
- */
-
 #include <unity.h>
 #include <cstring>
 #include <cstdint>
 #include <ctime>
-
-// ============================================================================
-// Standalone implementations for testing (extracted from NTP.cpp)
-// ============================================================================
 
 void FormatTwoDigits(char *tBuffer, int tValue) {
   if (tValue < 0) tValue = 0;
@@ -31,8 +22,6 @@ bool IsPacketValid(uint8_t *tPacket) {
   for (uint8_t i = 16; i <= 23; i++) if (tPacket[i] != 0) return true;
   return true;
 }
-
-// Epoch calculation helpers
 static const unsigned long SECONDS_PER_MINUTE = 60;
 static const unsigned long SECONDS_PER_HOUR = 3600;
 static const unsigned long SECONDS_PER_DAY = 86400;
@@ -51,7 +40,7 @@ void GetDateFromEpoch(unsigned long tEpoch, int &tYear, int &tMonth, int &tDay) 
     tMonth++;
   }
   tDay = tDays + 1;
-  tMonth++; // 1-based
+  tMonth++;
 }
 
 void GetTimeFromEpoch(unsigned long tEpoch, int &tHours, int &tMinutes, int &tSeconds) {
@@ -59,10 +48,6 @@ void GetTimeFromEpoch(unsigned long tEpoch, int &tHours, int &tMinutes, int &tSe
   tMinutes = (tEpoch % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE;
   tSeconds = tEpoch % SECONDS_PER_MINUTE;
 }
-
-// ============================================================================
-// FormatTwoDigits Tests
-// ============================================================================
 
 void test_FormatTwoDigits_zero() {
   char buffer[3] = {0};
@@ -100,10 +85,6 @@ void test_FormatTwoDigits_over99_clamped() {
   TEST_ASSERT_EQUAL_STRING("99", buffer);
 }
 
-// ============================================================================
-// IsLeapYear Tests
-// ============================================================================
-
 void test_IsLeapYear_regular_year() {
   TEST_ASSERT_FALSE(IsLeapYear(2023));
   TEST_ASSERT_FALSE(IsLeapYear(2019));
@@ -129,26 +110,20 @@ void test_IsLeapYear_400_year_leap() {
 }
 
 void test_IsLeapYear_edge_cases() {
-  TEST_ASSERT_FALSE(IsLeapYear(1970));  // Unix epoch start
-  TEST_ASSERT_TRUE(IsLeapYear(1972));   // First leap year after epoch
+  TEST_ASSERT_FALSE(IsLeapYear(1970));
+  TEST_ASSERT_TRUE(IsLeapYear(1972));
 }
-
-// ============================================================================
-// IsPacketValid Tests
-// ============================================================================
 
 void test_IsPacketValid_valid_packet() {
   uint8_t packet[48] = {0};
-  // LI=0, VN=4, Mode=4 -> 0b00100100 = 0x24
   packet[0] = 0x24;
-  packet[1] = 3;  // Stratum 3 (valid 1-15)
-  packet[16] = 0x01;  // Non-zero timestamp data
+  packet[1] = 3;
+  packet[16] = 0x01;
   TEST_ASSERT_TRUE(IsPacketValid(packet));
 }
 
 void test_IsPacketValid_invalid_li() {
   uint8_t packet[48] = {0};
-  // LI=3 (alarm), VN=4, Mode=4 -> 0b11100100 = 0xE4
   packet[0] = 0xE4;
   packet[1] = 3;
   packet[16] = 0x01;
@@ -157,7 +132,6 @@ void test_IsPacketValid_invalid_li() {
 
 void test_IsPacketValid_invalid_version() {
   uint8_t packet[48] = {0};
-  // LI=0, VN=2 (too low, need >=3), Mode=4 -> 0b00010100 = 0x14
   packet[0] = 0x14;
   packet[1] = 3;
   packet[16] = 0x01;
@@ -166,7 +140,6 @@ void test_IsPacketValid_invalid_version() {
 
 void test_IsPacketValid_invalid_mode() {
   uint8_t packet[48] = {0};
-  // LI=0, VN=4, Mode=3 -> 0b00100011 = 0x23
   packet[0] = 0x23;
   packet[1] = 3;
   packet[16] = 0x01;
@@ -176,7 +149,7 @@ void test_IsPacketValid_invalid_mode() {
 void test_IsPacketValid_invalid_stratum_zero() {
   uint8_t packet[48] = {0};
   packet[0] = 0x24;
-  packet[1] = 0;  // Stratum 0 (invalid)
+  packet[1] = 0;
   packet[16] = 0x01;
   TEST_ASSERT_FALSE(IsPacketValid(packet));
 }
@@ -184,7 +157,7 @@ void test_IsPacketValid_invalid_stratum_zero() {
 void test_IsPacketValid_invalid_stratum_high() {
   uint8_t packet[48] = {0};
   packet[0] = 0x24;
-  packet[1] = 16;  // Stratum 16 (invalid, max is 15)
+  packet[1] = 16;
   packet[16] = 0x01;
   TEST_ASSERT_FALSE(IsPacketValid(packet));
 }
@@ -193,15 +166,8 @@ void test_IsPacketValid_all_zeros_timestamp() {
   uint8_t packet[48] = {0};
   packet[0] = 0x24;
   packet[1] = 3;
-  // bytes 16-23 all zeros -> should still pass if validation passes up to that point
-  // Actually the loop returns true if ANY byte 16-23 is non-zero
-  // If all are zero, it returns true at end (from the loop check)
   TEST_ASSERT_TRUE(IsPacketValid(packet));
 }
-
-// ============================================================================
-// Date/Time from Epoch Tests
-// ============================================================================
 
 void test_GetDateFromEpoch_unix_epoch() {
   int year, month, day;
@@ -213,7 +179,6 @@ void test_GetDateFromEpoch_unix_epoch() {
 
 void test_GetDateFromEpoch_known_date() {
   int year, month, day;
-  // 2024-01-03 00:00:00 UTC = 1704240000
   GetDateFromEpoch(1704240000, year, month, day);
   TEST_ASSERT_EQUAL_INT(2024, year);
   TEST_ASSERT_EQUAL_INT(1, month);
@@ -222,7 +187,6 @@ void test_GetDateFromEpoch_known_date() {
 
 void test_GetDateFromEpoch_leap_year_feb29() {
   int year, month, day;
-  // 2024-02-29 12:00:00 UTC = 1709208000
   GetDateFromEpoch(1709208000, year, month, day);
   TEST_ASSERT_EQUAL_INT(2024, year);
   TEST_ASSERT_EQUAL_INT(2, month);
@@ -231,7 +195,6 @@ void test_GetDateFromEpoch_leap_year_feb29() {
 
 void test_GetDateFromEpoch_year_end() {
   int year, month, day;
-  // 2023-12-31 23:59:59 UTC = 1704067199
   GetDateFromEpoch(1704067199, year, month, day);
   TEST_ASSERT_EQUAL_INT(2023, year);
   TEST_ASSERT_EQUAL_INT(12, month);
@@ -248,7 +211,6 @@ void test_GetTimeFromEpoch_midnight() {
 
 void test_GetTimeFromEpoch_noon() {
   int hours, minutes, seconds;
-  // 12:00:00 = 43200 seconds
   GetTimeFromEpoch(43200, hours, minutes, seconds);
   TEST_ASSERT_EQUAL_INT(12, hours);
   TEST_ASSERT_EQUAL_INT(0, minutes);
@@ -257,7 +219,6 @@ void test_GetTimeFromEpoch_noon() {
 
 void test_GetTimeFromEpoch_specific_time() {
   int hours, minutes, seconds;
-  // 15:30:45 = 15*3600 + 30*60 + 45 = 55845 seconds
   GetTimeFromEpoch(55845, hours, minutes, seconds);
   TEST_ASSERT_EQUAL_INT(15, hours);
   TEST_ASSERT_EQUAL_INT(30, minutes);
@@ -266,39 +227,60 @@ void test_GetTimeFromEpoch_specific_time() {
 
 void test_GetTimeFromEpoch_end_of_day() {
   int hours, minutes, seconds;
-  // 23:59:59 = 86399 seconds
   GetTimeFromEpoch(86399, hours, minutes, seconds);
   TEST_ASSERT_EQUAL_INT(23, hours);
   TEST_ASSERT_EQUAL_INT(59, minutes);
   TEST_ASSERT_EQUAL_INT(59, seconds);
 }
 
-// ============================================================================
-// Test Runner
-// ============================================================================
+bool ShouldSyncSystemTimeIfNeeded(bool tLowPowerSyncEnable, unsigned long tCurrentEpoch, unsigned long tLastSyncEpoch, unsigned long tIntervalSec) {
+  if (!tLowPowerSyncEnable) return true;
+  if (tCurrentEpoch < 1704067200UL) return true;
+  if (tLastSyncEpoch == 0) return true;
+  if (tCurrentEpoch < tLastSyncEpoch) return true;
+  return (tCurrentEpoch - tLastSyncEpoch) >= tIntervalSec;
+}
+
+void test_ShouldSyncSystemTimeIfNeeded_low_power_disabled() {
+  TEST_ASSERT_TRUE(ShouldSyncSystemTimeIfNeeded(false, 1704067201UL, 1704067000UL, 3600UL));
+}
+
+void test_ShouldSyncSystemTimeIfNeeded_invalid_current_epoch() {
+  TEST_ASSERT_TRUE(ShouldSyncSystemTimeIfNeeded(true, 1000UL, 1704067000UL, 3600UL));
+}
+
+void test_ShouldSyncSystemTimeIfNeeded_no_previous_sync() {
+  TEST_ASSERT_TRUE(ShouldSyncSystemTimeIfNeeded(true, 1704067201UL, 0UL, 3600UL));
+}
+
+void test_ShouldSyncSystemTimeIfNeeded_clock_rollback() {
+  TEST_ASSERT_TRUE(ShouldSyncSystemTimeIfNeeded(true, 1704067201UL, 1704067300UL, 3600UL));
+}
+
+void test_ShouldSyncSystemTimeIfNeeded_interval_not_elapsed() {
+  TEST_ASSERT_FALSE(ShouldSyncSystemTimeIfNeeded(true, 1704067201UL, 1704067001UL, 3600UL));
+}
+
+void test_ShouldSyncSystemTimeIfNeeded_interval_elapsed() {
+  TEST_ASSERT_TRUE(ShouldSyncSystemTimeIfNeeded(true, 1704072001UL, 1704067001UL, 3600UL));
+}
 
 void setUp(void) {}
 void tearDown(void) {}
 
 int main(int argc, char **argv) {
   UNITY_BEGIN();
-  
-  // FormatTwoDigits tests
   RUN_TEST(test_FormatTwoDigits_zero);
   RUN_TEST(test_FormatTwoDigits_single_digit);
   RUN_TEST(test_FormatTwoDigits_double_digit);
   RUN_TEST(test_FormatTwoDigits_max);
   RUN_TEST(test_FormatTwoDigits_negative_clamped);
   RUN_TEST(test_FormatTwoDigits_over99_clamped);
-  
-  // IsLeapYear tests
   RUN_TEST(test_IsLeapYear_regular_year);
   RUN_TEST(test_IsLeapYear_divisible_by_4);
   RUN_TEST(test_IsLeapYear_century_not_leap);
   RUN_TEST(test_IsLeapYear_400_year_leap);
   RUN_TEST(test_IsLeapYear_edge_cases);
-  
-  // IsPacketValid tests
   RUN_TEST(test_IsPacketValid_valid_packet);
   RUN_TEST(test_IsPacketValid_invalid_li);
   RUN_TEST(test_IsPacketValid_invalid_version);
@@ -306,8 +288,6 @@ int main(int argc, char **argv) {
   RUN_TEST(test_IsPacketValid_invalid_stratum_zero);
   RUN_TEST(test_IsPacketValid_invalid_stratum_high);
   RUN_TEST(test_IsPacketValid_all_zeros_timestamp);
-  
-  // Date/Time from Epoch tests
   RUN_TEST(test_GetDateFromEpoch_unix_epoch);
   RUN_TEST(test_GetDateFromEpoch_known_date);
   RUN_TEST(test_GetDateFromEpoch_leap_year_feb29);
@@ -316,6 +296,13 @@ int main(int argc, char **argv) {
   RUN_TEST(test_GetTimeFromEpoch_noon);
   RUN_TEST(test_GetTimeFromEpoch_specific_time);
   RUN_TEST(test_GetTimeFromEpoch_end_of_day);
-  
+  RUN_TEST(test_ShouldSyncSystemTimeIfNeeded_low_power_disabled);
+  RUN_TEST(test_ShouldSyncSystemTimeIfNeeded_invalid_current_epoch);
+  RUN_TEST(test_ShouldSyncSystemTimeIfNeeded_no_previous_sync);
+  RUN_TEST(test_ShouldSyncSystemTimeIfNeeded_clock_rollback);
+  RUN_TEST(test_ShouldSyncSystemTimeIfNeeded_interval_not_elapsed);
+  RUN_TEST(test_ShouldSyncSystemTimeIfNeeded_interval_elapsed);
+
   return UNITY_END();
 }
+

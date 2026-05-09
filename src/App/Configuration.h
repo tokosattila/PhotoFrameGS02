@@ -42,6 +42,7 @@ namespace App {
       const char *PrepareAllConfigToINI();
       SAppConfig LoadConfigFromINI(const char *tFileName = nullptr);
       bool SaveAllConfig(const SAppConfig &tConfig);
+      void UpdateNTPLastSync(unsigned long tEpochUtc);
     private:
       Configuration_();
       Configuration_(const Configuration_&) = delete;
@@ -81,6 +82,20 @@ namespace App {
       static constexpr const char *kNvsConStaDns2 = "con.sta.dns2";
       static constexpr const char *kNvsConMdnsEnable = "con.mdns.en";
       static constexpr const char *kNvsConMdnsName = "con.mdns.name";
+      static constexpr const char *kNvsConFallbackApSsid = "con.fbk.ap.ssid";
+      static constexpr const char *kNvsConFallbackApPass = "con.fbk.ap.pass";
+      static constexpr const char *kNvsConFallbackApIp = "con.fbk.ap.ip";
+      static constexpr const char *kNvsConFallbackApGw = "con.fbk.ap.gw";
+      static constexpr const char *kNvsConFallbackApSubnet = "con.fbk.snet";
+      static constexpr const char *kNvsConStaAutoFallback = "con.sta.autofbk";
+      static constexpr const char *kNvsConStaMaxRetry = "con.sta.mrty";
+      static constexpr const char *kNvsConStaRetryDelayMs = "con.sta.rty.dly";
+      static constexpr const char *kNvsTimeGmtOffsetLong = "tme.gmtoff";
+      static constexpr const char *kNvsTimeDaylightOffset = "tme.dayoff";
+      static constexpr const char *kNvsTimeZoneLabel = "tme.tz.label";
+      static constexpr const char *kNvsTimeLowPowerSyncEnable = "tme.lps.en";
+      static constexpr const char *kNvsTimeLowPowerSyncInterval = "tme.lps.intvl";
+      static constexpr const char *kNvsTimeLastSuccessfulSync = "tme.last.sync";
       static constexpr const char *kNvsTimerWake = "tmr.wake";
       static constexpr const char *kNvsTimerWakeHour = "tmr.wake.hr";
       static constexpr const char *kNvsTelnetEnable = "tln.en";
@@ -93,6 +108,7 @@ namespace App {
       static constexpr const char *kNvsFtpPort = "ftp.port";
       static constexpr const char *kNvsFtpUsername = "ftp.username";
       static constexpr const char *kNvsFtpPassword = "ftp.password";
+      static constexpr const char *kNvsDeviceLogEnable = "log.enable";
       static const std::vector<SConfigKeyMappingEntry> &GetKeyMapping();
       static SAppConfig GetDefaultConfig();
       static void ApplyINIValue(SAppConfig &tConfig, const char *tSection, const SConfigKeyMappingEntry &tEntry, const char *tValue);

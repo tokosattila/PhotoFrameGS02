@@ -12,7 +12,7 @@ namespace App {
       static Storage_ &Instance();
       static void Lock();
       static void Unlock();
-      bool Init(bool tSilent = false);
+      bool Init(bool tVerbose = true);
       void End();
       bool IsMounted() const { return mMounted; }
       bool IsSDCard() const { return mActiveType == EFileSystemType::SDCard; }
@@ -31,9 +31,9 @@ namespace App {
       bool RemoveDir(const char *tPath);
       bool Exists(const char *tPath);
       const char *NormalizePath(const char *tPath);
-      uint32_t TotalBytes();
-      uint32_t UsedBytes();
-      uint32_t FreeBytes() { return TotalBytes() - UsedBytes(); }
+      uint64_t TotalBytes();
+      uint64_t UsedBytes();
+      uint64_t FreeBytes() { return TotalBytes() - UsedBytes(); }
       const char *CatFile(const char *tPath);
     private:
       Storage_();
@@ -46,10 +46,10 @@ namespace App {
       bool mSDCardAvailable = false;
       bool mLittleFSAvailable = false;      
       Storage_ &operator=(const Storage_ &) = delete;
-      bool TryInitSDCard(bool tSilent);
-      bool TryInitLittleFS(bool tSilent);
+      bool TryInitSDCard(bool tVerbose = true);
+      bool TryInitLittleFS(bool tVerbose = true);
       bool HasImagesInDir(EFileSystemType tType);
-      void SelectActiveStorage();
+      void SelectActiveStorage(bool tVerbose = true);
   };
 
 }

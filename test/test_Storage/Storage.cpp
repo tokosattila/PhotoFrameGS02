@@ -1,24 +1,13 @@
-/**
- * @file Storage.cpp
- * @brief Unit tests for Storage functions (pure C++ logic, no hardware)
- */
-
 #include <unity.h>
 #include <cstring>
 #include <cstdint>
 #include <vector>
 #include <string>
 
-// ============================================================================
-// Standalone implementations for testing (extracted from Storage.cpp)
-// ============================================================================
-
 enum class EFileSystemType : uint8_t {
   LittleFS = 1,
   SDCard = 2
 };
-
-// Simulated storage state for testing
 struct MockStorageState {
   bool SDCardMounted = false;
   bool LittleFSMounted = false;
@@ -27,8 +16,6 @@ struct MockStorageState {
   EFileSystemType DefaultFS = EFileSystemType::SDCard;
   bool FallbackEnabled = true;
 };
-
-// Storage selection logic (extracted from SelectActiveStorage)
 struct StorageSelection {
   EFileSystemType ActiveType;
   bool Mounted;
@@ -37,9 +24,8 @@ struct StorageSelection {
 
 StorageSelection SelectActiveStorage(const MockStorageState &state) {
   StorageSelection result = {EFileSystemType::LittleFS, false, false};
-  
+
   if (state.DefaultFS == EFileSystemType::SDCard) {
-    // SDCard is primary
     if (state.SDCardMounted) {
       if (state.SDCardHasImages) {
         result.ActiveType = EFileSystemType::SDCard;
@@ -47,20 +33,17 @@ StorageSelection SelectActiveStorage(const MockStorageState &state) {
         result.FallbackActive = false;
         return result;
       }
-      // SDCard mounted but no images - try fallback
       if (state.FallbackEnabled && state.LittleFSMounted && state.LittleFSHasImages) {
         result.ActiveType = EFileSystemType::LittleFS;
         result.Mounted = true;
         result.FallbackActive = true;
         return result;
       }
-      // No images on either, use primary
       result.ActiveType = EFileSystemType::SDCard;
       result.Mounted = true;
       result.FallbackActive = false;
       return result;
     }
-    // SDCard not mounted - fallback if enabled
     if (state.FallbackEnabled && state.LittleFSMounted) {
       result.ActiveType = EFileSystemType::LittleFS;
       result.Mounted = true;
@@ -68,7 +51,6 @@ StorageSelection SelectActiveStorage(const MockStorageState &state) {
       return result;
     }
   } else {
-    // LittleFS is primary
     if (state.LittleFSMounted) {
       if (state.LittleFSHasImages) {
         result.ActiveType = EFileSystemType::LittleFS;
@@ -76,20 +58,17 @@ StorageSelection SelectActiveStorage(const MockStorageState &state) {
         result.FallbackActive = false;
         return result;
       }
-      // LittleFS mounted but no images - try fallback
       if (state.FallbackEnabled && state.SDCardMounted && state.SDCardHasImages) {
         result.ActiveType = EFileSystemType::SDCard;
         result.Mounted = true;
         result.FallbackActive = true;
         return result;
       }
-      // No images on either, use primary
       result.ActiveType = EFileSystemType::LittleFS;
       result.Mounted = true;
       result.FallbackActive = false;
       return result;
     }
-    // LittleFS not mounted - fallback if enabled
     if (state.FallbackEnabled && state.SDCardMounted) {
       result.ActiveType = EFileSystemType::SDCard;
       result.Mounted = true;
@@ -97,13 +76,9 @@ StorageSelection SelectActiveStorage(const MockStorageState &state) {
       return result;
     }
   }
-  
-  return result; // Not mounted
-}
 
-// ============================================================================
-// SDCard Primary - Basic Tests
-// ============================================================================
+  return result;
+}
 
 void test_SDCard_primary_with_images() {
   MockStorageState state;
@@ -112,9 +87,9 @@ void test_SDCard_primary_with_images() {
   state.SDCardHasImages = true;
   state.LittleFSMounted = true;
   state.LittleFSHasImages = true;
-  
+
   StorageSelection result = SelectActiveStorage(state);
-  
+
   TEST_ASSERT_EQUAL(EFileSystemType::SDCard, result.ActiveType);
   TEST_ASSERT_TRUE(result.Mounted);
   TEST_ASSERT_FALSE(result.FallbackActive);
@@ -128,9 +103,9 @@ void test_SDCard_primary_no_images_fallback_to_littlefs() {
   state.LittleFSMounted = true;
   state.LittleFSHasImages = true;
   state.FallbackEnabled = true;
-  
+
   StorageSelection result = SelectActiveStorage(state);
-  
+
   TEST_ASSERT_EQUAL(EFileSystemType::LittleFS, result.ActiveType);
   TEST_ASSERT_TRUE(result.Mounted);
   TEST_ASSERT_TRUE(result.FallbackActive);
@@ -143,9 +118,9 @@ void test_SDCard_primary_not_mounted_fallback() {
   state.LittleFSMounted = true;
   state.LittleFSHasImages = true;
   state.FallbackEnabled = true;
-  
+
   StorageSelection result = SelectActiveStorage(state);
-  
+
   TEST_ASSERT_EQUAL(EFileSystemType::LittleFS, result.ActiveType);
   TEST_ASSERT_TRUE(result.Mounted);
   TEST_ASSERT_TRUE(result.FallbackActive);
@@ -159,10 +134,8 @@ void test_SDCard_primary_no_images_no_fallback_images() {
   state.LittleFSMounted = true;
   state.LittleFSHasImages = false;
   state.FallbackEnabled = true;
-  
+
   StorageSelection result = SelectActiveStorage(state);
-  
-  // Should stay on primary even with no images
   TEST_ASSERT_EQUAL(EFileSystemType::SDCard, result.ActiveType);
   TEST_ASSERT_TRUE(result.Mounted);
   TEST_ASSERT_FALSE(result.FallbackActive);
@@ -176,18 +149,12 @@ void test_SDCard_primary_fallback_disabled() {
   state.LittleFSMounted = true;
   state.LittleFSHasImages = true;
   state.FallbackEnabled = false;
-  
+
   StorageSelection result = SelectActiveStorage(state);
-  
-  // Should stay on primary even though fallback has images
   TEST_ASSERT_EQUAL(EFileSystemType::SDCard, result.ActiveType);
   TEST_ASSERT_TRUE(result.Mounted);
   TEST_ASSERT_FALSE(result.FallbackActive);
 }
-
-// ============================================================================
-// LittleFS Primary - Basic Tests
-// ============================================================================
 
 void test_LittleFS_primary_with_images() {
   MockStorageState state;
@@ -196,9 +163,9 @@ void test_LittleFS_primary_with_images() {
   state.LittleFSHasImages = true;
   state.SDCardMounted = true;
   state.SDCardHasImages = true;
-  
+
   StorageSelection result = SelectActiveStorage(state);
-  
+
   TEST_ASSERT_EQUAL(EFileSystemType::LittleFS, result.ActiveType);
   TEST_ASSERT_TRUE(result.Mounted);
   TEST_ASSERT_FALSE(result.FallbackActive);
@@ -212,9 +179,9 @@ void test_LittleFS_primary_no_images_fallback_to_sdcard() {
   state.SDCardMounted = true;
   state.SDCardHasImages = true;
   state.FallbackEnabled = true;
-  
+
   StorageSelection result = SelectActiveStorage(state);
-  
+
   TEST_ASSERT_EQUAL(EFileSystemType::SDCard, result.ActiveType);
   TEST_ASSERT_TRUE(result.Mounted);
   TEST_ASSERT_TRUE(result.FallbackActive);
@@ -227,17 +194,13 @@ void test_LittleFS_primary_not_mounted_fallback() {
   state.SDCardMounted = true;
   state.SDCardHasImages = true;
   state.FallbackEnabled = true;
-  
+
   StorageSelection result = SelectActiveStorage(state);
-  
+
   TEST_ASSERT_EQUAL(EFileSystemType::SDCard, result.ActiveType);
   TEST_ASSERT_TRUE(result.Mounted);
   TEST_ASSERT_TRUE(result.FallbackActive);
 }
-
-// ============================================================================
-// Edge Cases
-// ============================================================================
 
 void test_nothing_mounted() {
   MockStorageState state;
@@ -245,9 +208,9 @@ void test_nothing_mounted() {
   state.SDCardMounted = false;
   state.LittleFSMounted = false;
   state.FallbackEnabled = true;
-  
+
   StorageSelection result = SelectActiveStorage(state);
-  
+
   TEST_ASSERT_FALSE(result.Mounted);
 }
 
@@ -258,9 +221,9 @@ void test_only_fallback_mounted() {
   state.LittleFSMounted = true;
   state.LittleFSHasImages = true;
   state.FallbackEnabled = true;
-  
+
   StorageSelection result = SelectActiveStorage(state);
-  
+
   TEST_ASSERT_EQUAL(EFileSystemType::LittleFS, result.ActiveType);
   TEST_ASSERT_TRUE(result.Mounted);
   TEST_ASSERT_TRUE(result.FallbackActive);
@@ -273,40 +236,31 @@ void test_only_primary_mounted_no_images() {
   state.SDCardHasImages = false;
   state.LittleFSMounted = false;
   state.FallbackEnabled = true;
-  
+
   StorageSelection result = SelectActiveStorage(state);
-  
+
   TEST_ASSERT_EQUAL(EFileSystemType::SDCard, result.ActiveType);
   TEST_ASSERT_TRUE(result.Mounted);
   TEST_ASSERT_FALSE(result.FallbackActive);
 }
-
-// ============================================================================
-// Test Runner
-// ============================================================================
 
 void setUp(void) {}
 void tearDown(void) {}
 
 int main(int argc, char **argv) {
   UNITY_BEGIN();
-  
-  // SDCard Primary tests
   RUN_TEST(test_SDCard_primary_with_images);
   RUN_TEST(test_SDCard_primary_no_images_fallback_to_littlefs);
   RUN_TEST(test_SDCard_primary_not_mounted_fallback);
   RUN_TEST(test_SDCard_primary_no_images_no_fallback_images);
   RUN_TEST(test_SDCard_primary_fallback_disabled);
-  
-  // LittleFS Primary tests
   RUN_TEST(test_LittleFS_primary_with_images);
   RUN_TEST(test_LittleFS_primary_no_images_fallback_to_sdcard);
   RUN_TEST(test_LittleFS_primary_not_mounted_fallback);
-  
-  // Edge cases
   RUN_TEST(test_nothing_mounted);
   RUN_TEST(test_only_fallback_mounted);
   RUN_TEST(test_only_primary_mounted_no_images);
-  
+
   return UNITY_END();
 }
+

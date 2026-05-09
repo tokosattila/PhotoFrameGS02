@@ -62,8 +62,6 @@ namespace App {
       static uint32_t CalculateDelaySeconds(const STimerConfig &tTimerCfg) {
         uint8_t tHour = tTimerCfg.WakeUpHour % 24;
         switch (tTimerCfg.WakeUp) {
-          case ETimerWakeUp::Seconds:
-            return 10;
           case ETimerWakeUp::Minutes:
             return SECONDS_PER_MINUTE;
           case ETimerWakeUp::Hourly:

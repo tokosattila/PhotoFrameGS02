@@ -185,20 +185,20 @@ namespace App {
       if (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_INITED) esp_bt_controller_deinit();
       esp_bt_controller_mem_release(ESP_BT_MODE_BTDM);
     }
-    xLOG("Bluetooth disabled!");
+    xLOG("Bluetooth → disabled");
   }
 
   void Utils_::DisableTouchPad() {
     Guard tLock;
     touch_pad_init();
     touch_pad_deinit();
-    xLOG("Touch Pad disabled!");
+    xLOG("Touch Pad → disabled");
   }
 
   void Utils_::DisableBrownout() {
     Guard tLock;
     WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
-    xLOG("Brownout detector disabled!");
+    xLOG("Brownout detector → disabled");
   }
 
   void Utils_::ByteToReadableSize(uint64_t tBytes, char *tBuffer, size_t tLength) {
@@ -227,9 +227,9 @@ namespace App {
       return tBuffer;
     }
     if (tAsDateTime) {
-      time_t tTime = (time_t)(tEpoch + (unsigned long)mCfg.Ntp.GMTOffset);
+      time_t tTime = (time_t)(tEpoch);
       struct tm tTm;
-      gmtime_r(&tTime, &tTm);
+      localtime_r(&tTime, &tTm);
       snprintf(tBuffer, tLength, "%04d.%02d.%02d %02d:%02d:%02d", tTm.tm_year + 1900, tTm.tm_mon + 1, tTm.tm_mday, tTm.tm_hour, tTm.tm_min, tTm.tm_sec);
       return tBuffer;
     }
@@ -238,6 +238,23 @@ namespace App {
     else if (tEpoch < SECONDS_PER_DAY) snprintf(tBuffer, tLength, "%lu:%02lu:%02lu hour(s)", tEpoch / SECONDS_PER_HOUR, (tEpoch % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE, tEpoch % SECONDS_PER_MINUTE);
     else snprintf(tBuffer, tLength, "%lu day(s) %02lu:%02lu:%02lu", tEpoch / SECONDS_PER_DAY, (tEpoch % SECONDS_PER_DAY) / SECONDS_PER_HOUR, (tEpoch % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE, tEpoch % SECONDS_PER_MINUTE);
     return tBuffer;
+  }
+
+  void Utils_::PrintPartitionInfo() {
+    char tText[mPrintInfoWidth - 4] = "";
+    const esp_partition_t *tRunning = esp_ota_get_running_partition();
+    const esp_partition_t *tBoot = esp_ota_get_boot_partition();
+    PrintInfo("PARTITION INFO", EUtilsInfoType::Header);
+    PrintInfo("", EUtilsInfoType::Line);
+    if (tRunning) {
+      snprintf(tText, sizeof(tText), "Running partition: %s @ 0x%08x", tRunning->label, (unsigned)tRunning->address);
+      PrintInfo(tText);
+    }
+    if (tBoot) {
+      snprintf(tText, sizeof(tText), "Boot partition: %s @ 0x%08x", tBoot->label, (unsigned)tBoot->address);
+      PrintInfo(tText);
+    }
+    PrintInfo("", EUtilsInfoType::Footer);
   }
 
   void Utils_::PrintBootInfo() {
@@ -510,6 +527,11 @@ namespace App {
     PrintInfo(tText);
   }
 
+  void Utils_::PrintDateTime() {
+    char tBuf[24];
+    xLOG("Date/Time → %s", EpochToReadableFormat(time(nullptr), true, tBuf, sizeof(tBuf)));
+  }
+
   const char *Utils_::PrependSlash(const char *tPath, char *tOutBuffer, size_t tBufSize) {
     if (!tPath || !tOutBuffer || tBufSize < 2) return tPath;
     size_t tLen = 0;
@@ -539,6 +561,44 @@ namespace App {
     return tCause == ESP_SLEEP_WAKEUP_EXT1;
   }
 
+  bool Utils_::HasElapsedMs(uint32_t tStart, uint32_t tNow, uint32_t tDelayMs) {
+    if (tNow >= tStart) {
+      return (tNow - tStart) >= tDelayMs;
+    } else {
+      return ((UINT32_MAX - tStart) + tNow + 1) >= tDelayMs;
+    }
+  }
+
+  const char *Utils_::ResolveBootReason() {
+    esp_reset_reason_t tReason = esp_reset_reason();
+    switch (tReason) {
+      case ESP_RST_UNKNOWN: return "Unknown";
+      case ESP_RST_POWERON: return "Power on";
+      case ESP_RST_EXT: return "External (NRST)";
+      case ESP_RST_SW: return "Software (esp_restart)";
+      case ESP_RST_PANIC: return "Panic/Exception";
+      case ESP_RST_INT_WDT: return "Interrupt watchdog";
+      case ESP_RST_TASK_WDT: return "Task watchdog";
+      case ESP_RST_WDT: return "Watchdog";
+      case ESP_RST_DEEPSLEEP: return "Deep sleep";
+      case ESP_RST_BROWNOUT: return "Brownout";
+      case ESP_RST_SDIO: return "SDIO";
+      default: return "Other";
+    }
+  }
+
+  bool Utils_::WasWokenByPin(uint8_t tPin) {
+    esp_sleep_wakeup_cause_t tCause = esp_sleep_get_wakeup_cause();
+    if (tCause != ESP_SLEEP_WAKEUP_EXT0 && tCause != ESP_SLEEP_WAKEUP_EXT1) {
+      return false;
+    }
+    if (tCause == ESP_SLEEP_WAKEUP_EXT1) {
+      uint64_t tMask = esp_sleep_get_ext1_wakeup_status();
+      if (tPin < 64 && (tMask & (1ULL << tPin))) return true;
+    }
+    return false;
+  }
+
   uint64_t Utils_::SecondsUntilHour(uint8_t tTargetHour) {
     uint32_t tEpochUtc = static_cast<uint32_t>(time(nullptr));
     if (tEpochUtc < 1735689600UL) tEpochUtc = static_cast<uint32_t>(RTC.GetEpoch());
@@ -555,9 +615,6 @@ namespace App {
     uint64_t tDelaySec = 0;
     uint8_t tHour = mCfg.Timer.WakeUpHour % 24;
     switch (mCfg.Timer.WakeUp) {
-      case ETimerWakeUp::Seconds:
-        tDelaySec = 10;
-        break;
       case ETimerWakeUp::Minutes:
         tDelaySec = SECONDS_PER_MINUTE;
         break;

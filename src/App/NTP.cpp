@@ -28,7 +28,7 @@ namespace App {
 
   void NTP_::Init() {
     ReloadConfig();
-    Begin();
+    ApplyTimeZone();
   }
 
   void NTP_::ReloadConfig() {
@@ -122,6 +122,9 @@ namespace App {
       .tv_usec = 0 
     };
     if (settimeofday(&tTv, nullptr) != 0) return false;
+    ApplyTimeZone();
+    mCfg.LastSuccessfulSyncEpochUtc = mCurrentEpoch;
+    CFG.UpdateNTPLastSync(mCurrentEpoch);
     return true;
   }
 
@@ -269,13 +272,7 @@ namespace App {
   }
 
   bool NTP_::SyncSystemTime() {
-    if (!mUDPSetup) {
-      if (!Begin()) {
-        xLOG("System time failed synchronized!");
-        return false;
-      }
-    }
-    bool tSuccess = ForceTimeSync();
+    bool tSuccess = mUDPSetup ? ForceTimeSync() : Begin();
     if (tSuccess) {
       xLOG("System time synchronized!");
       char tDate[32];
@@ -311,6 +308,61 @@ namespace App {
     #endif
     bool tIsDst = IsDST(mCurrentEpoch + mCfg.GMTOffset);
     return tIsDst ? "EEST" : "EET";
+  }
+
+  void NTP_::ApplyTimeZone() {
+    Guard tLock;
+    if (mCfg.TimeZoneLabel.length() == 0) {
+      long tTotalOffsetSec = mCfg.GMTOffset + mCfg.DaylightOffset;
+      if (tTotalOffsetSec == 0) {
+        xLOG("ApplyTimeZone: TimeZoneLabel empty, setting GMT");
+        setenv("TZ", "GMT", 1);
+      } else {
+        long tOffsetHours = tTotalOffsetSec / static_cast<long>(SECONDS_PER_HOUR);
+        long tOffsetMinutes = labs(tTotalOffsetSec % static_cast<long>(SECONDS_PER_HOUR)) / static_cast<long>(SECONDS_PER_MINUTE);
+        char tTZ[32] = "";
+        if (tOffsetMinutes == 0) {
+          snprintf(tTZ, sizeof(tTZ), "UTC%+ld", tOffsetHours);
+        } else {
+          snprintf(tTZ, sizeof(tTZ), "UTC%+ld:%02ld", tOffsetHours, tOffsetMinutes);
+        }
+        xLOG("ApplyTimeZone: TimeZoneLabel empty, fallback TZ=%s", tTZ);
+        setenv("TZ", tTZ, 1);
+      }
+    } else {
+      xLOG("ApplyTimeZone: Setting TZ to %s", mCfg.TimeZoneLabel.c_str());
+      setenv("TZ", mCfg.TimeZoneLabel.c_str(), 1);
+    }
+    tzset();
+  }
+
+  bool NTP_::SyncSystemTimeIfNeeded() {
+    Guard tLock;
+    if (!mCfg.LowPowerSyncEnable) {
+      xLOG("SyncSystemTimeIfNeeded: Low-power sync disabled, forcing sync");
+      return SyncSystemTime();
+    }
+    unsigned long tCurrentEpoch = static_cast<unsigned long>(time(nullptr));
+    if (tCurrentEpoch < 1704067200UL) {
+      xLOG("SyncSystemTimeIfNeeded: System epoch invalid, forcing sync");
+      return SyncSystemTime();
+    }
+    unsigned long tLastSync = mCfg.LastSuccessfulSyncEpochUtc;
+    if (tLastSync == 0) {
+      xLOG("SyncSystemTimeIfNeeded: No previous sync recorded, forcing sync");
+      return SyncSystemTime();
+    }
+    if (tCurrentEpoch < tLastSync) {
+      xLOG("SyncSystemTimeIfNeeded: Last sync is newer than current epoch, forcing sync");
+      return SyncSystemTime();
+    }
+    unsigned long tTimeSinceSync = tCurrentEpoch - tLastSync;
+    if (tTimeSinceSync >= mCfg.LowPowerSyncIntervalSec) {
+      xLOG("SyncSystemTimeIfNeeded: Interval elapsed (%lu >= %lu), syncing", tTimeSinceSync, mCfg.LowPowerSyncIntervalSec);
+      return SyncSystemTime();
+    }
+    xLOG("SyncSystemTimeIfNeeded: Skipped (synced %lu seconds ago)", tTimeSinceSync);
+    return true;
   }
 
   void NTP_::PrintDateTimeInfo() {

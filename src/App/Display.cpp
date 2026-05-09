@@ -36,7 +36,7 @@ namespace App {
     SetBgColor(EDisplayColor::White);
     SetColor(EDisplayColor::Black);
     memset(mFrameBuffer, static_cast<uint8_t>(mBgColor), mCfg.Width * mCfg.Height / 2);
-    xLOG("Display init successful!");
+    xLOG("Display → init successful");
   }
 
   void Display_::ReloadConfig() {
@@ -223,9 +223,13 @@ namespace App {
     
   void Display_::Update() {
     Guard tLock;
+    xLOG("Display → update start");
     On();
+    uint32_t tStartMs = millis();
     epd_draw_grayscale_image(epd_full_screen(), mFrameBuffer);
     Off();
+    uint32_t tElapsedMs = millis() - tStartMs;
+    xLOG("Display → update end (%lu.%03lus)", static_cast<unsigned long>(tElapsedMs / 1000), static_cast<unsigned long>(tElapsedMs % 1000));
   }
 
   Rect_t Display_::CopyToFrameBuffer(Rect_t tArea, const uint8_t *tData) {

@@ -23,6 +23,7 @@
 #include <App/Telnet/Commands/RebootCommand.h>
 #include <App/Telnet/Commands/LogoutCommand.h>
 #include <App/Telnet/Commands/ExitCommand.h>
+#include <App/Telnet/Commands/LogCommand.h>
 #include <App/Telnet/Commands/NotFoundCommand.h>
 
 namespace App {
@@ -50,7 +51,8 @@ namespace App {
   static RebootCommand_ sRebootCmd;
   static LogoutCommand_ sLogoutCmd;
   static ExitCommand_ sExitCmd;
-  static NotFoundCommand_ sNotFoundCmd; 
+  static LogCommand_ sLogCmd;
+  static NotFoundCommand_ sNotFoundCmd;
 
   constexpr uint16_t kBufferSize = sizeof(Telnet_::Instance().mInputBuffer);
 
@@ -121,6 +123,7 @@ namespace App {
       RegisterCommand(&sRebootCmd);
       RegisterCommand(&sLogoutCmd);
       RegisterCommand(&sExitCmd);
+      RegisterCommand(&sLogCmd);
       RegisterCommand(&sNotFoundCmd);
       mAuthTimestamp = CFG.GetSession();
       if (tVerbose) {
@@ -156,6 +159,15 @@ namespace App {
     if (tCommand != nullptr) mCommands.push_back(tCommand);
   }
 
+  void Telnet_::ActivityCallback(FActivityCallback tCallback) {
+    Guard tLock;
+    mActivityCallback = std::move(tCallback);
+  }
+
+  void Telnet_::NotifyActivity() {
+    if (mActivityCallback) mActivityCallback();
+  }
+
   void Telnet_::HandleEvents() {
     Guard tLock;
     if (!mEnabled) return;
@@ -184,12 +196,14 @@ namespace App {
           ClearScreen();
           mClient.print(F(COLOR_YELLOW "Type 'help' to list commands." COLOR_WHITE "\r\n\r\n$ "));
         }
+        NotifyActivity();
         while (mClient.available()) mClient.read();
       } else mServer.available().stop();
     }
     if (mClient && mClient.connected() && mClient.available()) {
       while (mClient.available()) {
         char tC = mClient.read();
+        NotifyActivity();
         if (tC == '\r' || tC == '\n') {
           if (tC == '\r' && mClient.peek() == '\n') mClient.read(); 
           if (mInputPos == 0) {
@@ -267,6 +281,7 @@ namespace App {
           for (Command_ *tCmd : mCommands) {
             if (strcasecmp(tCmdName, tCmd->GetName()) == 0) {
               tCmd->Execute(mInputBuffer, mClient);
+              NotifyActivity();
               tHandled = true;
               break;
             }
@@ -275,6 +290,7 @@ namespace App {
             for (Command_ *tCmd : mCommands) {
               if (strcasecmp(tCmd->GetName(), "notfound") == 0) {
                 tCmd->Execute(mInputBuffer, mClient);
+                NotifyActivity();
                 break;
               }
             }

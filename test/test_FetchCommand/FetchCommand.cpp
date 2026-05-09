@@ -3,19 +3,13 @@
 #include <cstdio>
 #include <cstdint>
 
-// Include mocks
 #include "../mocks/MockString.h"
 #include "../mocks/MockWiFiClient.h"
 
-// Color codes from the original project
 #define COLOR_RED     "\033[31m"
 #define COLOR_GREEN   "\033[32m"
 #define COLOR_YELLOW  "\033[33m"
 #define COLOR_WHITE   "\033[37m"
-
-// =============================================================================
-// Extracted functions from FetchCommand.h for testing
-// =============================================================================
 
 namespace FetchCommandTest {
 
@@ -99,10 +93,6 @@ namespace FetchCommandTest {
 
 }
 
-// =============================================================================
-// SkipWhitespace Tests
-// =============================================================================
-
 void test_SkipWhitespace_no_whitespace() {
     const char *input = "hello";
     const char *result = FetchCommandTest::SkipWhitespace(input);
@@ -139,10 +129,6 @@ void test_SkipWhitespace_empty() {
     TEST_ASSERT_EQUAL_STRING("", result);
 }
 
-// =============================================================================
-// SkipNonWhitespace Tests
-// =============================================================================
-
 void test_SkipNonWhitespace_simple() {
     const char *input = "hello world";
     const char *result = FetchCommandTest::SkipNonWhitespace(input);
@@ -173,18 +159,14 @@ void test_SkipNonWhitespace_empty() {
     TEST_ASSERT_EQUAL_STRING("", result);
 }
 
-// =============================================================================
-// ParseUrl Tests (with Mock)
-// =============================================================================
-
 void test_ParseUrl_http_simple() {
     MockWiFiClient client;
     String host, path;
     uint16_t port;
     bool isHttps;
-    
+
     bool result = FetchCommandTest::ParseUrl("http://example.com", host, path, port, isHttps, client);
-    
+
     TEST_ASSERT_TRUE(result);
     TEST_ASSERT_EQUAL_STRING("example.com", host.c_str());
     TEST_ASSERT_EQUAL_STRING("/", path.c_str());
@@ -197,9 +179,9 @@ void test_ParseUrl_http_with_path() {
     String host, path;
     uint16_t port;
     bool isHttps;
-    
+
     bool result = FetchCommandTest::ParseUrl("http://example.com/images/photo.jpg", host, path, port, isHttps, client);
-    
+
     TEST_ASSERT_TRUE(result);
     TEST_ASSERT_EQUAL_STRING("example.com", host.c_str());
     TEST_ASSERT_EQUAL_STRING("/images/photo.jpg", path.c_str());
@@ -212,9 +194,9 @@ void test_ParseUrl_https_simple() {
     String host, path;
     uint16_t port;
     bool isHttps;
-    
+
     bool result = FetchCommandTest::ParseUrl("https://secure.example.com", host, path, port, isHttps, client);
-    
+
     TEST_ASSERT_TRUE(result);
     TEST_ASSERT_EQUAL_STRING("secure.example.com", host.c_str());
     TEST_ASSERT_EQUAL_STRING("/", path.c_str());
@@ -227,9 +209,9 @@ void test_ParseUrl_https_with_path() {
     String host, path;
     uint16_t port;
     bool isHttps;
-    
+
     bool result = FetchCommandTest::ParseUrl("https://api.example.com/v1/data", host, path, port, isHttps, client);
-    
+
     TEST_ASSERT_TRUE(result);
     TEST_ASSERT_EQUAL_STRING("api.example.com", host.c_str());
     TEST_ASSERT_EQUAL_STRING("/v1/data", path.c_str());
@@ -242,9 +224,9 @@ void test_ParseUrl_invalid_protocol() {
     String host, path;
     uint16_t port;
     bool isHttps;
-    
+
     bool result = FetchCommandTest::ParseUrl("ftp://example.com", host, path, port, isHttps, client);
-    
+
     TEST_ASSERT_FALSE(result);
     TEST_ASSERT_TRUE(client.contains("Error"));
     TEST_ASSERT_TRUE(client.contains("http://"));
@@ -255,9 +237,9 @@ void test_ParseUrl_no_protocol() {
     String host, path;
     uint16_t port;
     bool isHttps;
-    
+
     bool result = FetchCommandTest::ParseUrl("example.com/path", host, path, port, isHttps, client);
-    
+
     TEST_ASSERT_FALSE(result);
     TEST_ASSERT_TRUE(client.contains("Error"));
 }
@@ -267,24 +249,20 @@ void test_ParseUrl_complex_path() {
     String host, path;
     uint16_t port;
     bool isHttps;
-    
+
     bool result = FetchCommandTest::ParseUrl("http://cdn.site.org/assets/img/2024/photo_01.jpg?v=2", host, path, port, isHttps, client);
-    
+
     TEST_ASSERT_TRUE(result);
     TEST_ASSERT_EQUAL_STRING("cdn.site.org", host.c_str());
     TEST_ASSERT_EQUAL_STRING("/assets/img/2024/photo_01.jpg?v=2", path.c_str());
 }
 
-// =============================================================================
-// ParseArguments Tests (with Mock)
-// =============================================================================
-
 void test_ParseArguments_url_only() {
     MockWiFiClient client;
     char url[256], filename[128];
-    
+
     bool result = FetchCommandTest::ParseArguments("fetch http://example.com/img.jpg", url, sizeof(url), filename, sizeof(filename), client);
-    
+
     TEST_ASSERT_TRUE(result);
     TEST_ASSERT_EQUAL_STRING("http://example.com/img.jpg", url);
     TEST_ASSERT_EQUAL_STRING("", filename);
@@ -293,9 +271,9 @@ void test_ParseArguments_url_only() {
 void test_ParseArguments_url_and_filename() {
     MockWiFiClient client;
     char url[256], filename[128];
-    
+
     bool result = FetchCommandTest::ParseArguments("fetch http://example.com/img.jpg myfile.jpg", url, sizeof(url), filename, sizeof(filename), client);
-    
+
     TEST_ASSERT_TRUE(result);
     TEST_ASSERT_EQUAL_STRING("http://example.com/img.jpg", url);
     TEST_ASSERT_EQUAL_STRING("myfile.jpg", filename);
@@ -304,9 +282,9 @@ void test_ParseArguments_url_and_filename() {
 void test_ParseArguments_extra_spaces() {
     MockWiFiClient client;
     char url[256], filename[128];
-    
+
     bool result = FetchCommandTest::ParseArguments("fetch   http://example.com/img.jpg   output.jpg", url, sizeof(url), filename, sizeof(filename), client);
-    
+
     TEST_ASSERT_TRUE(result);
     TEST_ASSERT_EQUAL_STRING("http://example.com/img.jpg", url);
     TEST_ASSERT_EQUAL_STRING("output.jpg", filename);
@@ -315,9 +293,9 @@ void test_ParseArguments_extra_spaces() {
 void test_ParseArguments_missing_url() {
     MockWiFiClient client;
     char url[256], filename[128];
-    
+
     bool result = FetchCommandTest::ParseArguments("", url, sizeof(url), filename, sizeof(filename), client);
-    
+
     TEST_ASSERT_FALSE(result);
     TEST_ASSERT_TRUE(client.contains("Missing URL"));
 }
@@ -325,9 +303,9 @@ void test_ParseArguments_missing_url() {
 void test_ParseArguments_null_input() {
     MockWiFiClient client;
     char url[256], filename[128];
-    
+
     bool result = FetchCommandTest::ParseArguments(nullptr, url, sizeof(url), filename, sizeof(filename), client);
-    
+
     TEST_ASSERT_FALSE(result);
     TEST_ASSERT_TRUE(client.contains("Missing URL"));
 }
@@ -335,49 +313,45 @@ void test_ParseArguments_null_input() {
 void test_ParseArguments_too_many_args() {
     MockWiFiClient client;
     char url[256], filename[128];
-    
+
     bool result = FetchCommandTest::ParseArguments("fetch http://example.com/img.jpg file.jpg extra", url, sizeof(url), filename, sizeof(filename), client);
-    
+
     TEST_ASSERT_FALSE(result);
     TEST_ASSERT_TRUE(client.contains("Too many arguments"));
 }
 
 void test_ParseArguments_url_too_long() {
     MockWiFiClient client;
-    char url[32], filename[128];  // Small buffer for URL
-    
+    char url[32], filename[128];
+
     bool result = FetchCommandTest::ParseArguments("fetch http://very-long-domain-name-that-exceeds-buffer.com/path/to/file.jpg", url, sizeof(url), filename, sizeof(filename), client);
-    
+
     TEST_ASSERT_FALSE(result);
     TEST_ASSERT_TRUE(client.contains("Invalid or too long URL"));
 }
-
-// =============================================================================
-// Main
-// =============================================================================
 
 void setUp(void) {}
 void tearDown(void) {}
 
 int main(int argc, char **argv) {
     UNITY_BEGIN();
-    
-    // SkipWhitespace tests
+
+
     RUN_TEST(test_SkipWhitespace_no_whitespace);
     RUN_TEST(test_SkipWhitespace_leading_spaces);
     RUN_TEST(test_SkipWhitespace_leading_tabs);
     RUN_TEST(test_SkipWhitespace_mixed);
     RUN_TEST(test_SkipWhitespace_only_whitespace);
     RUN_TEST(test_SkipWhitespace_empty);
-    
-    // SkipNonWhitespace tests
+
+
     RUN_TEST(test_SkipNonWhitespace_simple);
     RUN_TEST(test_SkipNonWhitespace_no_whitespace);
     RUN_TEST(test_SkipNonWhitespace_starts_with_space);
     RUN_TEST(test_SkipNonWhitespace_tab_separator);
     RUN_TEST(test_SkipNonWhitespace_empty);
-    
-    // ParseUrl tests (with mock)
+
+
     RUN_TEST(test_ParseUrl_http_simple);
     RUN_TEST(test_ParseUrl_http_with_path);
     RUN_TEST(test_ParseUrl_https_simple);
@@ -385,8 +359,8 @@ int main(int argc, char **argv) {
     RUN_TEST(test_ParseUrl_invalid_protocol);
     RUN_TEST(test_ParseUrl_no_protocol);
     RUN_TEST(test_ParseUrl_complex_path);
-    
-    // ParseArguments tests (with mock)
+
+
     RUN_TEST(test_ParseArguments_url_only);
     RUN_TEST(test_ParseArguments_url_and_filename);
     RUN_TEST(test_ParseArguments_extra_spaces);
@@ -394,6 +368,6 @@ int main(int argc, char **argv) {
     RUN_TEST(test_ParseArguments_null_input);
     RUN_TEST(test_ParseArguments_too_many_args);
     RUN_TEST(test_ParseArguments_url_too_long);
-    
+
     return UNITY_END();
 }

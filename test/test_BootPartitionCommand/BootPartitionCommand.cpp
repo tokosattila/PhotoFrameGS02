@@ -1,8 +1,3 @@
-/**
- * @file BootPartitionCommand.cpp
- * @brief Unit tests for bootpart command parsing (pure C++ logic)
- */
-
 #include <unity.h>
 #include <cstring>
 #include <cctype>
@@ -29,7 +24,7 @@ static int CiStrcmp(const char *a, const char *b) {
 static EBootPartArg ParseBootPartArg(const char *input) {
   const char *p = input ? input : "";
   while (*p == ' ' || *p == '\t') ++p;
-  while (*p != '\0' && *p != ' ' && *p != '\t') ++p; // skip command
+  while (*p != '\0' && *p != ' ' && *p != '\t') ++p;
   while (*p == ' ' || *p == '\t') ++p;
 
   if (*p == '\0') return EBootPartArg::Status;
@@ -85,3 +80,4 @@ int main(int argc, char **argv) {
   RUN_TEST(test_invalid_and_too_many);
   return UNITY_END();
 }
+

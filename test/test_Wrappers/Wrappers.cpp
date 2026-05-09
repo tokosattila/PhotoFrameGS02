@@ -1,10 +1,6 @@
 #include <unity.h>
 #include <cstdint>
 
-// =============================================================================
-// Percentage wrapper class (from Global.h)
-// =============================================================================
-
 class Percentage {
 public:
     constexpr explicit Percentage(uint8_t tValue = 0) : mValue(tValue) {}
@@ -15,10 +11,6 @@ public:
 private:
     uint8_t mValue;
 };
-
-// =============================================================================
-// Port wrapper class (from Global.h)
-// =============================================================================
 
 class Port {
 public:
@@ -31,10 +23,6 @@ public:
 private:
     uint16_t mValue;
 };
-
-// =============================================================================
-// Percentage Tests
-// =============================================================================
 
 void test_Percentage_default_constructor() {
     Percentage p;
@@ -61,7 +49,7 @@ void test_Percentage_equality() {
     Percentage p1(30);
     Percentage p2(30);
     Percentage p3(40);
-    
+
     TEST_ASSERT_TRUE(p1 == p2);
     TEST_ASSERT_FALSE(p1 == p3);
 }
@@ -70,7 +58,7 @@ void test_Percentage_inequality() {
     Percentage p1(30);
     Percentage p2(30);
     Percentage p3(40);
-    
+
     TEST_ASSERT_FALSE(p1 != p2);
     TEST_ASSERT_TRUE(p1 != p3);
 }
@@ -79,19 +67,15 @@ void test_Percentage_common_values() {
     Percentage brightness(35);
     Percentage contrast(70);
     Percentage gamma(135);
-    
+
     TEST_ASSERT_EQUAL_UINT8(35, brightness.Get());
     TEST_ASSERT_EQUAL_UINT8(70, contrast.Get());
     TEST_ASSERT_EQUAL_UINT8(135, gamma.Get());
 }
 
-// =============================================================================
-// Port Tests
-// =============================================================================
-
 void test_Port_default_constructor() {
     Port p;
-    TEST_ASSERT_EQUAL_UINT16(1, p.Get());  // 0 becomes 1
+    TEST_ASSERT_EQUAL_UINT16(1, p.Get());
 }
 
 void test_Port_zero_becomes_one() {
@@ -110,7 +94,7 @@ void test_Port_common_ports() {
     Port ftp(21);
     Port telnet(23);
     Port ntp(123);
-    
+
     TEST_ASSERT_EQUAL_UINT16(80, http.Get());
     TEST_ASSERT_EQUAL_UINT16(443, https.Get());
     TEST_ASSERT_EQUAL_UINT16(21, ftp.Get());
@@ -130,11 +114,10 @@ void test_Port_implicit_conversion() {
 }
 
 void test_Port_IsValid_always_true() {
-    // Port is always valid because 0 becomes 1 in constructor
     Port p1(0);
     Port p2(1);
     Port p3(8080);
-    
+
     TEST_ASSERT_TRUE(p1.IsValid());
     TEST_ASSERT_TRUE(p2.IsValid());
     TEST_ASSERT_TRUE(p3.IsValid());
@@ -144,7 +127,7 @@ void test_Port_equality() {
     Port p1(80);
     Port p2(80);
     Port p3(443);
-    
+
     TEST_ASSERT_TRUE(p1 == p2);
     TEST_ASSERT_FALSE(p1 == p3);
 }
@@ -153,62 +136,50 @@ void test_Port_inequality() {
     Port p1(80);
     Port p2(80);
     Port p3(443);
-    
+
     TEST_ASSERT_FALSE(p1 != p2);
     TEST_ASSERT_TRUE(p1 != p3);
 }
 
-// =============================================================================
-// Combined usage tests
-// =============================================================================
-
 void test_Percentage_in_config_scenario() {
-    // Simulate display config usage
     struct DisplayConfig {
         Percentage JpgBrightness;
         Percentage JpgContrast;
         Percentage JpgGamma;
     };
-    
+
     DisplayConfig cfg;
     cfg.JpgBrightness = Percentage(30);
     cfg.JpgContrast = Percentage(35);
     cfg.JpgGamma = Percentage(135);
-    
+
     TEST_ASSERT_EQUAL_UINT8(30, cfg.JpgBrightness.Get());
     TEST_ASSERT_EQUAL_UINT8(35, cfg.JpgContrast.Get());
     TEST_ASSERT_EQUAL_UINT8(135, cfg.JpgGamma.Get());
 }
 
 void test_Port_in_config_scenario() {
-    // Simulate network config usage
     struct NetworkConfig {
         Port TelnetPort;
         Port FtpPort;
         Port NtpPort;
     };
-    
+
     NetworkConfig cfg;
     cfg.TelnetPort = Port(23);
     cfg.FtpPort = Port(21);
     cfg.NtpPort = Port(123);
-    
+
     TEST_ASSERT_EQUAL_UINT16(23, cfg.TelnetPort.Get());
     TEST_ASSERT_EQUAL_UINT16(21, cfg.FtpPort.Get());
     TEST_ASSERT_EQUAL_UINT16(123, cfg.NtpPort.Get());
 }
-
-// =============================================================================
-// Main
-// =============================================================================
 
 void setUp(void) {}
 void tearDown(void) {}
 
 int main(int argc, char **argv) {
     UNITY_BEGIN();
-    
-    // Percentage tests
     RUN_TEST(test_Percentage_default_constructor);
     RUN_TEST(test_Percentage_explicit_constructor);
     RUN_TEST(test_Percentage_max_value);
@@ -216,8 +187,6 @@ int main(int argc, char **argv) {
     RUN_TEST(test_Percentage_equality);
     RUN_TEST(test_Percentage_inequality);
     RUN_TEST(test_Percentage_common_values);
-    
-    // Port tests
     RUN_TEST(test_Port_default_constructor);
     RUN_TEST(test_Port_zero_becomes_one);
     RUN_TEST(test_Port_explicit_constructor);
@@ -227,10 +196,9 @@ int main(int argc, char **argv) {
     RUN_TEST(test_Port_IsValid_always_true);
     RUN_TEST(test_Port_equality);
     RUN_TEST(test_Port_inequality);
-    
-    // Combined usage tests
     RUN_TEST(test_Percentage_in_config_scenario);
     RUN_TEST(test_Port_in_config_scenario);
-    
+
     return UNITY_END();
 }
+

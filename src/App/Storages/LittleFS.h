@@ -35,8 +35,8 @@ namespace App {
       void PrintListDir();
       void End();
       size_t GetListPos() { return mListPos; };
-      uint32_t TotalBytes();
-      uint32_t UsedBytes();
+      uint64_t TotalBytes();
+      uint64_t UsedBytes();
     private:
       LittleFS_();
       LittleFS_(const LittleFS_&) = delete;

@@ -45,11 +45,11 @@ namespace App {
     bool tOk = LittleFS.begin(false, mMountLabel, mMaxFiles, mPartLabel);
     if (tOk) {
       if (tVerbose) {
-        xLOG("LittleFS init succesful!");
+        xLOG("LittleFS ??? init succesful");
         BootstrapVault(tVerbose);
       }
     } else {
-      if (tVerbose) xLOG("LittleFS init failed!");
+      if (tVerbose) xLOG("LittleFS ??? init failed");
     }
     if (mCallback) mCallback();
     return tOk;
@@ -109,7 +109,7 @@ namespace App {
           const char *tName = GetFileName(tFile.name());
           if (IsFile(tName)) {
             char tBuffer[16];
-            UTL.ByteToReadableSize((uint64_t)tFile.size(), tBuffer, sizeof(tBuffer));
+            UTL.ByteToReadableSize(tFile.size(), tBuffer, sizeof(tBuffer));
             AppendToBuffer("  ", 2);
             AppendToBuffer(tName, strlen(tName));
             AppendToBuffer(" [", 2);
@@ -129,7 +129,7 @@ namespace App {
       const char *tShort = GetFileName(tFileEntry.name());
       if (IsFile(tShort)) {
         char tBuffer[16];
-        UTL.ByteToReadableSize((uint64_t)tFileEntry.size(), tBuffer, sizeof(tBuffer));
+        UTL.ByteToReadableSize(tFileEntry.size(), tBuffer, sizeof(tBuffer));
         AppendToBuffer(tShort, strlen(tShort));
         AppendToBuffer(" [", 2);
         AppendToBuffer(tBuffer, strlen(tBuffer));
@@ -199,13 +199,13 @@ namespace App {
       tOk = (tFile.write((const uint8_t*)tData, tLength) == tLength);
       if (tOk) {
         tFile.flush();
-        if (tVerbose) xLOG("File created → %s", tName);
+        if (tVerbose) xLOG("File created ??? %s", tName);
       } else {
-        if (tVerbose) xLOG("Error writing file → %s", tName);
+        if (tVerbose) xLOG("Error writing file ??? %s", tName);
       }
       tFile.close();
     } else {
-      if (tVerbose) xLOG("Failed to open for writing → %s", tName);
+      if (tVerbose) xLOG("Failed to open for writing ??? %s", tName);
     }
     return tOk;
   }
@@ -216,8 +216,8 @@ namespace App {
     strncpy(tNormalizedPath, NormalizePath(tPath), sizeof(tNormalizedPath) - 1);
     tNormalizedPath[sizeof(tNormalizedPath) - 1] = '\0';
     bool tOk = LittleFS.remove(tNormalizedPath);
-    if (tOk) xLOG("File deleted → %s", tPath);
-    else xLOG("Error deleted file → %s", tPath);
+    if (tOk) xLOG("File deleted ??? %s", tPath);
+    else xLOG("Error deleted file ??? %s", tPath);
     return tOk;
   }
 
@@ -226,9 +226,9 @@ namespace App {
     bool tExists = Exists(tPath);
     bool tOk = tExists ? true : LittleFS.mkdir(tPath);
     if (tVerbose) {
-      if (tOk && !tExists) xLOG("Directory created → %s", tPath);
-      else if (tExists) xLOG("Directory already exists → %s", tPath);
-      else xLOG("Error creating directory → %s", tPath);
+      if (tOk && !tExists) xLOG("Directory created ??? %s", tPath);
+      else if (tExists) xLOG("Directory ??? already exists %s", tPath);
+      else xLOG("Error creating directory ??? %s", tPath);
     }
     return tOk;
   }
@@ -239,8 +239,8 @@ namespace App {
     strncpy(tNormalizedPath, NormalizePath(tPath), sizeof(tNormalizedPath) - 1);
     tNormalizedPath[sizeof(tNormalizedPath) - 1] = '\0';
     bool tOk = LittleFS.rmdir(tNormalizedPath);
-    if (tOk) xLOG("Directory deleted → %s", tPath);
-    else xLOG("Error deleted directory → %s", tPath);
+    if (tOk) xLOG("Directory deleted ??? %s", tPath);
+    else xLOG("Error deleted directory ??? %s", tPath);
     return tOk;
   }
 
@@ -250,15 +250,15 @@ namespace App {
     return tOk;
   }
 
-  uint32_t LittleFS_::TotalBytes() {
+  uint64_t LittleFS_::TotalBytes() {
     Guard tLock;
-    uint32_t tValue = LittleFS.totalBytes();
+    uint64_t tValue = LittleFS.totalBytes();
     return tValue;
   }
 
-  uint32_t LittleFS_::UsedBytes() {
+  uint64_t LittleFS_::UsedBytes() {
     Guard tLock;
-    uint32_t tValue = LittleFS.usedBytes();
+    uint64_t tValue = LittleFS.usedBytes();
     return tValue;
   }
 
@@ -271,10 +271,6 @@ namespace App {
     char tIDirName[128] = "";
     UTL.PrependSlash(mCfg.Display.ImagesDir.c_str(), tIDirName, sizeof(tIDirName));
     CreateDir(tIDirName, tVerbose);
-    char tCFileName[128] = "";
-    UTL.PrependSlash(mCfg.Device.ConfigFile.c_str(), tCFileName, sizeof(tCFileName));
-    const char *tCFileContent = CFG.PrepareAllConfigToINI();
-    WriteFile(tCFileName, tCFileContent, tVerbose);
     if (tVerbose) PrintListDir();
   }
 
@@ -320,12 +316,12 @@ namespace App {
       return tResult;
     }
     if (!LittleFS.exists(tDir)) {
-      xLOG("Directory not found → %s", tDir);
+      xLOG("Directory not found ??? %s", tDir);
       return {};
     }
     File tRoot = LittleFS.open(tDir);
     if (!tRoot || !tRoot.isDirectory()) {
-      xLOG("Cannot open directory → %s", tDir);
+      xLOG("Cannot open directory ??? %s", tDir);
       return {};
     }
     char tSearchExt[16];
@@ -411,7 +407,7 @@ namespace App {
     if (tSize > sizeof(mFileBuffer)) {
       tFile.close();
       char tSizeBuffer[16];
-      UTL.ByteToReadableSize((uint64_t)tSize, tSizeBuffer, sizeof(tSizeBuffer));
+      UTL.ByteToReadableSize((uint32_t)tSize, tSizeBuffer, sizeof(tSizeBuffer));
       snprintf(mFileBuffer, sizeof(mFileBuffer), "  Error: File too large (%s).\r\n", tSizeBuffer);
       return mFileBuffer;
     }

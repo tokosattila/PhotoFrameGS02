@@ -111,9 +111,23 @@ namespace App {
     SDCard
   };
 
+  enum class ELogLevel : uint8_t {
+    Boot = 0,
+    Halt,
+    Storage,
+    Wifi,
+    Ntp,
+    Rtc,
+    Battery,
+    Image,
+    Sleep,
+    Ota,
+    Warn,
+    Error
+  };
+
   enum class ETimerWakeUp : uint8_t {
-    Seconds = 1,
-    Minutes,
+    Minutes = 1,
     Hourly,
     HalfDay,
     Daily,
@@ -166,6 +180,7 @@ namespace App {
     uint8_t BatteryPin = 0;
     uint8_t ResetPin = 0;
     uint8_t SettingPin = 0;
+    bool LogManagerEnabled = true;
     SDeviceConfig() = default;
   };
 
@@ -176,8 +191,16 @@ namespace App {
     String ApIp;
     String ApGateway;
     String ApSubnet;
+    String FallbackApSsid;
+    String FallbackApPassword;
+    String FallbackApIp;
+    String FallbackApGateway;
+    String FallbackApSubnet;
     String StaSsid;
     String StaPassword;
+    bool StaAutoFallbackApEnable = true;
+    uint8_t StaConnectMaxRetry = 3;
+    uint32_t StaRetryDelayMs = 5 * 1000;
     bool StaIpEnable = false;
     String StaIp;
     String StaGateway;
@@ -192,8 +215,13 @@ namespace App {
   struct SNTPConfig {
     String Server;
     Port NtpPort {123};
-    unsigned long GMTOffset = 0;
+    long GMTOffset = 0;
+    long DaylightOffset = 0;
+    String TimeZoneLabel;
     unsigned long UpdateInterval = 0;
+    bool LowPowerSyncEnable = true;
+    unsigned long LowPowerSyncIntervalSec = 7UL * 24UL * 60UL * 60UL;
+    unsigned long LastSuccessfulSyncEpochUtc = 0;
     SNTPConfig() = default;
   };
 
@@ -302,6 +330,7 @@ namespace App {
   constexpr uint32_t DELAY_ONE_SEC_MS = ONE_SECOND_MS;
 
   constexpr uint32_t WIFI_CONNECT_TIMEOUT_MS = 30 * ONE_SECOND_MS;
+  constexpr uint32_t MAINTENANCE_INACTIVITY_TIMEOUT_MS = 15 * 60 * ONE_SECOND_MS;
   constexpr uint32_t WIFI_RETRY_COUNT = 20;
   constexpr uint32_t NVS_RETRY_DELAY_MS = ONE_SECOND_MS / 10;
   constexpr uint32_t CONFIG_RETRY_DELAY_MS = ONE_SECOND_MS;
@@ -315,8 +344,9 @@ namespace App {
 #include <App/Storages/LittleFS.h>
 #include <App/Storages/SDCard.h>
 #include <App/Storage.h>
+#include <App/LogManager.h>
 #include <App/NTP.h>
-#include <App/RTCTime.h>
+#include <App/RTC.h>
 #include <App/Connection.h>
 #include <App/Button.h>
 #include <App/Display.h>
@@ -326,12 +356,12 @@ namespace App {
 #include <App/Telnet/Commands/CallbackCommand.h>
 #include <App/Telnet.h>
 
-#include <Fonts/OpenSans11.h>
-#include <Fonts/OpenSans11b.h>
-#include <Fonts/OpenSans13.h>
-#include <Fonts/OpenSans13b.h>
+#include <App/Fonts/OpenSans11.h>
+#include <App/Fonts/OpenSans11b.h>
+#include <App/Fonts/OpenSans13.h>
+#include <App/Fonts/OpenSans13b.h>
 
-#include <Images/DefaultImage.h>
+#include <App/Images/DefaultImage.h>
 
 #define CFG Configuration_::Instance()
 #define UTL Utils_::Instance()
@@ -339,12 +369,13 @@ namespace App {
 #define SDC SDCard_::Instance()
 #define STG Storage_::Instance()
 #define NTP NTP_::Instance()
-#define RTC RTCTime_::Instance()
+#define RTC RTC_::Instance()
 #define CON Connection_::Instance()
 #define BTN Button_::Instance()
 #define DSP Display_::Instance()
 #define FTP FTP_::Instance()
 #define FWU Firmware_::Instance()
 #define TLN Telnet_::Instance()
+#define LOG LogManager_::Instance()
 
 #endif

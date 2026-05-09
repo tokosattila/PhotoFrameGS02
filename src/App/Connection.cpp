@@ -115,14 +115,19 @@ namespace App {
         tSelf->SetupAp();
         tCurrentActive = (mWiFi->softAPgetStationNum() > 0);
       } else {
-        uint32_t tStart = millis();
-        tSelf->ConnectSta();
-        while (mWiFi->status() != WL_CONNECTED && (millis() - tStart) < WIFI_CONNECT_TIMEOUT_MS) vTaskDelay(DELAY_HALF_SEC_MS / portTICK_PERIOD_MS);
-        if (mWiFi->status() == WL_CONNECTED) tCurrentActive = true;
-        else {
-          xLOG("STA connection failed → fallback to AP mode");
-          tSelf->SetupAp();
+        bool tStaConnected = tSelf->TryConnectStaWithRetry();
+        if (tStaConnected) {
           tCurrentActive = true;
+        } else if (tSelf->mCfg.Connection.StaAutoFallbackApEnable) {
+          xLOG("STA failed & StaAutoFallbackApEnable=true → trying AP+STA maintenance mode");
+          if (!tSelf->TryConnectApSta()) {
+            xLOG("AP+STA maintenance failed → switching to fallback AP");
+            tSelf->SwitchToFallbackApMode();
+          }
+          tCurrentActive = true;
+        } else {
+          xLOG("STA failed & StaAutoFallbackApEnable=false → WiFi offline");
+          tCurrentActive = false;
         }
       }
       if (tCurrentActive && !tLastActive) {
@@ -181,8 +186,100 @@ namespace App {
     mWiFi->hostname(mCfg.Connection.MdnsName);
     xLOG("Connecting to WiFi → %s", mCfg.Connection.StaSsid.c_str());
     mWiFi->begin(mCfg.Connection.StaSsid.c_str(), mCfg.Connection.StaPassword.c_str());
-    uint8_t tRetry = 0;
-    while (mWiFi->status() != WL_CONNECTED && tRetry++ < WIFI_RETRY_COUNT) vTaskDelay(DELAY_HALF_SEC_MS / portTICK_PERIOD_MS);
+    PrintConnectionInfo();
+  }
+
+  bool Connection_::TryConnectStaWithRetry() {
+    uint8_t tMaxRetry = mCfg.Connection.StaConnectMaxRetry;
+    if (tMaxRetry == 0) tMaxRetry = 1;
+    uint32_t tRetryDelayMs = mCfg.Connection.StaRetryDelayMs;
+    xLOG("STA connect: max retries=%u, delay=%lums", tMaxRetry, tRetryDelayMs);
+    for (uint8_t tAttempt = 0; tAttempt < tMaxRetry; tAttempt++) {
+      ConnectSta();
+      uint32_t tStart = millis();
+      while (mWiFi->status() != WL_CONNECTED && (millis() - tStart) < WIFI_CONNECT_TIMEOUT_MS) {
+        vTaskDelay(DELAY_HALF_SEC_MS / portTICK_PERIOD_MS);
+      }
+      if (mWiFi->status() == WL_CONNECTED) {
+        xLOG("STA connected successfully @ attempt %u/%u", tAttempt + 1, tMaxRetry);
+        return true;
+      }
+      if (tAttempt < tMaxRetry - 1) {
+        xLOG("STA attempt %u/%u failed, retrying in %lums...", tAttempt + 1, tMaxRetry, tRetryDelayMs);
+        vTaskDelay(pdMS_TO_TICKS(tRetryDelayMs));
+      }
+    }
+    xLOG("STA connect failed after %u attempts → consider fallback to AP", tMaxRetry);
+    return false;
+  }
+
+  bool Connection_::TryConnectApSta() {
+    String tApSsid = mCfg.Connection.FallbackApSsid.length() ? mCfg.Connection.FallbackApSsid : mCfg.Connection.ApSsid;
+    String tApPassword = mCfg.Connection.FallbackApPassword.length() ? mCfg.Connection.FallbackApPassword : mCfg.Connection.ApPassword;
+    String tApIpStr = mCfg.Connection.FallbackApIp.length() ? mCfg.Connection.FallbackApIp : mCfg.Connection.ApIp;
+    String tApGatewayStr = mCfg.Connection.FallbackApGateway.length() ? mCfg.Connection.FallbackApGateway : mCfg.Connection.ApGateway;
+    String tApSubnetStr = mCfg.Connection.FallbackApSubnet.length() ? mCfg.Connection.FallbackApSubnet : mCfg.Connection.ApSubnet;
+
+    IPAddress tApIp, tApGateway, tApSubnet;
+    tApIp.fromString(tApIpStr.c_str());
+    tApGateway.fromString(tApGatewayStr.c_str());
+    tApSubnet.fromString(tApSubnetStr.c_str());
+
+    mWiFi->mode(WIFI_AP_STA);
+    mWiFi->persistent(false);
+    mWiFi->softAPConfig(tApIp, tApGateway, tApSubnet);
+    bool tApStarted = mWiFi->softAP(tApSsid.c_str(), tApPassword.c_str());
+    if (!tApStarted) {
+      xLOG("AP+STA maintenance: AP start failed");
+      return false;
+    }
+
+    if (mCfg.Connection.StaIpEnable) {
+      IPAddress tIp, tGateway, tSubnet, tDns1, tDns2;
+      tIp.fromString(mCfg.Connection.StaIp.c_str());
+      tGateway.fromString(mCfg.Connection.StaGateway.c_str());
+      tSubnet.fromString(mCfg.Connection.StaSubnet.c_str());
+      tDns1.fromString(mCfg.Connection.StaPrimaryDns.c_str());
+      tDns2.fromString(mCfg.Connection.StaSecondaryDns.c_str());
+      mWiFi->config(tIp, tGateway, tSubnet, tDns1, tDns2);
+    }
+    mWiFi->hostname(mCfg.Connection.MdnsName);
+
+    if (mCfg.Connection.StaSsid.length()) {
+      mWiFi->begin(mCfg.Connection.StaSsid.c_str(), mCfg.Connection.StaPassword.c_str());
+      uint32_t tStart = millis();
+      while (mWiFi->status() != WL_CONNECTED && (millis() - tStart) < WIFI_CONNECT_TIMEOUT_MS) {
+        vTaskDelay(DELAY_HALF_SEC_MS / portTICK_PERIOD_MS);
+      }
+      if (mWiFi->status() == WL_CONNECTED) {
+        xLOG("AP+STA maintenance: STA connected while AP is active");
+      } else {
+        xLOG("AP+STA maintenance: STA not connected, AP remains active");
+      }
+    } else {
+      xLOG("AP+STA maintenance: STA SSID empty, AP-only fallback behavior");
+    }
+
+    PrintConnectionInfo();
+    return true;
+  }
+
+  void Connection_::SwitchToFallbackApMode() {
+    if (mCfg.Connection.FallbackApSsid.length() == 0) {
+      xLOG("Fallback AP SSID not configured, using default AP settings");
+      SetupAp();
+      return;
+    }
+    xLOG("Switching to fallback AP mode → %s", mCfg.Connection.FallbackApSsid.c_str());
+    IPAddress tIp, tGateway, tSubnet;
+    tIp.fromString(mCfg.Connection.FallbackApIp.c_str());
+    tGateway.fromString(mCfg.Connection.FallbackApGateway.c_str());
+    tSubnet.fromString(mCfg.Connection.FallbackApSubnet.c_str());
+    mWiFi->mode(WIFI_AP);
+    mWiFi->persistent(false);
+    mWiFi->softAPConfig(tIp, tGateway, tSubnet);
+    mWiFi->softAP(mCfg.Connection.FallbackApSsid.c_str(), mCfg.Connection.FallbackApPassword.c_str());
+    xLOG("Fallback AP activated → %s @ %s", mCfg.Connection.FallbackApSsid.c_str(), mCfg.Connection.FallbackApIp.c_str());
     PrintConnectionInfo();
   }
 
@@ -261,7 +358,7 @@ namespace App {
   void Connection_::BootstrapVault() {
     Guard tLock;
     NTP.Init();
-    NTP.SyncSystemTime();
+    NTP.SyncSystemTimeIfNeeded();
     NTP.PrintDateTimeInfo();
     NTP.End();
   }

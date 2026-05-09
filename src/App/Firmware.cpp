@@ -326,11 +326,8 @@ namespace App {
         continue;
       }
       bool tDeleted = false;
-      if (tEntries[i].isDir) {
-        tDeleted = STG.RemoveDir(tPath);
-      } else {
-        tDeleted = STG.DeleteFile(tPath);
-      }
+      if (tEntries[i].isDir) tDeleted = STG.RemoveDir(tPath);
+      else tDeleted = STG.DeleteFile(tPath);
       if (!tDeleted) {
         tAllOk = false;
         if (tLog) {

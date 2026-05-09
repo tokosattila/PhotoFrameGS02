@@ -1,22 +1,13 @@
-/**
- * @file RTCTime.cpp
- * @brief Unit tests for RTC time functions (pure C++ logic, no hardware)
- */
-
 #include <unity.h>
 #include <cstring>
 #include <cstdint>
 #include <cstdio>
 #include <ctime>
 
-// ============================================================================
-// Standalone implementations for testing (extracted from RTCTime.cpp)
-// ============================================================================
-
 static const unsigned long SECONDS_PER_MINUTE = 60;
 static const unsigned long SECONDS_PER_HOUR = 3600;
 static const unsigned long SECONDS_PER_DAY = 86400;
-static const unsigned long MIN_VALID_EPOCH = 1735689600UL; // 2025-01-01 00:00:00 UTC
+static const unsigned long MIN_VALID_EPOCH = 1735689600UL;
 
 struct SRTCDateTime {
   uint16_t Year;
@@ -85,10 +76,6 @@ void FormatTime(const SRTCDateTime &tDateTime, char *tBuffer, size_t tLength) {
   snprintf(tBuffer, tLength, "%02d:%02d:%02d", tDateTime.Hour, tDateTime.Minute, tDateTime.Second);
 }
 
-// ============================================================================
-// BCD Conversion Tests
-// ============================================================================
-
 void test_BcdToDec_zero() {
   TEST_ASSERT_EQUAL_UINT8(0, BcdToDec(0x00));
 }
@@ -127,10 +114,6 @@ void test_BcdDec_roundtrip() {
   }
 }
 
-// ============================================================================
-// GetDaysInMonth Tests
-// ============================================================================
-
 void test_GetDaysInMonth_january() {
   TEST_ASSERT_EQUAL_UINT8(31, GetDaysInMonth(1, 2024));
   TEST_ASSERT_EQUAL_UINT8(31, GetDaysInMonth(1, 2025));
@@ -159,42 +142,30 @@ void test_GetDaysInMonth_invalid() {
   TEST_ASSERT_EQUAL_UINT8(0, GetDaysInMonth(13, 2024));
 }
 
-// ============================================================================
-// DateTimeToEpoch Tests
-// ============================================================================
-
 void test_DateTimeToEpoch_unix_epoch() {
   SRTCDateTime dt = {1970, 1, 1, 0, 0, 0, 0};
   TEST_ASSERT_EQUAL_UINT32(0, DateTimeToEpoch(dt));
 }
 
 void test_DateTimeToEpoch_known_date() {
-  // 2024-01-01 00:00:00 UTC = 1704067200
   SRTCDateTime dt = {2024, 1, 1, 0, 0, 0, 0};
   TEST_ASSERT_EQUAL_UINT32(1704067200, DateTimeToEpoch(dt));
 }
 
 void test_DateTimeToEpoch_with_time() {
-  // 2024-01-01 12:30:45 UTC = 1704067200 + 12*3600 + 30*60 + 45 = 1704112245
   SRTCDateTime dt = {2024, 1, 1, 12, 30, 45, 0};
   TEST_ASSERT_EQUAL_UINT32(1704112245, DateTimeToEpoch(dt));
 }
 
 void test_DateTimeToEpoch_leap_year() {
-  // 2024-02-29 00:00:00 UTC = 1709164800
   SRTCDateTime dt = {2024, 2, 29, 0, 0, 0, 0};
   TEST_ASSERT_EQUAL_UINT32(1709164800, DateTimeToEpoch(dt));
 }
 
 void test_DateTimeToEpoch_2026() {
-  // 2026-01-01 00:00:00 UTC = 1767225600
   SRTCDateTime dt = {2026, 1, 1, 0, 0, 0, 0};
   TEST_ASSERT_EQUAL_UINT32(1767225600, DateTimeToEpoch(dt));
 }
-
-// ============================================================================
-// IsValidDateTime Tests
-// ============================================================================
 
 void test_IsValidDateTime_valid() {
   SRTCDateTime dt = {2026, 6, 15, 12, 30, 45, 0};
@@ -220,7 +191,7 @@ void test_IsValidDateTime_invalid_month() {
 
 void test_IsValidDateTime_invalid_day() {
   SRTCDateTime dt1 = {2026, 6, 0, 12, 30, 45, 0};
-  SRTCDateTime dt2 = {2026, 6, 31, 12, 30, 45, 0}; // June has 30 days
+  SRTCDateTime dt2 = {2026, 6, 31, 12, 30, 45, 0};
   TEST_ASSERT_FALSE(IsValidDateTime(dt1));
   TEST_ASSERT_FALSE(IsValidDateTime(dt2));
 }
@@ -250,24 +221,16 @@ void test_IsValidDateTime_invalid_second() {
   TEST_ASSERT_FALSE(IsValidDateTime(dt));
 }
 
-// ============================================================================
-// IsValidEpoch Tests
-// ============================================================================
-
 void test_IsValidEpoch_valid() {
-  TEST_ASSERT_TRUE(IsValidEpoch(1767225600)); // 2026-01-01
+  TEST_ASSERT_TRUE(IsValidEpoch(1767225600));
   TEST_ASSERT_TRUE(IsValidEpoch(MIN_VALID_EPOCH));
 }
 
 void test_IsValidEpoch_too_old() {
   TEST_ASSERT_FALSE(IsValidEpoch(0));
-  TEST_ASSERT_FALSE(IsValidEpoch(1704067200)); // 2024-01-01
+  TEST_ASSERT_FALSE(IsValidEpoch(1704067200));
   TEST_ASSERT_FALSE(IsValidEpoch(MIN_VALID_EPOCH - 1));
 }
-
-// ============================================================================
-// Format Tests
-// ============================================================================
 
 void test_FormatDate() {
   SRTCDateTime dt = {2026, 1, 12, 15, 30, 45, 0};
@@ -297,17 +260,11 @@ void test_FormatTime_midnight() {
   TEST_ASSERT_EQUAL_STRING("00:00:00", buffer);
 }
 
-// ============================================================================
-// Test Runner
-// ============================================================================
-
 void setUp(void) {}
 void tearDown(void) {}
 
 int main(int argc, char **argv) {
   UNITY_BEGIN();
-  
-  // BCD Conversion tests
   RUN_TEST(test_BcdToDec_zero);
   RUN_TEST(test_BcdToDec_single_digit);
   RUN_TEST(test_BcdToDec_double_digit);
@@ -315,23 +272,17 @@ int main(int argc, char **argv) {
   RUN_TEST(test_DecToBcd_single_digit);
   RUN_TEST(test_DecToBcd_double_digit);
   RUN_TEST(test_BcdDec_roundtrip);
-  
-  // GetDaysInMonth tests
   RUN_TEST(test_GetDaysInMonth_january);
   RUN_TEST(test_GetDaysInMonth_february_normal);
   RUN_TEST(test_GetDaysInMonth_february_leap);
   RUN_TEST(test_GetDaysInMonth_april);
   RUN_TEST(test_GetDaysInMonth_december);
   RUN_TEST(test_GetDaysInMonth_invalid);
-  
-  // DateTimeToEpoch tests
   RUN_TEST(test_DateTimeToEpoch_unix_epoch);
   RUN_TEST(test_DateTimeToEpoch_known_date);
   RUN_TEST(test_DateTimeToEpoch_with_time);
   RUN_TEST(test_DateTimeToEpoch_leap_year);
   RUN_TEST(test_DateTimeToEpoch_2026);
-  
-  // IsValidDateTime tests
   RUN_TEST(test_IsValidDateTime_valid);
   RUN_TEST(test_IsValidDateTime_year_too_low);
   RUN_TEST(test_IsValidDateTime_year_too_high);
@@ -342,16 +293,13 @@ int main(int argc, char **argv) {
   RUN_TEST(test_IsValidDateTime_invalid_hour);
   RUN_TEST(test_IsValidDateTime_invalid_minute);
   RUN_TEST(test_IsValidDateTime_invalid_second);
-  
-  // IsValidEpoch tests
   RUN_TEST(test_IsValidEpoch_valid);
   RUN_TEST(test_IsValidEpoch_too_old);
-  
-  // Format tests
   RUN_TEST(test_FormatDate);
   RUN_TEST(test_FormatTime);
   RUN_TEST(test_FormatDate_single_digits);
   RUN_TEST(test_FormatTime_midnight);
-  
+
   return UNITY_END();
 }
+

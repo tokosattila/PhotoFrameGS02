@@ -111,7 +111,7 @@ namespace App {
         // Treat user input as LOCAL time, store RTC as UTC internally.
         unsigned long tLocalEpoch = 0;
         {
-          // Same algorithm as RTCTime_::DateTimeToEpoch (duplicated here to avoid changing RTCTime_ API)
+          // Same algorithm as RTC_::DateTimeToEpoch (duplicated here to avoid changing RTC_ API)
           unsigned long tDays = 0;
           for (uint16_t y = 1970; y < tDateTime.Year; y++) {
             tDays += (y % 4 == 0 && (y % 100 != 0 || y % 400 == 0)) ? 366 : 365;
@@ -158,6 +158,11 @@ namespace App {
         }
         tClient.print(F("\r\n  Connecting to NTP server...\r\n"));
         NTP.Init();
+        if (!NTP.SyncSystemTime()) {
+          tClient.print(F(COLOR_RED "  NTP sync failed!\r\n\r\n" COLOR_WHITE));
+          NTP.End();
+          return false;
+        }
         tClient.print(F("  Syncing RTC from NTP...\r\n"));
         if (RTC.SyncFromNTP()) {
           char tBuffer[16];

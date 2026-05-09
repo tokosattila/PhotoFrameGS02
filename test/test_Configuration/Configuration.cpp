@@ -1,28 +1,17 @@
-/**
- * @file test_configuration.cpp
- * @brief Unit tests for Configuration INI parsing (pure C++ logic, no hardware)
- */
-
 #include <unity.h>
 #include <cstring>
 #include <cstdint>
 #include <cstdlib>
 
-// ============================================================================
-// Standalone implementations for testing (extracted from Configuration.cpp)
-// ============================================================================
-
 void TrimValue(char *tValue) {
   if (!tValue || tValue[0] == '\0') return;
   size_t tLength = strlen(tValue);
-  // Trim trailing whitespace
-  while (tLength > 0 && (tValue[tLength - 1] == ' ' || tValue[tLength - 1] == '\t' || 
+  while (tLength > 0 && (tValue[tLength - 1] == ' ' || tValue[tLength - 1] == '\t' ||
          tValue[tLength - 1] == '\r' || tValue[tLength - 1] == '\n')) {
     tValue[--tLength] = '\0';
   }
-  // Trim leading whitespace
   size_t tStart = 0;
-  while (tValue[tStart] == ' ' || tValue[tStart] == '\t' || 
+  while (tValue[tStart] == ' ' || tValue[tStart] == '\t' ||
          tValue[tStart] == '\r' || tValue[tStart] == '\n') {
     tStart++;
   }
@@ -60,24 +49,25 @@ bool IsPublicConfigKey(const char *tKey) {
   if (!tKey || !tKey[0]) return false;
   static const char *kPublicKeys[] = {
     "appname", "version", "jpg_brightness", "jpg_contrast", "jpg_gamma", "image_file",
-    "ntp_server", "ntp_port", "ntp_gmt_offset", "ntp_update",
+    "ntp_server", "ntp_port", "ntp_gmt_offset", "ntp_daylight_offset", "ntp_timezone_label", "ntp_update",
+    "ntp_low_power_sync_enable", "ntp_low_power_sync_interval", "ntp_last_successful_sync",
     "ap_enable", "ap_ssid", "ap_password", "ap_ip", "ap_gateway", "ap_subnet",
-    "sta_ssid", "sta_password", "sta_enable", "sta_ip", "sta_gateway", "sta_subnet", "sta_dns1", "sta_dns2",
+    "fallback_ap_ssid", "fallback_ap_password", "fallback_ap_ip", "fallback_ap_gateway", "fallback_ap_subnet",
+    "sta_ssid", "sta_password", "sta_auto_fallback", "sta_max_retry", "sta_retry_delay_ms",
+    "sta_enable", "sta_ip", "sta_gateway", "sta_subnet", "sta_dns1", "sta_dns2",
     "mdns_enable", "mdns_hostname",
     "wake_up", "wake_up_hour",
     "telnet_enable", "telnet_port", "telnet_username", "telnet_password", "telnet_session",
     "ftp_enable", "ftp_port", "ftp_username", "ftp_password",
-    "default_file_system", "fallback_enabled"
+    "default_file_system", "fallback_enabled",
+    "config_file", "battery_pin", "setting_pin", "reset_pin",
+    "display_width", "display_height", "image_ext", "images_dir", "wake_pin"
   };
   for (size_t i = 0; i < sizeof(kPublicKeys) / sizeof(kPublicKeys[0]); i++) {
     if (strcmp(kPublicKeys[i], tKey) == 0) return true;
   }
   return false;
 }
-
-// ============================================================================
-// TrimValue Tests
-// ============================================================================
 
 void test_TrimValue_no_whitespace() {
   char buffer[64] = "hello";
@@ -134,13 +124,9 @@ void test_TrimValue_only_whitespace() {
 }
 
 void test_TrimValue_null_input() {
-  TrimValue(nullptr);  // Should not crash
+  TrimValue(nullptr);
   TEST_PASS();
 }
-
-// ============================================================================
-// ParseLine Tests - Comments and Empty Lines
-// ============================================================================
 
 void test_ParseLine_empty_line() {
   char line[128] = "";
@@ -174,10 +160,6 @@ void test_ParseLine_whitespace_only() {
   TEST_ASSERT_FALSE(ParseLine(line, section, key, value));
 }
 
-// ============================================================================
-// ParseLine Tests - Sections
-// ============================================================================
-
 void test_ParseLine_section() {
   char line[128] = "[device]";
   char section[32] = "";
@@ -204,10 +186,6 @@ void test_ParseLine_section_preserves_previous() {
   ParseLine(line, section, key, value);
   TEST_ASSERT_EQUAL_STRING("new_section", section);
 }
-
-// ============================================================================
-// ParseLine Tests - Key-Value Pairs
-// ============================================================================
 
 void test_ParseLine_simple_keyvalue() {
   char line[128] = "appname = Photo Frame";
@@ -256,7 +234,7 @@ void test_ParseLine_value_with_equals() {
   char value[128] = "";
   TEST_ASSERT_TRUE(ParseLine(line, section, key, value));
   TEST_ASSERT_EQUAL_STRING("formula", key);
-  TEST_ASSERT_EQUAL_STRING("a=b+c", value);  // Value contains everything after first =
+  TEST_ASSERT_EQUAL_STRING("a=b+c", value);
 }
 
 void test_ParseLine_numeric_value() {
@@ -309,10 +287,6 @@ void test_ParseLine_ssid_with_spaces() {
   TEST_ASSERT_EQUAL_STRING("My WiFi Network", value);
 }
 
-// ============================================================================
-// ParseLine Tests - Null and Edge Cases
-// ============================================================================
-
 void test_ParseLine_null_input() {
   char section[32] = "";
   char key[32] = "";
@@ -328,23 +302,68 @@ void test_ParseLine_no_equals_sign() {
   TEST_ASSERT_FALSE(ParseLine(line, section, key, value));
 }
 
+void test_ParseLine_fallback_section_keyvalue() {
+  char line[128] = "fallback_ap_ssid = PhotoFrameGS02-Fallback";
+  char section[32] = "ap mode fallback";
+  char key[32] = "";
+  char value[128] = "";
+  TEST_ASSERT_TRUE(ParseLine(line, section, key, value));
+  TEST_ASSERT_EQUAL_STRING("fallback_ap_ssid", key);
+  TEST_ASSERT_EQUAL_STRING("PhotoFrameGS02-Fallback", value);
+}
+
+void test_ParseLine_ntp_extended_keyvalue() {
+  char line[128] = "ntp_low_power_sync_interval = 604800";
+  char section[32] = "ntp";
+  char key[32] = "";
+  char value[128] = "";
+  TEST_ASSERT_TRUE(ParseLine(line, section, key, value));
+  TEST_ASSERT_EQUAL_STRING("ntp_low_power_sync_interval", key);
+  TEST_ASSERT_EQUAL_STRING("604800", value);
+}
+
 void test_PublicConfigKeys_image_updated_at_not_exposed() {
   TEST_ASSERT_FALSE(IsPublicConfigKey("image_updated_at"));
   TEST_ASSERT_FALSE(IsPublicConfigKey("dsp.file.upd"));
   TEST_ASSERT_TRUE(IsPublicConfigKey("image_file"));
 }
 
-// ============================================================================
-// Test Runner
-// ============================================================================
+void test_PublicConfigKeys_new_ntp_keys_exposed() {
+  TEST_ASSERT_TRUE(IsPublicConfigKey("ntp_daylight_offset"));
+  TEST_ASSERT_TRUE(IsPublicConfigKey("ntp_timezone_label"));
+  TEST_ASSERT_TRUE(IsPublicConfigKey("ntp_low_power_sync_enable"));
+  TEST_ASSERT_TRUE(IsPublicConfigKey("ntp_low_power_sync_interval"));
+  TEST_ASSERT_TRUE(IsPublicConfigKey("ntp_last_successful_sync"));
+}
+
+void test_PublicConfigKeys_sta_fallback_keys_exposed() {
+  TEST_ASSERT_TRUE(IsPublicConfigKey("fallback_ap_ssid"));
+  TEST_ASSERT_TRUE(IsPublicConfigKey("fallback_ap_password"));
+  TEST_ASSERT_TRUE(IsPublicConfigKey("fallback_ap_ip"));
+  TEST_ASSERT_TRUE(IsPublicConfigKey("fallback_ap_gateway"));
+  TEST_ASSERT_TRUE(IsPublicConfigKey("fallback_ap_subnet"));
+  TEST_ASSERT_TRUE(IsPublicConfigKey("sta_auto_fallback"));
+  TEST_ASSERT_TRUE(IsPublicConfigKey("sta_max_retry"));
+  TEST_ASSERT_TRUE(IsPublicConfigKey("sta_retry_delay_ms"));
+}
+
+void test_PublicConfigKeys_static_display_and_device_keys_exposed() {
+  TEST_ASSERT_TRUE(IsPublicConfigKey("config_file"));
+  TEST_ASSERT_TRUE(IsPublicConfigKey("battery_pin"));
+  TEST_ASSERT_TRUE(IsPublicConfigKey("setting_pin"));
+  TEST_ASSERT_TRUE(IsPublicConfigKey("reset_pin"));
+  TEST_ASSERT_TRUE(IsPublicConfigKey("display_width"));
+  TEST_ASSERT_TRUE(IsPublicConfigKey("display_height"));
+  TEST_ASSERT_TRUE(IsPublicConfigKey("image_ext"));
+  TEST_ASSERT_TRUE(IsPublicConfigKey("images_dir"));
+  TEST_ASSERT_TRUE(IsPublicConfigKey("wake_pin"));
+}
 
 void setUp(void) {}
 void tearDown(void) {}
 
 int main(int argc, char **argv) {
   UNITY_BEGIN();
-  
-  // TrimValue tests
   RUN_TEST(test_TrimValue_no_whitespace);
   RUN_TEST(test_TrimValue_leading_spaces);
   RUN_TEST(test_TrimValue_trailing_spaces);
@@ -355,19 +374,13 @@ int main(int argc, char **argv) {
   RUN_TEST(test_TrimValue_empty_string);
   RUN_TEST(test_TrimValue_only_whitespace);
   RUN_TEST(test_TrimValue_null_input);
-  
-  // ParseLine - Comments/Empty
   RUN_TEST(test_ParseLine_empty_line);
   RUN_TEST(test_ParseLine_comment_hash);
   RUN_TEST(test_ParseLine_comment_semicolon);
   RUN_TEST(test_ParseLine_whitespace_only);
-  
-  // ParseLine - Sections
   RUN_TEST(test_ParseLine_section);
   RUN_TEST(test_ParseLine_section_with_spaces);
   RUN_TEST(test_ParseLine_section_preserves_previous);
-  
-  // ParseLine - Key-Value
   RUN_TEST(test_ParseLine_simple_keyvalue);
   RUN_TEST(test_ParseLine_keyvalue_no_spaces);
   RUN_TEST(test_ParseLine_keyvalue_extra_spaces);
@@ -378,11 +391,15 @@ int main(int argc, char **argv) {
   RUN_TEST(test_ParseLine_boolean_false);
   RUN_TEST(test_ParseLine_ip_address);
   RUN_TEST(test_ParseLine_ssid_with_spaces);
-  
-  // ParseLine - Edge cases
   RUN_TEST(test_ParseLine_null_input);
   RUN_TEST(test_ParseLine_no_equals_sign);
+  RUN_TEST(test_ParseLine_fallback_section_keyvalue);
+  RUN_TEST(test_ParseLine_ntp_extended_keyvalue);
   RUN_TEST(test_PublicConfigKeys_image_updated_at_not_exposed);
-  
+  RUN_TEST(test_PublicConfigKeys_new_ntp_keys_exposed);
+  RUN_TEST(test_PublicConfigKeys_sta_fallback_keys_exposed);
+  RUN_TEST(test_PublicConfigKeys_static_display_and_device_keys_exposed);
+
   return UNITY_END();
 }
+

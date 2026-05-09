@@ -20,6 +20,7 @@ namespace App {
       bool mExitRequested = false;
       bool mWaitingPassword = false;
       using FConfirmCallback = std::function<void(bool tConfirmed, WiFiClient &tClient)>;
+      using FActivityCallback = std::function<void()>;
       bool Init(bool tVerbose = false);
       void End();
       void ReloadConfig();
@@ -28,6 +29,7 @@ namespace App {
       void SaveSessionTimestamp();
       void ClearSession();
       void RequestConfirmation(const char *tPrompt, FConfirmCallback tCallback);
+      void ActivityCallback(FActivityCallback tCallback);
     private:
       Telnet_();
       Telnet_(const Telnet_&) = delete;
@@ -38,6 +40,7 @@ namespace App {
       mutable SemaphoreHandle_t mMutex = nullptr;
       FConnectionCallback mCallback = nullptr;
       FConfirmCallback mConfirmCallback = nullptr;
+      FActivityCallback mActivityCallback = nullptr;
       volatile bool mEnabled = false;
       bool mAuthRequired = true;
       uint32_t mAuthTimestamp = 0;
@@ -61,6 +64,7 @@ namespace App {
       const char *GetCurrentPrompt();
       void WritePrompt();   
       bool ParseYesNo(const char *tInput, bool &tValue) const;
+        void NotifyActivity();
   };
 
 }

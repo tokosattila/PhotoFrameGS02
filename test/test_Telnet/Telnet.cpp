@@ -1,16 +1,7 @@
-/**
- * @file Telnet.cpp
- * @brief Unit tests for Telnet helper functions (pure C++ logic, no hardware)
- */
-
 #include <unity.h>
 #include <cstring>
 #include <cstdint>
 #include <cctype>
-
-// ============================================================================
-// Standalone implementations for testing (extracted from Telnet.cpp)
-// ============================================================================
 
 bool IfHaveArguments(const char *tInput) {
   for (size_t i = 0; i < strlen(tInput); i++) {
@@ -18,8 +9,6 @@ bool IfHaveArguments(const char *tInput) {
   }
   return false;
 }
-
-// Command parsing helper
 void ParseCommandName(const char *tInput, char *tCmdName, size_t tCmdNameSize) {
   if (!tInput || !tCmdName || tCmdNameSize == 0) return;
   strncpy(tCmdName, tInput, tCmdNameSize - 1);
@@ -27,22 +16,15 @@ void ParseCommandName(const char *tInput, char *tCmdName, size_t tCmdNameSize) {
   char *tSpace = strchr(tCmdName, ' ');
   if (tSpace) *tSpace = '\0';
 }
-
-// Get arguments after command
 const char *GetArguments(const char *tInput) {
   if (!tInput) return "";
   const char *tSpace = strchr(tInput, ' ');
   if (tSpace) {
-    // Skip leading spaces in arguments
     while (*tSpace == ' ') tSpace++;
     return tSpace;
   }
   return "";
 }
-
-// ============================================================================
-// IfHaveArguments Tests
-// ============================================================================
 
 void test_IfHaveArguments_no_args() {
   TEST_ASSERT_FALSE(IfHaveArguments("help"));
@@ -74,10 +56,6 @@ void test_IfHaveArguments_trailing_space() {
   TEST_ASSERT_TRUE(IfHaveArguments("help "));
 }
 
-// ============================================================================
-// ParseCommandName Tests
-// ============================================================================
-
 void test_ParseCommandName_simple() {
   char cmd[32];
   ParseCommandName("help", cmd, sizeof(cmd));
@@ -105,18 +83,14 @@ void test_ParseCommandName_empty() {
 void test_ParseCommandName_null() {
   char cmd[32] = "initial";
   ParseCommandName(nullptr, cmd, sizeof(cmd));
-  TEST_ASSERT_EQUAL_STRING("initial", cmd);  // unchanged
+  TEST_ASSERT_EQUAL_STRING("initial", cmd);
 }
 
 void test_ParseCommandName_small_buffer() {
   char cmd[4];
   ParseCommandName("longcommand args", cmd, sizeof(cmd));
-  TEST_ASSERT_EQUAL_STRING("lon", cmd);  // truncated
+  TEST_ASSERT_EQUAL_STRING("lon", cmd);
 }
-
-// ============================================================================
-// GetArguments Tests
-// ============================================================================
 
 void test_GetArguments_no_args() {
   const char *args = GetArguments("help");
@@ -148,39 +122,30 @@ void test_GetArguments_empty() {
   TEST_ASSERT_EQUAL_STRING("", args);
 }
 
-// ============================================================================
-// Test Runner
-// ============================================================================
-
 void setUp(void) {}
 void tearDown(void) {}
 
 int main(int argc, char **argv) {
   UNITY_BEGIN();
-  
-  // IfHaveArguments tests
   RUN_TEST(test_IfHaveArguments_no_args);
   RUN_TEST(test_IfHaveArguments_with_space);
   RUN_TEST(test_IfHaveArguments_only_space);
   RUN_TEST(test_IfHaveArguments_tab);
   RUN_TEST(test_IfHaveArguments_empty);
   RUN_TEST(test_IfHaveArguments_trailing_space);
-  
-  // ParseCommandName tests
   RUN_TEST(test_ParseCommandName_simple);
   RUN_TEST(test_ParseCommandName_with_args);
   RUN_TEST(test_ParseCommandName_multiple_args);
   RUN_TEST(test_ParseCommandName_empty);
   RUN_TEST(test_ParseCommandName_null);
   RUN_TEST(test_ParseCommandName_small_buffer);
-  
-  // GetArguments tests
   RUN_TEST(test_GetArguments_no_args);
   RUN_TEST(test_GetArguments_single_arg);
   RUN_TEST(test_GetArguments_multiple_args);
   RUN_TEST(test_GetArguments_extra_spaces);
   RUN_TEST(test_GetArguments_null);
   RUN_TEST(test_GetArguments_empty);
-  
+
   return UNITY_END();
 }
+

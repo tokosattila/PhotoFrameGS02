@@ -1,5 +1,5 @@
-#ifndef RTC_TIME_H
-#define RTC_TIME_H
+#ifndef RTC_H
+#define RTC_H
 
 #include <App/Global.h>
 #include <Wire.h>
@@ -16,12 +16,12 @@ namespace App {
     uint16_t Year = 2026;
   };
 
-  class RTCTime_ {
+  class RTC_ {
     DEFINE_TAG("RTC");
-    friend class AutoGuard<RTCTime_>;
+    friend class AutoGuard<RTC_>;
     public:
-      using Guard = AutoGuard<RTCTime_>;
-      static RTCTime_ &Instance();
+      using Guard = AutoGuard<RTC_>;
+      static RTC_ &Instance();
       bool Init(bool tVerbose = false);
       void End();
       bool IsAvailable() const { return mAvailable; }
@@ -37,19 +37,25 @@ namespace App {
       void GetDateTime(char *tBuffer, size_t tSize);
       void PrintInfo();
     private:
-      RTCTime_();
-      RTCTime_(const RTCTime_&) = delete;
-      RTCTime_ &operator=(const RTCTime_&) = delete;
-      ~RTCTime_();
+      RTC_();
+      RTC_(const RTC_&) = delete;
+      RTC_ &operator=(const RTC_&) = delete;
+      ~RTC_();
       TwoWire mWire = TwoWire(0);
       const uint8_t mSdaPin = RTC_SDA_PIN;
       const uint8_t mSclPin = RTC_SCL_PIN;
       const uint8_t mAddress = RTC_ADDRESS;
       mutable SemaphoreHandle_t mMutex = nullptr;
       bool mAvailable = false;
+      static constexpr uint8_t I2C_RETRY_COUNT = 3;
+      static constexpr uint32_t I2C_RETRY_DELAY_MS = 5;
       static void Lock();
       static void Unlock();
       bool TryI2C();
+      bool ReadDateTimeRaw(SRTCDateTime &tDateTime, bool &tVLFlagSet);
+      bool ReadDateTimeWithRetry(SRTCDateTime &tDateTime);
+      bool WriteDateTimeWithRetry(const SRTCDateTime &tDateTime);
+      bool IsDateTimePlausible(const SRTCDateTime &tDateTime);
       static uint8_t BcdToDec(uint8_t tBcd);
       static uint8_t DecToBcd(uint8_t tDec);
       static unsigned long DateTimeToEpoch(const SRTCDateTime &tDateTime);
