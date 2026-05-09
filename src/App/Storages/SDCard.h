@@ -34,7 +34,7 @@ namespace App {
       const char *GetNextFile(const char *tCurrentFilename, const char *tDir = IMAGES_DIR, const char *tExt = ".jpg");
       static std::vector<const char *> GetFilesInDir(const char *tDir, const char *tExt);
       void BootstrapVault(bool tVerbose = false);
-      void PrintListDir();
+      void PrintListDir(size_t tMaxLines = 15);
       void End();
       size_t GetListPos() { return mListPos; };
       uint64_t TotalBytes();

@@ -42,8 +42,13 @@ namespace App {
     TryInitSDCard(false);
     SelectActiveStorage(tVerbose);
     if (tVerbose && mMounted) {
-      if (mActiveType == EFileSystemType::SDCard) SDC.BootstrapVault(true);
-      else LFS.BootstrapVault(true);
+      #if !PRODUCTION
+        if (mSDCardAvailable) SDC.BootstrapVault(true);
+        if (mLittleFSAvailable) LFS.BootstrapVault(true);
+      #else
+        if (mActiveType == EFileSystemType::SDCard) SDC.BootstrapVault(true);
+        else LFS.BootstrapVault(true);
+      #endif
       char tUsedBuffer[16], tTotalBuffer[16];
       UTL.ByteToReadableSize(UsedBytes(), tUsedBuffer, sizeof(tUsedBuffer));
       UTL.ByteToReadableSize(TotalBytes(), tTotalBuffer, sizeof(tTotalBuffer));
