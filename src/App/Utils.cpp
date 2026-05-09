@@ -185,20 +185,20 @@ namespace App {
       if (esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_INITED) esp_bt_controller_deinit();
       esp_bt_controller_mem_release(ESP_BT_MODE_BTDM);
     }
-    xLOG("Bluetooth → disabled");
+    xLOG("Bluetooth disabled");
   }
 
   void Utils_::DisableTouchPad() {
     Guard tLock;
     touch_pad_init();
     touch_pad_deinit();
-    xLOG("Touch Pad → disabled");
+    xLOG("Touch Pad disabled");
   }
 
   void Utils_::DisableBrownout() {
     Guard tLock;
     WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
-    xLOG("Brownout detector → disabled");
+    xLOG("Brownout detector disabled");
   }
 
   void Utils_::ByteToReadableSize(uint64_t tBytes, char *tBuffer, size_t tLength) {
@@ -665,7 +665,7 @@ namespace App {
   }  
 
   void Utils_::SleepLowBattery() {
-    xLOG("Low battery → entering deep sleep..\n\n");
+    xLOG("Low battery entering deep sleep..\n\n");
     esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
     esp_deep_sleep_start();
   }

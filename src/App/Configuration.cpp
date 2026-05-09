@@ -394,7 +394,7 @@ namespace App {
       tSuccess = (tBytesWritten > 0) || (tSaved == String(tValue));
       if (tSuccess) tSuccess = mConfig.putULong(kNvsDisplayImageUpdatedAt, tEpoch);
     });
-    if (!tSuccess) xLOG("Config → failed to save image name: %s", (tValue && tValue[0]) ? tValue : "<empty>");
+    if (!tSuccess) xLOG("Failed to save image name → %s", (tValue && tValue[0]) ? tValue : "<empty>");
     return tSuccess;
   }
 
@@ -411,7 +411,7 @@ namespace App {
     AccessConfig(false, [&]() {
       tSuccess = mConfig.putULong(kNvsTelnetAuthSession, tValue);
     });
-    if (!tSuccess) xLOG("Failed to save session: %lu", tValue);
+    if (!tSuccess) xLOG("Failed to save session → %lu", tValue);
     return tSuccess;
   }
 
@@ -792,7 +792,7 @@ namespace App {
       tSuccess = tSuccess && mConfig.putString(kNvsFtpPassword, tConfig.Ftp.Password);
     });
     if (tSuccess) xLOG("Config saved successfully!");
-    else xLOG("Config save failed → some values may not have been written!");
+    else xLOG("Failed save, some values may not have been written!");
     return tSuccess;
   }
 

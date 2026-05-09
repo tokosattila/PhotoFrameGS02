@@ -119,7 +119,7 @@ class Application {
     }
 
     void SaveNextImage(const char *tNextImage) {
-      if (!CFG.SaveImageName(tNextImage)) xLOG("Failed to save → next image name");
+      if (!CFG.SaveImageName(tNextImage)) xLOG("Failed to save next image name");
       else xLOG("Next image → %s", tNextImage);
     }
 
@@ -147,7 +147,7 @@ class Application {
 
     void PhotoFrameMode() {
       ReloadConfig();
-      UTL.PrintInfo("Device  → starts in Photo Frame Mode", EUtilsInfoType::Single);
+      UTL.PrintInfo("Device starts in Photo Frame Mode", EUtilsInfoType::Single);
       STG.Init(true);
       LOG.Init();
       LOG.Boot(UTL.ResolveBootReason(), "PHOTO_FRAME", mCfg.Device.Version.c_str(), gBootCount);
@@ -183,7 +183,7 @@ class Application {
       ReloadConfig();
       {
         char tText[45] = "";
-        snprintf(tText, sizeof(tText), "Device → starts in Maintenance [%s] Mode", (mCfg.Connection.ApModeEnable ? "AP" : "STA"));
+        snprintf(tText, sizeof(tText), "Device starts in Maintenance [%s] Mode", (mCfg.Connection.ApModeEnable ? "AP" : "STA"));
         UTL.PrintInfo(tText, EUtilsInfoType::Single);
       }
       STG.Init(true);
@@ -204,7 +204,7 @@ class Application {
       }
       BTN.AddLongPressCallback(mCfg.Device.SettingPin, []() {
         #if !PRODUCTION
-          xLOG("Device → rebooting...");
+          xLOG("Device rebooting...");
           vTaskDelay(DELAY_SHORT_MS / portTICK_PERIOD_MS);
         #endif
         { 
@@ -219,7 +219,7 @@ class Application {
       }, REBOOT_LONG_PRESS_MS);
       BTN.AddLongPressCallback(mCfg.Device.ResetPin, []() {
         #if !PRODUCTION
-          xLOG("Device → factory reset...");
+          xLOG("Device factory reset...");
           vTaskDelay(DELAY_SHORT_MS / portTICK_PERIOD_MS);
         #endif
         { 
@@ -312,7 +312,7 @@ class Application {
     }
 
     void LowBatteryMode() {
-      UTL.PrintInfo("Device  → starts in Low Battery Mode", EUtilsInfoType::Single);
+      UTL.PrintInfo("Device starts in Low Battery Mode", EUtilsInfoType::Single);
       LFS.Init(true);
       DSP.Init();
       char tBuffer[32];

@@ -110,7 +110,7 @@ namespace App {
           mActiveType = EFileSystemType::LittleFS;
           mMounted = true;
           mFallbackActive = true;
-          if (tVerbose) xLOG("SDCard images empty → smart fallback to LittleFS");
+          if (tVerbose) xLOG("SDCard images empty, smart fallback to LittleFS");
           return;
         }
         mActiveType = EFileSystemType::SDCard;
@@ -126,7 +126,7 @@ namespace App {
         mActiveType = EFileSystemType::LittleFS;
         mMounted = true;
         mFallbackActive = true;
-        if (tVerbose) xLOG("SDCard not available → fallback to LittleFS");
+        if (tVerbose) xLOG("SDCard not available, fallback to LittleFS");
         return;
       }
     } else {
@@ -142,7 +142,7 @@ namespace App {
           mActiveType = EFileSystemType::SDCard;
           mMounted = true;
           mFallbackActive = true;
-          if (tVerbose) xLOG("LittleFS images empty → smart fallback to SDCard");
+          if (tVerbose) xLOG("LittleFS images empty, smart fallback to SDCard");
           return;
         }
         mActiveType = EFileSystemType::LittleFS;
@@ -158,7 +158,7 @@ namespace App {
         mActiveType = EFileSystemType::SDCard;
         mMounted = true;
         mFallbackActive = true;
-        if (tVerbose) xLOG("LittleFS not available → fallback to SDCard");
+        if (tVerbose) xLOG("LittleFS not available, fallback to SDCard");
         return;
       }
     }

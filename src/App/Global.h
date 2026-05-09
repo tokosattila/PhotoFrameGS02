@@ -111,21 +111,6 @@ namespace App {
     SDCard
   };
 
-  enum class ELogLevel : uint8_t {
-    Boot = 0,
-    Halt,
-    Storage,
-    Wifi,
-    Ntp,
-    Rtc,
-    Battery,
-    Image,
-    Sleep,
-    Ota,
-    Warn,
-    Error
-  };
-
   enum class ETimerWakeUp : uint8_t {
     Minutes = 1,
     Hourly,
@@ -281,12 +266,14 @@ namespace App {
 
   constexpr unsigned long BAUDRATE = 115200;
 
-  constexpr const char *IMAGES_DIR = "images";
-  constexpr const char *CONFIG_FILE = "/config.ini";
+  constexpr const char *LOGS_DIR = "logs";
 
-  constexpr const char *FIRMWARE_DIR = "/firmware";
-  constexpr const char *FIRMWARE_PATH = "/firmware/firmware.bin";
-  constexpr const char *FIRMWARE_SHA_PATH = "/firmware/firmware.sha256";
+  constexpr const char *IMAGES_DIR = "images";
+  constexpr const char *CONFIG_FILE = "config.ini";
+
+  constexpr const char *FIRMWARE_DIR = "firmware";
+  constexpr const char *FIRMWARE_PATH = "firmware/firmware.bin";
+  constexpr const char *FIRMWARE_SHA_PATH = "firmware/firmware.sha256";
 
   constexpr EFileSystemType DEFAULT_FILE_SYSTEM = EFileSystemType::SDCard;
   constexpr bool STORAGE_FALLBACK_ENABLED = true;
@@ -355,12 +342,10 @@ namespace App {
 #include <App/Telnet/Command.h>
 #include <App/Telnet/Commands/CallbackCommand.h>
 #include <App/Telnet.h>
-
 #include <App/Fonts/OpenSans11.h>
 #include <App/Fonts/OpenSans11b.h>
 #include <App/Fonts/OpenSans13.h>
 #include <App/Fonts/OpenSans13b.h>
-
 #include <App/Images/DefaultImage.h>
 
 #define CFG Configuration_::Instance()

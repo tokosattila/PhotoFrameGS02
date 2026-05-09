@@ -119,20 +119,20 @@ namespace App {
         if (tStaConnected) {
           tCurrentActive = true;
         } else if (tSelf->mCfg.Connection.StaAutoFallbackApEnable) {
-          xLOG("STA failed & StaAutoFallbackApEnable=true → trying AP+STA maintenance mode");
+          xLOG("Trying AP+STA maintenance mode");
           if (!tSelf->TryConnectApSta()) {
-            xLOG("AP+STA maintenance failed → switching to fallback AP");
+            xLOG("Switching to fallback AP");
             tSelf->SwitchToFallbackApMode();
           }
           tCurrentActive = true;
         } else {
-          xLOG("STA failed & StaAutoFallbackApEnable=false → WiFi offline");
+          xLOG("WiFi offline");
           tCurrentActive = false;
         }
       }
       if (tCurrentActive && !tLastActive) {
         if (tSelf->mCfg.Connection.ApModeEnable) {
-          xLOG("Client connected to AP → clients: %d", mWiFi->softAPgetStationNum());
+          xLOG("Client connected to AP clients → %d", mWiFi->softAPgetStationNum());
         }
         if (tSelf->mCfg.Connection.MdnsEnable) {
           tSelf->StartMdns();
@@ -147,7 +147,7 @@ namespace App {
         if (tMdnsRunning) {
           tSelf->mMDNS.end();
           tMdnsRunning = false;
-          xLOG("Localhost stopped → connection lost");
+          xLOG("Localhost stopped, connection lost");
         }
       }
       tLastActive = tCurrentActive;
@@ -193,7 +193,7 @@ namespace App {
     uint8_t tMaxRetry = mCfg.Connection.StaConnectMaxRetry;
     if (tMaxRetry == 0) tMaxRetry = 1;
     uint32_t tRetryDelayMs = mCfg.Connection.StaRetryDelayMs;
-    xLOG("STA connect: max retries=%u, delay=%lums", tMaxRetry, tRetryDelayMs);
+    xLOG("STA connect, max retries=%u, delay=%lums", tMaxRetry, tRetryDelayMs);
     for (uint8_t tAttempt = 0; tAttempt < tMaxRetry; tAttempt++) {
       ConnectSta();
       uint32_t tStart = millis();
@@ -209,7 +209,7 @@ namespace App {
         vTaskDelay(pdMS_TO_TICKS(tRetryDelayMs));
       }
     }
-    xLOG("STA connect failed after %u attempts → consider fallback to AP", tMaxRetry);
+    xLOG("STA connect failed after %u attempts, consider fallback to AP", tMaxRetry);
     return false;
   }
 
@@ -230,7 +230,7 @@ namespace App {
     mWiFi->softAPConfig(tApIp, tApGateway, tApSubnet);
     bool tApStarted = mWiFi->softAP(tApSsid.c_str(), tApPassword.c_str());
     if (!tApStarted) {
-      xLOG("AP+STA maintenance: AP start failed");
+      xLOG("AP start failed");
       return false;
     }
 
@@ -251,14 +251,9 @@ namespace App {
       while (mWiFi->status() != WL_CONNECTED && (millis() - tStart) < WIFI_CONNECT_TIMEOUT_MS) {
         vTaskDelay(DELAY_HALF_SEC_MS / portTICK_PERIOD_MS);
       }
-      if (mWiFi->status() == WL_CONNECTED) {
-        xLOG("AP+STA maintenance: STA connected while AP is active");
-      } else {
-        xLOG("AP+STA maintenance: STA not connected, AP remains active");
-      }
-    } else {
-      xLOG("AP+STA maintenance: STA SSID empty, AP-only fallback behavior");
-    }
+      if (mWiFi->status() == WL_CONNECTED) xLOG("STA connected while AP is active");
+      else xLOG("STA not connected, AP remains active");
+    } else xLOG("STA SSID empty, AP-only fallback behavior");
 
     PrintConnectionInfo();
     return true;
@@ -289,7 +284,7 @@ namespace App {
     uint8_t tRetry = 0;
     while (!(mWiFi->status() == WL_CONNECTED || mCfg.Connection.ApModeEnable) && tRetry++ < 10) vTaskDelay(DELAY_HALF_SEC_MS / portTICK_PERIOD_MS);
     if (!(mWiFi->status() == WL_CONNECTED || mCfg.Connection.ApModeEnable)) {
-      xLOG("Localhost start failed → no active interface");
+      xLOG("Localhost start failed, no active interface");
       return;
     }
     bool tStarted = false;
@@ -300,7 +295,7 @@ namespace App {
       }
       tStarted = mMDNS.begin(mCfg.Connection.MdnsName);
       if (!tStarted) {
-        xLOG("Localhost start → attempt %d failed", i + 1);
+        xLOG("Localhost start, attempt %d failed", i + 1);
         vTaskDelay(DELAY_HALF_SEC_MS / portTICK_PERIOD_MS);
       }
     }

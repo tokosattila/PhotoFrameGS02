@@ -181,19 +181,19 @@ namespace App {
 
   const char *LogManager_::LevelToString(ELogLevel tLevel) const {
     switch (tLevel) {
-      case ELogLevel::Boot:    return "BOOT";
-      case ELogLevel::Halt:    return "HALT";
+      case ELogLevel::Boot: return "BOOT";
+      case ELogLevel::Halt: return "HALT";
       case ELogLevel::Storage: return "STORAGE";
-      case ELogLevel::Wifi:    return "WIFI";
-      case ELogLevel::Ntp:     return "NTP";
-      case ELogLevel::Rtc:     return "RTC";
+      case ELogLevel::Wifi: return "WIFI";
+      case ELogLevel::Ntp: return "NTP";
+      case ELogLevel::Rtc: return "RTC";
       case ELogLevel::Battery: return "BATTERY";
-      case ELogLevel::Image:   return "IMAGE";
-      case ELogLevel::Sleep:   return "SLEEP";
-      case ELogLevel::Ota:     return "FIRMW";
-      case ELogLevel::Warn:    return "WARN";
-      case ELogLevel::Error:   return "ERROR";
-      default:                 return "LOG";
+      case ELogLevel::Image: return "IMAGE";
+      case ELogLevel::Sleep: return "SLEEP";
+      case ELogLevel::Ota: return "FIRMW";
+      case ELogLevel::Warn: return "WARN";
+      case ELogLevel::Error: return "ERROR";
+      default: return "LOG";
     }
   }
 
@@ -272,11 +272,8 @@ namespace App {
     struct tm tTm = {};
     if (tNow >= 1000000000L) localtime_r(&tNow, &tTm);
     else memset(&tTm, 0, sizeof(tTm));
-    if (tRollIndex == 0) {
-      snprintf(tPath, tSize, "%s/%04d/%02d/%02d/%04d%02d%02d.log", kLogsRoot, tTm.tm_year + 1900, tTm.tm_mon + 1, tTm.tm_mday, tTm.tm_year + 1900, tTm.tm_mon + 1, tTm.tm_mday);
-    } else {
-      snprintf(tPath, tSize, "%s/%04d/%02d/%02d/%04d%02d%02d_%u.log", kLogsRoot, tTm.tm_year + 1900, tTm.tm_mon + 1, tTm.tm_mday, tTm.tm_year + 1900, tTm.tm_mon + 1, tTm.tm_mday, (unsigned)tRollIndex);
-    }
+    if (tRollIndex == 0) snprintf(tPath, tSize, "/%s/%04d/%02d/%02d/%04d%02d%02d.log", kLogsRoot, tTm.tm_year + 1900, tTm.tm_mon + 1, tTm.tm_mday, tTm.tm_year + 1900, tTm.tm_mon + 1, tTm.tm_mday);
+    else snprintf(tPath, tSize, "/%s/%04d/%02d/%02d/%04d%02d%02d_%u.log", kLogsRoot, tTm.tm_year + 1900, tTm.tm_mon + 1, tTm.tm_mday, tTm.tm_year + 1900, tTm.tm_mon + 1, tTm.tm_mday, (unsigned)tRollIndex);
     return true;
   }
 
@@ -317,14 +314,14 @@ namespace App {
     }
     File tFile = STG.OpenFile(mCurrentFilePath, FILE_APPEND, true);
     if (!tFile) {
-      xLOG("Log file open for append failed: %s", mCurrentFilePath);
+      xLOG("Log file open for append failed → %s", mCurrentFilePath);
       mWriteBufferPos = 0;
       return;
     }
     size_t tBytesWritten = tFile.write(reinterpret_cast<const uint8_t *>(mWriteBuffer), mWriteBufferPos);
     tFile.close();
     if (tBytesWritten != mWriteBufferPos) {
-      xLOG("Log file write incomplete: %u/%u bytes", (unsigned)tBytesWritten, (unsigned)mWriteBufferPos);
+      xLOG("Log file write incomplete → %u/%u bytes", (unsigned)tBytesWritten, (unsigned)mWriteBufferPos);
     }
     mWriteBufferPos = 0;
   }

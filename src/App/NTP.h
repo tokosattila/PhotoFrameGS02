@@ -52,7 +52,6 @@ namespace App {
       bool IsDST(unsigned long tEpoch);
       int8_t GetGMTOffset();
       const char *GetTimezoneName();
-
   };
 
 }

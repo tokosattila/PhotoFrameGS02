@@ -64,7 +64,7 @@ namespace App {
       const char *GetCurrentPrompt();
       void WritePrompt();   
       bool ParseYesNo(const char *tInput, bool &tValue) const;
-        void NotifyActivity();
+      void NotifyActivity();
   };
 
 }

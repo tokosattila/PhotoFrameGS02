@@ -32,9 +32,9 @@ namespace App {
     mAvailable = TryI2C();
     if (tVerbose) {
       if (mAvailable) {
-        xLOG("RTC found → PCF8563");
+        xLOG("RTC is available, found PCF8563");
         PrintInfo();
-      } else xLOG("No RTC detected on I2C bus");
+      } else xLOG("RTC is not available, PCF85063 not detected on I2C bus");
     }
     return mAvailable;
   }
@@ -96,7 +96,7 @@ namespace App {
     uint8_t tSecRaw = mWire.read();
     tVLFlagSet = (tSecRaw & 0x80) != 0;
     if (tVLFlagSet) {
-      xLOG("RTC VL (low voltage) flag set → clock may be invalid");
+      xLOG("RTC VL (low voltage) flag set, clock may be invalid");
     }
     tDateTime.Second = BcdToDec(tSecRaw & 0x7F);
     tDateTime.Minute = BcdToDec(mWire.read() & 0x7F);
@@ -253,7 +253,7 @@ namespace App {
       return false;
     }
     bool tOk = SetFromEpoch(tEpoch);
-    if (tOk) xLOG("RTC synced from → NTP");
+    if (tOk) xLOG("RTC synced from NTP");
     return tOk;
   }
 
@@ -261,15 +261,15 @@ namespace App {
     Guard tLock;
     unsigned long tEpoch = GetEpoch();
     if (tEpoch == 0) {
-      xLOG("RTC epoch is 0 → cannot sync");
+      xLOG("RTC epoch is 0, cannot sync");
       return false;
     }
     if (tEpoch > 2147483647UL) {
-      xLOG("RTC epoch %lu exceeds 32-bit signed max (Y2038 problem) → cannot sync", tEpoch);
+      xLOG("RTC epoch %lu exceeds 32-bit signed max (Y2038 problem), cannot sync", tEpoch);
       return false;
     }
     if (tEpoch < 1735689600UL) {
-      xLOG("RTC epoch %lu is before 2026 → invalid", tEpoch);
+      xLOG("RTC epoch %lu is before 2026, invalid", tEpoch);
       return false;
     }
     struct timeval tTv;
@@ -279,7 +279,7 @@ namespace App {
       xLOG("settimeofday failed");
       return false;
     }
-    xLOG("System time synced from → RTC");
+    xLOG("System time synced from RTC");
     return true;
   }
 
@@ -289,7 +289,7 @@ namespace App {
     gettimeofday(&tTv, nullptr);
     if (tTv.tv_sec < 1735689600) return false;
     bool tOk = SetFromEpoch(tTv.tv_sec);
-    if (tOk) xLOG("RTC synced from → system time");
+    if (tOk) xLOG("RTC synced from system time");
     return tOk;
   }
 
@@ -324,7 +324,7 @@ namespace App {
     SRTCDateTime tDt;
     if (GetDateTime(tDt)) {
       xLOG("RTC DateTime → %04d.%02d.%02d %02d:%02d:%02d", tDt.Year, tDt.Month, tDt.Day, tDt.Hour, tDt.Minute, tDt.Second);
-    } else xLOG("RTC DateTime → read failed");
+    } else xLOG("RTC DateTime read failed");
   }
 
 }

@@ -39,11 +39,11 @@ namespace App {
   bool NTP_::IsAvailable() {
     wifi_mode_t tMode = WiFi.getMode();
     if (tMode == WIFI_AP || tMode == WIFI_OFF) {
-      xLOG("NTP not available → WiFi in AP mode or OFF");
+      xLOG("NTP not available, WiFi in AP mode or OFF");
       return false;
     }
     if (WiFi.status() != WL_CONNECTED) {
-      xLOG("NTP not available → WiFi not connected");
+      xLOG("NTP not available, WiFi not connected");
       return false;
     }
     return true;
@@ -102,7 +102,7 @@ namespace App {
         if (!IsPacketValid(mPacketBuffer)) tPacketSize = 0;
       }
       if (++tTimeoutCounter > 200) {
-        xLOG("NTP timeout → no response");
+        xLOG("Timeout, no response");
         mCurrentEpoch = 0;
         return false;
       }
@@ -111,7 +111,7 @@ namespace App {
     unsigned long tNtpTime = (mPacketBuffer[40] << 24) | (mPacketBuffer[41] << 16) | (mPacketBuffer[42] <<  8) | mPacketBuffer[43];
     mCurrentEpoch = tNtpTime - mSevenZYYears;
     if (mCurrentEpoch < 1704067200UL) {
-      xLOG("NTP invalid epoch received: %lu", mCurrentEpoch);
+      xLOG("Invalid epoch received → %lu", mCurrentEpoch);
       mCurrentEpoch = 0;
       return false;
     }
@@ -274,14 +274,14 @@ namespace App {
   bool NTP_::SyncSystemTime() {
     bool tSuccess = mUDPSetup ? ForceTimeSync() : Begin();
     if (tSuccess) {
-      xLOG("System time synchronized!");
+      xLOG("System time synchronized from NTP");
       char tDate[32];
       GetDate(tDate, sizeof(tDate));
       xLOG("Current date → %s", tDate);
       char tTime[9];
       GetTime(tTime, sizeof(tTime));
       xLOG("Current time → %s", tTime);
-    } else xLOG("System time failed synchronized!");
+    } else xLOG("System time failed synchronized from NTP");
     return tSuccess;
   }
 
@@ -315,7 +315,7 @@ namespace App {
     if (mCfg.TimeZoneLabel.length() == 0) {
       long tTotalOffsetSec = mCfg.GMTOffset + mCfg.DaylightOffset;
       if (tTotalOffsetSec == 0) {
-        xLOG("ApplyTimeZone: TimeZoneLabel empty, setting GMT");
+        xLOG("TimeZoneLabel empty, setting GMT");
         setenv("TZ", "GMT", 1);
       } else {
         long tOffsetHours = tTotalOffsetSec / static_cast<long>(SECONDS_PER_HOUR);
@@ -326,11 +326,11 @@ namespace App {
         } else {
           snprintf(tTZ, sizeof(tTZ), "UTC%+ld:%02ld", tOffsetHours, tOffsetMinutes);
         }
-        xLOG("ApplyTimeZone: TimeZoneLabel empty, fallback TZ=%s", tTZ);
+        xLOG("TimeZoneLabel empty, fallback TZ=%s", tTZ);
         setenv("TZ", tTZ, 1);
       }
     } else {
-      xLOG("ApplyTimeZone: Setting TZ to %s", mCfg.TimeZoneLabel.c_str());
+      xLOG("Setting TZ to %s", mCfg.TimeZoneLabel.c_str());
       setenv("TZ", mCfg.TimeZoneLabel.c_str(), 1);
     }
     tzset();
@@ -339,29 +339,29 @@ namespace App {
   bool NTP_::SyncSystemTimeIfNeeded() {
     Guard tLock;
     if (!mCfg.LowPowerSyncEnable) {
-      xLOG("SyncSystemTimeIfNeeded: Low-power sync disabled, forcing sync");
+      xLOG("Low-power sync disabled, forcing sync");
       return SyncSystemTime();
     }
     unsigned long tCurrentEpoch = static_cast<unsigned long>(time(nullptr));
     if (tCurrentEpoch < 1704067200UL) {
-      xLOG("SyncSystemTimeIfNeeded: System epoch invalid, forcing sync");
+      xLOG("System epoch invalid, forcing sync");
       return SyncSystemTime();
     }
     unsigned long tLastSync = mCfg.LastSuccessfulSyncEpochUtc;
     if (tLastSync == 0) {
-      xLOG("SyncSystemTimeIfNeeded: No previous sync recorded, forcing sync");
+      xLOG("No previous sync recorded, forcing sync");
       return SyncSystemTime();
     }
     if (tCurrentEpoch < tLastSync) {
-      xLOG("SyncSystemTimeIfNeeded: Last sync is newer than current epoch, forcing sync");
+      xLOG("Last sync is newer than current epoch, forcing sync");
       return SyncSystemTime();
     }
     unsigned long tTimeSinceSync = tCurrentEpoch - tLastSync;
     if (tTimeSinceSync >= mCfg.LowPowerSyncIntervalSec) {
-      xLOG("SyncSystemTimeIfNeeded: Interval elapsed (%lu >= %lu), syncing", tTimeSinceSync, mCfg.LowPowerSyncIntervalSec);
+      xLOG("Interval elapsed (%lu >= %lu), syncing", tTimeSinceSync, mCfg.LowPowerSyncIntervalSec);
       return SyncSystemTime();
     }
-    xLOG("SyncSystemTimeIfNeeded: Skipped (synced %lu seconds ago)", tTimeSinceSync);
+    xLOG("Skipped (synced %lu seconds ago)", tTimeSinceSync);
     return true;
   }
 
