@@ -10,16 +10,15 @@ struct SButtonDebounce {
   uint32_t DownTimeMs;
   uint32_t NextHoldMs;
 };
+
 bool ButtonDown(const SButtonDebounce *tDebounce) {
-  return tDebounce->Inverted
-    ? ((tDebounce->History & kDebounceMask) == 0b1111000000000000)
-    : ((tDebounce->History & kDebounceMask) == 0b0000000000111111);
+  return tDebounce->Inverted ? ((tDebounce->History & kDebounceMask) == 0b1111000000000000) : ((tDebounce->History & kDebounceMask) == 0b0000000000111111);
 }
+
 bool ButtonUp(const SButtonDebounce *tDebounce) {
-  return tDebounce->Inverted
-    ? ((tDebounce->History & kDebounceMask) == 0b0000000000111111)
-    : ((tDebounce->History & kDebounceMask) == 0b1111000000000000);
+  return tDebounce->Inverted ? ((tDebounce->History & kDebounceMask) == 0b0000000000111111) : ((tDebounce->History & kDebounceMask) == 0b1111000000000000);
 }
+
 void UpdateDebounce(SButtonDebounce *tDebounce, uint8_t tLevel) {
   tDebounce->History = (tDebounce->History << 1) | (tLevel & 1);
 }

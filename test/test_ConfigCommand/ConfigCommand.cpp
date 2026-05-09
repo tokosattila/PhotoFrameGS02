@@ -16,54 +16,49 @@ struct SConfigParsed {
   char Value[128];
   bool HasValue;
 };
+
 inline const char *SkipWhitespace(const char *tPtr) {
   while (*tPtr == ' ' || *tPtr == '\t') ++tPtr;
   return tPtr;
 }
+
 inline const char *SkipNonWhitespace(const char *tPtr) {
   while (*tPtr != '\0' && *tPtr != ' ' && *tPtr != '\t') ++tPtr;
   return tPtr;
 }
+
 EConfigParseResult ParseConfigArgs(const char *tArguments, SConfigParsed &tParsed) {
   memset(&tParsed, 0, sizeof(tParsed));
-
   if (!tArguments || tArguments[0] == '\0') {
     return EConfigParseResult::MissingKey;
   }
-
   const char *tPtr = tArguments;
   tPtr = SkipWhitespace(tPtr);
   tPtr = SkipNonWhitespace(tPtr);
   tPtr = SkipWhitespace(tPtr);
-
   if (*tPtr == '\0') {
     return EConfigParseResult::MissingKey;
   }
   const char *tKeyStart = tPtr;
   tPtr = SkipNonWhitespace(tPtr);
   size_t tKeyLen = tPtr - tKeyStart;
-
   if (tKeyLen >= sizeof(tParsed.Key)) {
     return EConfigParseResult::KeyTooLong;
   }
-
   strncpy(tParsed.Key, tKeyStart, tKeyLen);
   tParsed.Key[tKeyLen] = '\0';
   tPtr = SkipWhitespace(tPtr);
-
   if (*tPtr == '\0') {
     tParsed.HasValue = false;
     return EConfigParseResult::Success;
   }
   const char *tValueStart = tPtr;
   bool tInQuote = false;
-
   if (*tPtr == '"') {
     tInQuote = true;
     ++tPtr;
     tValueStart = tPtr;
   }
-
   while (*tPtr != '\0') {
     if (tInQuote) {
       if (*tPtr == '"') break;
@@ -72,13 +67,10 @@ EConfigParseResult ParseConfigArgs(const char *tArguments, SConfigParsed &tParse
     }
     ++tPtr;
   }
-
   size_t tValueLen = tPtr - tValueStart;
-
   if (tValueLen >= sizeof(tParsed.Value)) {
     return EConfigParseResult::ValueTooLong;
   }
-
   strncpy(tParsed.Value, tValueStart, tValueLen);
   tParsed.Value[tValueLen] = '\0';
   tParsed.HasValue = true;
@@ -87,7 +79,6 @@ EConfigParseResult ParseConfigArgs(const char *tArguments, SConfigParsed &tParse
   if (*tPtr != '\0') {
     return EConfigParseResult::TooManyArguments;
   }
-
   return EConfigParseResult::Success;
 }
 

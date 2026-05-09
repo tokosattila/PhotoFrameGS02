@@ -21,6 +21,16 @@ namespace App {
     const char *IniKey;
     const char *IniSection;
     EConfigType Type;
+
+    constexpr SConfigKeyMappingEntry(
+      const char *tNvsKey,
+      const char *tIniKey,
+      const char *tIniSection,
+      EConfigType tType
+    ) : NvsKey(tNvsKey),
+        IniKey(tIniKey),
+        IniSection(tIniSection),
+        Type(tType) {}
   };
 
   class Configuration_ {
@@ -43,17 +53,6 @@ namespace App {
       SAppConfig LoadConfigFromINI(const char *tFileName = nullptr);
       bool SaveAllConfig(const SAppConfig &tConfig);
       void UpdateNTPLastSync(unsigned long tEpochUtc);
-    private:
-      Configuration_();
-      Configuration_(const Configuration_&) = delete;
-      Configuration_ &operator=(const Configuration_&) = delete;
-      ~Configuration_();
-      Preferences mConfig;
-      const char *mLabel = "cfg";
-      const char *mPartLabel = "nvs";
-      mutable SemaphoreHandle_t mMutex;
-      static void Lock();
-      static void Unlock();
       static constexpr const char *kNvsDeviceConfig = "dvc.cfg";
       static constexpr const char *kNvsDeviceAppName = "dvc.appname";
       static constexpr const char *kNvsDeviceVersion = "dvc.version";
@@ -109,15 +108,27 @@ namespace App {
       static constexpr const char *kNvsFtpUsername = "ftp.username";
       static constexpr const char *kNvsFtpPassword = "ftp.password";
       static constexpr const char *kNvsDeviceLogEnable = "log.enable";
-      static const std::vector<SConfigKeyMappingEntry> &GetKeyMapping();
+    private:
+      Configuration_();
+      Configuration_(const Configuration_&) = delete;
+      Configuration_ &operator=(const Configuration_&) = delete;
+      ~Configuration_();
+      Preferences mConfig;
+      const char *mLabel = "cfg";
+      const char *mPartLabel = "nvs";
+      mutable SemaphoreHandle_t mMutex;
+      static void Lock();
+      static void Unlock();
       static SAppConfig GetDefaultConfig();
+      static bool MatchIniSection(const SConfigKeyMappingEntry &tEntry, const char *tFileSection);
+      static const std::vector<SConfigKeyMappingEntry> &GetKeyMapping();
+      static bool ParseLine(char *tLine, char *tSection, char *tKey, char *tValue);
+      static void TrimValue(char *tValue);
       static void ApplyINIValue(SAppConfig &tConfig, const char *tSection, const SConfigKeyMappingEntry &tEntry, const char *tValue);
       static bool ReadINIFile(const char *tFileName, SAppConfig &tConfig);
       bool Begin(bool tReadOnly);
       void End();
       void AccessConfig(bool tReadOnly, std::function<void()> tAction);
-      static bool ParseLine(char *tLine, char *tSection, char *tKey, char *tValue);
-      static void TrimValue(char *tValue);
   };
 
   template<> SAppConfig Configuration_::Get<SAppConfig>();

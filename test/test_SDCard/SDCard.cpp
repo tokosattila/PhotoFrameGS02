@@ -329,7 +329,6 @@ int main(int argc, char **argv) {
   RUN_TEST(test_IsFile_invalid_extensions);
   RUN_TEST(test_IsFile_no_extension);
   RUN_TEST(test_IsFile_empty_null);
-
   return UNITY_END();
 }
 

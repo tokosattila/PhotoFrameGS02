@@ -2,7 +2,7 @@
 
 Grayscale e-ink digital photo frame with autonomous slideshow operation, deep sleep scheduling, RTC backup, and remote maintenance through Telnet and FTP.
 
-> **📌 Note:** This project targets the **LilyGo T5 4.7 inch E-Paper Plus** (ESP32-S3). For the color variant based on the **Waveshare ESP32-S3-PhotoPainter 7.3 inch E6**, see [PhotoFrameCL01](https://github.com/tokosattila/PhotoFrameCL01.git). For the older **LilyGo T5 4.7 inch E-Paper** (WROVER-E) version, see [PhotoFrameGS01](https://github.com/tokosattila/PhotoFrameGS01.git).
+> **📌 Note:** This project targets the **LilyGo T5 4.7 inch E-Paper Plus** (ESP32-S3) and is **Telnet + FTP** based. For the color variant based on the **Waveshare ESP32-S3-PhotoPainter 7.3 inch E6**, see [PhotoFrameCL01](https://github.com/tokosattila/PhotoFrameCL01.git) (**web admin** based). For the older **LilyGo T5 4.7 inch E-Paper** (WROVER-E) version, see [PhotoFrameGS01](https://github.com/tokosattila/PhotoFrameGS01.git) (**Telnet + FTP** based).
 
 The project is designed around three goals:
 1. Low-power autonomous image display with deep sleep.

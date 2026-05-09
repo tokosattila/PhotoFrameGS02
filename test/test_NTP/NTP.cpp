@@ -22,6 +22,7 @@ bool IsPacketValid(uint8_t *tPacket) {
   for (uint8_t i = 16; i <= 23; i++) if (tPacket[i] != 0) return true;
   return true;
 }
+
 static const unsigned long SECONDS_PER_MINUTE = 60;
 static const unsigned long SECONDS_PER_HOUR = 3600;
 static const unsigned long SECONDS_PER_DAY = 86400;
@@ -302,7 +303,6 @@ int main(int argc, char **argv) {
   RUN_TEST(test_ShouldSyncSystemTimeIfNeeded_clock_rollback);
   RUN_TEST(test_ShouldSyncSystemTimeIfNeeded_interval_not_elapsed);
   RUN_TEST(test_ShouldSyncSystemTimeIfNeeded_interval_elapsed);
-
   return UNITY_END();
 }
 

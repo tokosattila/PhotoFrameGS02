@@ -108,46 +108,36 @@ void test_SafeAtoul_whitespace() {
 
 void test_ByteToReadableSize_bytes() {
   char buffer[32];
-
   ByteToReadableSize(0, buffer, sizeof(buffer));
   TEST_ASSERT_EQUAL_STRING("0 B", buffer);
-
   ByteToReadableSize(512, buffer, sizeof(buffer));
   TEST_ASSERT_EQUAL_STRING("512 B", buffer);
-
   ByteToReadableSize(1023, buffer, sizeof(buffer));
   TEST_ASSERT_EQUAL_STRING("1023 B", buffer);
 }
 
 void test_ByteToReadableSize_kilobytes() {
   char buffer[32];
-
   ByteToReadableSize(1024, buffer, sizeof(buffer));
   TEST_ASSERT_EQUAL_STRING("1 KB", buffer);
-
   ByteToReadableSize(2048, buffer, sizeof(buffer));
   TEST_ASSERT_EQUAL_STRING("2 KB", buffer);
-
   ByteToReadableSize(1536, buffer, sizeof(buffer));
   TEST_ASSERT_EQUAL_STRING("1.50 KB", buffer);
 }
 
 void test_ByteToReadableSize_megabytes() {
   char buffer[32];
-
   ByteToReadableSize(1024 * 1024, buffer, sizeof(buffer));
   TEST_ASSERT_EQUAL_STRING("1 MB", buffer);
-
   ByteToReadableSize(2 * 1024 * 1024, buffer, sizeof(buffer));
   TEST_ASSERT_EQUAL_STRING("2 MB", buffer);
-
   ByteToReadableSize(1536 * 1024, buffer, sizeof(buffer));
   TEST_ASSERT_EQUAL_STRING("1.50 MB", buffer);
 }
 
 void test_ByteToReadableSize_large_values() {
   char buffer[32];
-
   ByteToReadableSize(16 * 1024 * 1024, buffer, sizeof(buffer));
   TEST_ASSERT_EQUAL_STRING("16 MB", buffer);
 }
@@ -180,10 +170,8 @@ void test_EpochToReadableDuration_seconds() {
   char buffer[64];
   EpochToReadableDuration(1, buffer, sizeof(buffer));
   TEST_ASSERT_EQUAL_STRING("1 sec", buffer);
-
   EpochToReadableDuration(30, buffer, sizeof(buffer));
   TEST_ASSERT_EQUAL_STRING("30 sec", buffer);
-
   EpochToReadableDuration(59, buffer, sizeof(buffer));
   TEST_ASSERT_EQUAL_STRING("59 sec", buffer);
 }
@@ -192,10 +180,8 @@ void test_EpochToReadableDuration_minutes() {
   char buffer[64];
   EpochToReadableDuration(60, buffer, sizeof(buffer));
   TEST_ASSERT_EQUAL_STRING("01:00 min", buffer);
-
   EpochToReadableDuration(90, buffer, sizeof(buffer));
   TEST_ASSERT_EQUAL_STRING("01:30 min", buffer);
-
   EpochToReadableDuration(3599, buffer, sizeof(buffer));
   TEST_ASSERT_EQUAL_STRING("59:59 min", buffer);
 }
@@ -204,10 +190,8 @@ void test_EpochToReadableDuration_hours() {
   char buffer[64];
   EpochToReadableDuration(3600, buffer, sizeof(buffer));
   TEST_ASSERT_EQUAL_STRING("1:00:00 hour(s)", buffer);
-
   EpochToReadableDuration(7200, buffer, sizeof(buffer));
   TEST_ASSERT_EQUAL_STRING("2:00:00 hour(s)", buffer);
-
   EpochToReadableDuration(3661, buffer, sizeof(buffer));
   TEST_ASSERT_EQUAL_STRING("1:01:01 hour(s)", buffer);
 }
@@ -216,10 +200,8 @@ void test_EpochToReadableDuration_days() {
   char buffer[64];
   EpochToReadableDuration(86400, buffer, sizeof(buffer));
   TEST_ASSERT_EQUAL_STRING("1 day(s) 00:00:00", buffer);
-
   EpochToReadableDuration(172800, buffer, sizeof(buffer));
   TEST_ASSERT_EQUAL_STRING("2 day(s) 00:00:00", buffer);
-
   EpochToReadableDuration(90061, buffer, sizeof(buffer));
   TEST_ASSERT_EQUAL_STRING("1 day(s) 01:01:01", buffer);
 }

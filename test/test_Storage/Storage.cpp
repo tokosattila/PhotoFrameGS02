@@ -87,9 +87,7 @@ void test_SDCard_primary_with_images() {
   state.SDCardHasImages = true;
   state.LittleFSMounted = true;
   state.LittleFSHasImages = true;
-
   StorageSelection result = SelectActiveStorage(state);
-
   TEST_ASSERT_EQUAL(EFileSystemType::SDCard, result.ActiveType);
   TEST_ASSERT_TRUE(result.Mounted);
   TEST_ASSERT_FALSE(result.FallbackActive);
@@ -103,9 +101,7 @@ void test_SDCard_primary_no_images_fallback_to_littlefs() {
   state.LittleFSMounted = true;
   state.LittleFSHasImages = true;
   state.FallbackEnabled = true;
-
   StorageSelection result = SelectActiveStorage(state);
-
   TEST_ASSERT_EQUAL(EFileSystemType::LittleFS, result.ActiveType);
   TEST_ASSERT_TRUE(result.Mounted);
   TEST_ASSERT_TRUE(result.FallbackActive);
@@ -118,9 +114,7 @@ void test_SDCard_primary_not_mounted_fallback() {
   state.LittleFSMounted = true;
   state.LittleFSHasImages = true;
   state.FallbackEnabled = true;
-
   StorageSelection result = SelectActiveStorage(state);
-
   TEST_ASSERT_EQUAL(EFileSystemType::LittleFS, result.ActiveType);
   TEST_ASSERT_TRUE(result.Mounted);
   TEST_ASSERT_TRUE(result.FallbackActive);
@@ -134,7 +128,6 @@ void test_SDCard_primary_no_images_no_fallback_images() {
   state.LittleFSMounted = true;
   state.LittleFSHasImages = false;
   state.FallbackEnabled = true;
-
   StorageSelection result = SelectActiveStorage(state);
   TEST_ASSERT_EQUAL(EFileSystemType::SDCard, result.ActiveType);
   TEST_ASSERT_TRUE(result.Mounted);
@@ -149,7 +142,6 @@ void test_SDCard_primary_fallback_disabled() {
   state.LittleFSMounted = true;
   state.LittleFSHasImages = true;
   state.FallbackEnabled = false;
-
   StorageSelection result = SelectActiveStorage(state);
   TEST_ASSERT_EQUAL(EFileSystemType::SDCard, result.ActiveType);
   TEST_ASSERT_TRUE(result.Mounted);
@@ -163,9 +155,7 @@ void test_LittleFS_primary_with_images() {
   state.LittleFSHasImages = true;
   state.SDCardMounted = true;
   state.SDCardHasImages = true;
-
   StorageSelection result = SelectActiveStorage(state);
-
   TEST_ASSERT_EQUAL(EFileSystemType::LittleFS, result.ActiveType);
   TEST_ASSERT_TRUE(result.Mounted);
   TEST_ASSERT_FALSE(result.FallbackActive);
@@ -179,9 +169,7 @@ void test_LittleFS_primary_no_images_fallback_to_sdcard() {
   state.SDCardMounted = true;
   state.SDCardHasImages = true;
   state.FallbackEnabled = true;
-
   StorageSelection result = SelectActiveStorage(state);
-
   TEST_ASSERT_EQUAL(EFileSystemType::SDCard, result.ActiveType);
   TEST_ASSERT_TRUE(result.Mounted);
   TEST_ASSERT_TRUE(result.FallbackActive);
@@ -194,9 +182,7 @@ void test_LittleFS_primary_not_mounted_fallback() {
   state.SDCardMounted = true;
   state.SDCardHasImages = true;
   state.FallbackEnabled = true;
-
   StorageSelection result = SelectActiveStorage(state);
-
   TEST_ASSERT_EQUAL(EFileSystemType::SDCard, result.ActiveType);
   TEST_ASSERT_TRUE(result.Mounted);
   TEST_ASSERT_TRUE(result.FallbackActive);
@@ -208,9 +194,7 @@ void test_nothing_mounted() {
   state.SDCardMounted = false;
   state.LittleFSMounted = false;
   state.FallbackEnabled = true;
-
   StorageSelection result = SelectActiveStorage(state);
-
   TEST_ASSERT_FALSE(result.Mounted);
 }
 
@@ -221,9 +205,7 @@ void test_only_fallback_mounted() {
   state.LittleFSMounted = true;
   state.LittleFSHasImages = true;
   state.FallbackEnabled = true;
-
   StorageSelection result = SelectActiveStorage(state);
-
   TEST_ASSERT_EQUAL(EFileSystemType::LittleFS, result.ActiveType);
   TEST_ASSERT_TRUE(result.Mounted);
   TEST_ASSERT_TRUE(result.FallbackActive);
@@ -236,9 +218,7 @@ void test_only_primary_mounted_no_images() {
   state.SDCardHasImages = false;
   state.LittleFSMounted = false;
   state.FallbackEnabled = true;
-
   StorageSelection result = SelectActiveStorage(state);
-
   TEST_ASSERT_EQUAL(EFileSystemType::SDCard, result.ActiveType);
   TEST_ASSERT_TRUE(result.Mounted);
   TEST_ASSERT_FALSE(result.FallbackActive);
@@ -260,7 +240,6 @@ int main(int argc, char **argv) {
   RUN_TEST(test_nothing_mounted);
   RUN_TEST(test_only_fallback_mounted);
   RUN_TEST(test_only_primary_mounted_no_images);
-
   return UNITY_END();
 }
 

@@ -23,9 +23,9 @@ enum class EDateParseResult {
   InvalidMinute,
   InvalidSecond
 };
+
 EDateParseResult ParseDateTimeArgs(const char *tArgs, SRTCDateTime &tDateTime) {
   if (!tArgs || tArgs[0] == '\0') return EDateParseResult::InvalidFormat;
-
   int tYear, tMonth, tDay, tHour, tMin, tSec;
   if (sscanf(tArgs, "%d.%d.%d %d:%d:%d", &tYear, &tMonth, &tDay, &tHour, &tMin, &tSec) != 6) {
     return EDateParseResult::InvalidFormat;
@@ -48,16 +48,15 @@ EDateParseResult ParseDateTimeArgs(const char *tArgs, SRTCDateTime &tDateTime) {
   if (tSec < 0 || tSec > 59) {
     return EDateParseResult::InvalidSecond;
   }
-
   tDateTime.Year = tYear;
   tDateTime.Month = tMonth;
   tDateTime.Day = tDay;
   tDateTime.Hour = tHour;
   tDateTime.Minute = tMin;
   tDateTime.Second = tSec;
-
   return EDateParseResult::Success;
 }
+
 const char *GetDateSubcommand(const char *tArguments) {
   if (!tArguments) return "";
   const char *tPtr = tArguments;
@@ -66,6 +65,7 @@ const char *GetDateSubcommand(const char *tArguments) {
   while (*tPtr == ' ' || *tPtr == '\t') ++tPtr;
   return tPtr;
 }
+
 bool IsSubcommand(const char *tPtr, const char *tSubcmd) {
   if (!tPtr || !tSubcmd) return false;
   return strcmp(tPtr, tSubcmd) == 0;

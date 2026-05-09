@@ -23,7 +23,6 @@
 #include <App/Telnet/Commands/RebootCommand.h>
 #include <App/Telnet/Commands/LogoutCommand.h>
 #include <App/Telnet/Commands/ExitCommand.h>
-#include <App/Telnet/Commands/LogCommand.h>
 #include <App/Telnet/Commands/NotFoundCommand.h>
 
 namespace App {
@@ -51,7 +50,6 @@ namespace App {
   static RebootCommand_ sRebootCmd;
   static LogoutCommand_ sLogoutCmd;
   static ExitCommand_ sExitCmd;
-  static LogCommand_ sLogCmd;
   static NotFoundCommand_ sNotFoundCmd;
 
   constexpr uint16_t kBufferSize = sizeof(Telnet_::Instance().mInputBuffer);
@@ -123,7 +121,6 @@ namespace App {
       RegisterCommand(&sRebootCmd);
       RegisterCommand(&sLogoutCmd);
       RegisterCommand(&sExitCmd);
-      RegisterCommand(&sLogCmd);
       RegisterCommand(&sNotFoundCmd);
       mAuthTimestamp = CFG.GetSession();
       if (tVerbose) {

@@ -299,7 +299,6 @@ int main(int argc, char **argv) {
   RUN_TEST(test_FormatTime);
   RUN_TEST(test_FormatDate_single_digits);
   RUN_TEST(test_FormatTime_midnight);
-
   return UNITY_END();
 }
 

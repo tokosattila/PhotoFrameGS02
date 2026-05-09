@@ -1,62 +1,70 @@
 #include <App/Configuration.h>
-#include <App/RTC.h>
 
 namespace App {
 
+  bool Configuration_::MatchIniSection(const SConfigKeyMappingEntry &tEntry, const char *tFileSection) {
+    if (strcasecmp(tEntry.IniSection, tFileSection) == 0) return true;
+    if ((strcasecmp(tEntry.IniSection, "ap mode fallback") == 0 && strcasecmp(tFileSection, "ap mode") == 0) ||
+        (strcasecmp(tEntry.IniSection, "ap mode") == 0 && strcasecmp(tFileSection, "ap mode fallback") == 0)) {
+      return true;
+    }
+    return false;
+  }
+
   const std::vector<SConfigKeyMappingEntry> &Configuration_::GetKeyMapping() {
-    static const std::vector<SConfigKeyMappingEntry> tKeyMapping = {
-      {kNvsDeviceAppName, "appname", "device", EConfigType::STRING},
-      {kNvsDeviceVersion, "version", "device", EConfigType::STRING},
-      {kNvsDisplayBrightness, "jpg_brightness", "display", EConfigType::UCHAR},
-      {kNvsDisplayContrast, "jpg_contrast", "display", EConfigType::UCHAR},
-      {kNvsDisplayGamma, "jpg_gamma", "display", EConfigType::UCHAR},
-      {kNvsDisplayFile, "image_file", "display", EConfigType::STRING},
-      {kNvsTimeServer, "ntp_server", "ntp", EConfigType::STRING},
-      {kNvsTimePort, "ntp_port", "ntp", EConfigType::USHORT},
-      {kNvsTimeGmtOffset, "ntp_gmt_offset", "ntp", EConfigType::INT},
-      {kNvsTimeUpdate, "ntp_update", "ntp", EConfigType::UINT},
-      {kNvsConApEnable, "ap_enable", "ap mode", EConfigType::BOOL},
-      {kNvsConApSsid, "ap_ssid", "ap mode", EConfigType::STRING},
-      {kNvsConApPass, "ap_password", "ap mode", EConfigType::STRING},
-      {kNvsConApIp, "ap_ip", "ap mode", EConfigType::STRING},
-      {kNvsConApGw, "ap_gateway", "ap mode", EConfigType::STRING},
-      {kNvsConApSubnet, "ap_subnet", "ap mode", EConfigType::STRING},
-      {kNvsConStaSsid, "sta_ssid", "sta mode", EConfigType::STRING},
-      {kNvsConStaPass, "sta_password", "sta mode", EConfigType::STRING},
-      {kNvsConStaEnable, "sta_enable", "static ip", EConfigType::BOOL},
-      {kNvsConStaIp, "sta_ip", "static ip", EConfigType::STRING},
-      {kNvsConStaGw, "sta_gateway", "static ip", EConfigType::STRING},
-      {kNvsConStaSubnet, "sta_subnet", "static ip", EConfigType::STRING},
-      {kNvsConStaDns1, "sta_dns1", "static ip", EConfigType::STRING},
-      {kNvsConStaDns2, "sta_dns2", "static ip", EConfigType::STRING},
-      {kNvsConMdnsEnable, "mdns_enable", "mdns", EConfigType::BOOL},
-      {kNvsConMdnsName, "mdns_hostname", "mdns", EConfigType::STRING},
-      {kNvsConFallbackApSsid, "fallback_ap_ssid", "ap mode fallback", EConfigType::STRING},
-      {kNvsConFallbackApPass, "fallback_ap_password", "ap mode fallback", EConfigType::STRING},
-      {kNvsConFallbackApIp, "fallback_ap_ip", "ap mode fallback", EConfigType::STRING},
-      {kNvsConFallbackApGw, "fallback_ap_gateway", "ap mode fallback", EConfigType::STRING},
-      {kNvsConFallbackApSubnet, "fallback_ap_subnet", "ap mode fallback", EConfigType::STRING},
-      {kNvsConStaAutoFallback, "sta_auto_fallback", "sta mode", EConfigType::BOOL},
-      {kNvsConStaMaxRetry, "sta_max_retry", "sta mode", EConfigType::UCHAR},
-      {kNvsConStaRetryDelayMs, "sta_retry_delay_ms", "sta mode", EConfigType::UINT},
-      {kNvsTimeGmtOffsetLong, "ntp_gmt_offset", "ntp", EConfigType::INT},
-      {kNvsTimeDaylightOffset, "ntp_daylight_offset", "ntp", EConfigType::INT},
-      {kNvsTimeZoneLabel, "ntp_timezone_label", "ntp", EConfigType::STRING},
-      {kNvsTimeLowPowerSyncEnable, "ntp_low_power_sync_enable", "ntp", EConfigType::BOOL},
-      {kNvsTimeLowPowerSyncInterval, "ntp_low_power_sync_interval", "ntp", EConfigType::ULONG},
-      {kNvsTimeLastSuccessfulSync, "ntp_last_successful_sync", "ntp", EConfigType::ULONG},
-      {kNvsTimerWake, "wake_up", "timer", EConfigType::UCHAR},
-      {kNvsTimerWakeHour, "wake_up_hour", "timer", EConfigType::UCHAR},
-      {kNvsTelnetEnable, "telnet_enable", "telnet", EConfigType::BOOL},
-      {kNvsTelnetPort, "telnet_port", "telnet", EConfigType::UCHAR},
-      {kNvsTelnetUsername, "telnet_username", "telnet", EConfigType::STRING},
-      {kNvsTelnetPassword, "telnet_password", "telnet", EConfigType::STRING},
-      {kNvsTelnetSession, "telnet_session", "telnet", EConfigType::ULONG},
-      {kNvsFtpEnable, "ftp_enable", "ftp", EConfigType::BOOL},
-      {kNvsFtpPort, "ftp_port", "ftp", EConfigType::UCHAR},
-      {kNvsFtpUsername, "ftp_username", "ftp", EConfigType::STRING},
-      {kNvsFtpPassword, "ftp_password", "ftp", EConfigType::STRING},
-      {kNvsDeviceLogEnable, "log_enabled", "device", EConfigType::BOOL},
+    static const SConfigKeyMappingEntry tKeyMapping[] = {
+      {Configuration_::kNvsDeviceAppName, "appname", "device", EConfigType::STRING},
+      {Configuration_::kNvsDeviceVersion, "version", "device", EConfigType::STRING},
+      {Configuration_::kNvsDisplayBrightness, "jpg_brightness", "display", EConfigType::UCHAR},
+      {Configuration_::kNvsDisplayContrast, "jpg_contrast", "display", EConfigType::UCHAR},
+      {Configuration_::kNvsDisplayGamma, "jpg_gamma", "display", EConfigType::UCHAR},
+      {Configuration_::kNvsDisplayFile, "image_file", "display", EConfigType::STRING},
+      {Configuration_::kNvsTimeServer, "ntp_server", "ntp", EConfigType::STRING},
+      {Configuration_::kNvsTimePort, "ntp_port", "ntp", EConfigType::USHORT},
+      {Configuration_::kNvsTimeGmtOffset, "ntp_gmt_offset", "ntp", EConfigType::INT},
+      {Configuration_::kNvsTimeUpdate, "ntp_update", "ntp", EConfigType::UINT},
+      {Configuration_::kNvsConApEnable, "ap_enable", "ap mode", EConfigType::BOOL},
+      {Configuration_::kNvsConApSsid, "ap_ssid", "ap mode", EConfigType::STRING},
+      {Configuration_::kNvsConApPass, "ap_password", "ap mode", EConfigType::STRING},
+      {Configuration_::kNvsConApIp, "ap_ip", "ap mode", EConfigType::STRING},
+      {Configuration_::kNvsConApGw, "ap_gateway", "ap mode", EConfigType::STRING},
+      {Configuration_::kNvsConApSubnet, "ap_subnet", "ap mode", EConfigType::STRING},
+      {Configuration_::kNvsConFallbackApSsid, "fallback_ap_ssid", "ap mode fallback", EConfigType::STRING},
+      {Configuration_::kNvsConFallbackApPass, "fallback_ap_password", "ap mode fallback", EConfigType::STRING},
+      {Configuration_::kNvsConFallbackApIp, "fallback_ap_ip", "ap mode fallback", EConfigType::STRING},
+      {Configuration_::kNvsConFallbackApGw, "fallback_ap_gateway", "ap mode fallback", EConfigType::STRING},
+      {Configuration_::kNvsConFallbackApSubnet, "fallback_ap_subnet", "ap mode fallback", EConfigType::STRING},
+      {Configuration_::kNvsConStaSsid, "sta_ssid", "sta mode", EConfigType::STRING},
+      {Configuration_::kNvsConStaPass, "sta_password", "sta mode", EConfigType::STRING},
+      {Configuration_::kNvsConStaAutoFallback, "sta_auto_fallback", "sta mode", EConfigType::BOOL},
+      {Configuration_::kNvsConStaMaxRetry, "sta_max_retry", "sta mode", EConfigType::UCHAR},
+      {Configuration_::kNvsConStaRetryDelayMs, "sta_retry_delay_ms", "sta mode", EConfigType::UINT},
+      {Configuration_::kNvsConStaEnable, "sta_enable", "static ip", EConfigType::BOOL},
+      {Configuration_::kNvsConStaIp, "sta_ip", "static ip", EConfigType::STRING},
+      {Configuration_::kNvsConStaGw, "sta_gateway", "static ip", EConfigType::STRING},
+      {Configuration_::kNvsConStaSubnet, "sta_subnet", "static ip", EConfigType::STRING},
+      {Configuration_::kNvsConStaDns1, "sta_dns1", "static ip", EConfigType::STRING},
+      {Configuration_::kNvsConStaDns2, "sta_dns2", "static ip", EConfigType::STRING},
+      {Configuration_::kNvsConMdnsEnable, "mdns_enable", "mdns", EConfigType::BOOL},
+      {Configuration_::kNvsConMdnsName, "mdns_hostname", "mdns", EConfigType::STRING},
+      {Configuration_::kNvsTimeGmtOffsetLong, "ntp_gmt_offset", "ntp", EConfigType::INT},
+      {Configuration_::kNvsTimeDaylightOffset, "ntp_daylight_offset", "ntp", EConfigType::INT},
+      {Configuration_::kNvsTimeZoneLabel, "ntp_timezone_label", "ntp", EConfigType::STRING},
+      {Configuration_::kNvsTimeLowPowerSyncEnable, "ntp_low_power_sync_enable", "ntp", EConfigType::BOOL},
+      {Configuration_::kNvsTimeLowPowerSyncInterval, "ntp_low_power_sync_interval", "ntp", EConfigType::ULONG},
+      {Configuration_::kNvsTimeLastSuccessfulSync, "ntp_last_successful_sync", "ntp", EConfigType::ULONG},
+      {Configuration_::kNvsTimerWake, "wake_up", "timer", EConfigType::UCHAR},
+      {Configuration_::kNvsTimerWakeHour, "wake_up_hour", "timer", EConfigType::UCHAR},
+      {Configuration_::kNvsTelnetEnable, "telnet_enable", "telnet", EConfigType::BOOL},
+      {Configuration_::kNvsTelnetPort, "telnet_port", "telnet", EConfigType::UCHAR},
+      {Configuration_::kNvsTelnetUsername, "telnet_username", "telnet", EConfigType::STRING},
+      {Configuration_::kNvsTelnetPassword, "telnet_password", "telnet", EConfigType::STRING},
+      {Configuration_::kNvsTelnetSession, "telnet_session", "telnet", EConfigType::ULONG},
+      {Configuration_::kNvsFtpEnable, "ftp_enable", "ftp", EConfigType::BOOL},
+      {Configuration_::kNvsFtpPort, "ftp_port", "ftp", EConfigType::UCHAR},
+      {Configuration_::kNvsFtpUsername, "ftp_username", "ftp", EConfigType::STRING},
+      {Configuration_::kNvsFtpPassword, "ftp_password", "ftp", EConfigType::STRING},
+      {Configuration_::kNvsDeviceLogEnable, "log_enabled", "device", EConfigType::BOOL},
       {"", "default_file_system", "storage", EConfigType::GLOBAL_INT},
       {"", "fallback_enabled", "storage", EConfigType::GLOBAL_INT},
       {"", "config_file", "device", EConfigType::GLOBAL_INT},
@@ -69,7 +77,135 @@ namespace App {
       {"", "images_dir", "display", EConfigType::GLOBAL_INT},
       {"", "wake_pin", "timer", EConfigType::GLOBAL_INT},
     };
-    return tKeyMapping;
+    static const std::vector<SConfigKeyMappingEntry> tKeyMappingVector(tKeyMapping, tKeyMapping + (sizeof(tKeyMapping) / sizeof(tKeyMapping[0])));
+    return tKeyMappingVector;
+  }
+
+  bool Configuration_::ParseLine(char *tLine, char *tSection, char *tKey, char *tValue) {
+    if (tLine == nullptr || tLine[0] == '\0') return false;
+    TrimValue(tLine);
+    if (tLine[0] == '\0' || tLine[0] == '#' || tLine[0] == ';') return false;
+    if (tLine[0] == '[') {
+      char *tEnd = strchr(tLine, ']');
+      if (tEnd) {
+        *tEnd = '\0';
+        strncpy(tSection, tLine + 1, 31);
+        tSection[31] = '\0';
+      }
+      return false;
+    }
+    char *tSeparator = strchr(tLine, '=');
+    if (tSeparator) {
+      *tSeparator = '\0';
+      strncpy(tKey, tLine, 31);
+      tKey[31] = '\0';
+      strncpy(tValue, tSeparator + 1, 127);
+      tValue[127] = '\0';
+      TrimValue(tKey);
+      TrimValue(tValue);
+      return true;
+    }
+    return false;
+  }
+
+  void Configuration_::TrimValue(char *tValue) {
+    if (!tValue || tValue[0] == '\0') return;
+    size_t tLength = strlen(tValue);
+    while (tLength > 0 && (tValue[tLength - 1] == ' ' || tValue[tLength - 1] == '\t' || tValue[tLength - 1] == '\r' || tValue[tLength - 1] == '\n')) tValue[--tLength] = '\0';
+    size_t tStart = 0;
+    while (tValue[tStart] == ' ' || tValue[tStart] == '\t' || tValue[tStart] == '\r' || tValue[tStart] == '\n') tStart++;
+    if (tStart > 0) memmove(tValue, tValue + tStart, tLength - tStart + 1);
+  }
+
+  void Configuration_::ApplyINIValue(SAppConfig &tConfig, const char *tSection, const SConfigKeyMappingEntry &tEntry, const char *tValue) {
+    if (strcasecmp(tSection, "device") == 0) {
+      if (strcmp(tEntry.NvsKey, Configuration_::kNvsDeviceAppName) == 0) tConfig.Device.Name = String(tValue);
+      else if (strcmp(tEntry.NvsKey, Configuration_::kNvsDeviceVersion) == 0) tConfig.Device.Version = String(tValue);
+    } else if (strcasecmp(tSection, "display") == 0) {
+      if (strcmp(tEntry.NvsKey, Configuration_::kNvsDisplayBrightness) == 0) tConfig.Display.JpgBrightness = Percentage(static_cast<uint8_t>(atoi(tValue)));
+      else if (strcmp(tEntry.NvsKey, Configuration_::kNvsDisplayContrast) == 0) tConfig.Display.JpgContrast = Percentage(static_cast<uint8_t>(atoi(tValue)));
+      else if (strcmp(tEntry.NvsKey, Configuration_::kNvsDisplayGamma) == 0) tConfig.Display.JpgGamma = Percentage(static_cast<uint8_t>(atoi(tValue)));
+      else if (strcmp(tEntry.NvsKey, Configuration_::kNvsDisplayFile) == 0) tConfig.Display.CurrentFile = String(tValue);
+    } else if (strcasecmp(tSection, "ntp") == 0) {
+      if (strcmp(tEntry.NvsKey, Configuration_::kNvsTimeServer) == 0) tConfig.Ntp.Server = String(tValue);
+      else if (strcmp(tEntry.NvsKey, Configuration_::kNvsTimePort) == 0) tConfig.Ntp.NtpPort = Port(static_cast<uint16_t>(atoi(tValue)));
+      else if (strcmp(tEntry.NvsKey, Configuration_::kNvsTimeGmtOffset) == 0 || strcmp(tEntry.NvsKey, Configuration_::kNvsTimeGmtOffsetLong) == 0) tConfig.Ntp.GMTOffset = atol(tValue);
+      else if (strcmp(tEntry.NvsKey, Configuration_::kNvsTimeDaylightOffset) == 0) tConfig.Ntp.DaylightOffset = atol(tValue);
+      else if (strcmp(tEntry.NvsKey, Configuration_::kNvsTimeZoneLabel) == 0) tConfig.Ntp.TimeZoneLabel = String(tValue);
+      else if (strcmp(tEntry.NvsKey, Configuration_::kNvsTimeUpdate) == 0) tConfig.Ntp.UpdateInterval = UTL.SafeAtoul(tValue, 60, 86400000, 3600);
+      else if (strcmp(tEntry.NvsKey, Configuration_::kNvsTimeLowPowerSyncEnable) == 0) tConfig.Ntp.LowPowerSyncEnable = (strcasecmp(tValue, "true") == 0 || atoi(tValue) != 0);
+      else if (strcmp(tEntry.NvsKey, Configuration_::kNvsTimeLowPowerSyncInterval) == 0) tConfig.Ntp.LowPowerSyncIntervalSec = UTL.SafeAtoul(tValue, 60, 31536000, 604800);
+      else if (strcmp(tEntry.NvsKey, Configuration_::kNvsTimeLastSuccessfulSync) == 0) tConfig.Ntp.LastSuccessfulSyncEpochUtc = strtoul(tValue, nullptr, 10);
+    } else if (strcasecmp(tSection, "ap mode") == 0 || strcasecmp(tSection, "ap mode fallback") == 0) {
+      if (strcmp(tEntry.NvsKey, Configuration_::kNvsConApEnable) == 0) tConfig.Connection.ApModeEnable = (strcasecmp(tValue, "true") == 0 || atoi(tValue) != 0);
+      else if (strcmp(tEntry.NvsKey, Configuration_::kNvsConApSsid) == 0) tConfig.Connection.ApSsid = String(tValue);
+      else if (strcmp(tEntry.NvsKey, Configuration_::kNvsConApPass) == 0) tConfig.Connection.ApPassword = String(tValue);
+      else if (strcmp(tEntry.NvsKey, Configuration_::kNvsConApIp) == 0) tConfig.Connection.ApIp = String(tValue);
+      else if (strcmp(tEntry.NvsKey, Configuration_::kNvsConApGw) == 0) tConfig.Connection.ApGateway = String(tValue);
+      else if (strcmp(tEntry.NvsKey, Configuration_::kNvsConApSubnet) == 0) tConfig.Connection.ApSubnet = String(tValue);
+      if (strcmp(tEntry.NvsKey, Configuration_::kNvsConFallbackApSsid) == 0) tConfig.Connection.FallbackApSsid = String(tValue);
+      else if (strcmp(tEntry.NvsKey, Configuration_::kNvsConFallbackApPass) == 0) tConfig.Connection.FallbackApPassword = String(tValue);
+      else if (strcmp(tEntry.NvsKey, Configuration_::kNvsConFallbackApIp) == 0) tConfig.Connection.FallbackApIp = String(tValue);
+      else if (strcmp(tEntry.NvsKey, Configuration_::kNvsConFallbackApGw) == 0) tConfig.Connection.FallbackApGateway = String(tValue);
+      else if (strcmp(tEntry.NvsKey, Configuration_::kNvsConFallbackApSubnet) == 0) tConfig.Connection.FallbackApSubnet = String(tValue);
+    } else if (strcasecmp(tSection, "sta mode") == 0) {
+      if (strcmp(tEntry.NvsKey, Configuration_::kNvsConStaSsid) == 0) tConfig.Connection.StaSsid = String(tValue);
+      else if (strcmp(tEntry.NvsKey, Configuration_::kNvsConStaPass) == 0) tConfig.Connection.StaPassword = String(tValue);
+      else if (strcmp(tEntry.NvsKey, Configuration_::kNvsConStaAutoFallback) == 0) tConfig.Connection.StaAutoFallbackApEnable = (strcasecmp(tValue, "true") == 0 || atoi(tValue) != 0);
+      else if (strcmp(tEntry.NvsKey, Configuration_::kNvsConStaMaxRetry) == 0) tConfig.Connection.StaConnectMaxRetry = static_cast<uint8_t>(atoi(tValue));
+      else if (strcmp(tEntry.NvsKey, Configuration_::kNvsConStaRetryDelayMs) == 0) tConfig.Connection.StaRetryDelayMs = static_cast<uint32_t>(strtoul(tValue, nullptr, 10));
+    } else if (strcasecmp(tSection, "static ip") == 0) {
+      if (strcmp(tEntry.NvsKey, Configuration_::kNvsConStaEnable) == 0) tConfig.Connection.StaIpEnable = (strcasecmp(tValue, "true") == 0 || atoi(tValue) != 0);
+      else if (strcmp(tEntry.NvsKey, Configuration_::kNvsConStaIp) == 0) tConfig.Connection.StaIp = String(tValue);
+      else if (strcmp(tEntry.NvsKey, Configuration_::kNvsConStaGw) == 0) tConfig.Connection.StaGateway = String(tValue);
+      else if (strcmp(tEntry.NvsKey, Configuration_::kNvsConStaSubnet) == 0) tConfig.Connection.StaSubnet = String(tValue);
+      else if (strcmp(tEntry.NvsKey, Configuration_::kNvsConStaDns1) == 0) tConfig.Connection.StaPrimaryDns = String(tValue);
+      else if (strcmp(tEntry.NvsKey, Configuration_::kNvsConStaDns2) == 0) tConfig.Connection.StaSecondaryDns = String(tValue);
+    } else if (strcasecmp(tSection, "mdns") == 0) {
+      if (strcmp(tEntry.NvsKey, Configuration_::kNvsConMdnsEnable) == 0) tConfig.Connection.MdnsEnable = (strcasecmp(tValue, "true") == 0 || atoi(tValue) != 0);
+      else if (strcmp(tEntry.NvsKey, Configuration_::kNvsConMdnsName) == 0) tConfig.Connection.MdnsName = String(tValue);
+    } else if (strcasecmp(tSection, "timer") == 0) {
+      if (strcmp(tEntry.NvsKey, Configuration_::kNvsTimerWake) == 0) tConfig.Timer.WakeUp = static_cast<ETimerWakeUp>(atoi(tValue));
+      else if (strcmp(tEntry.NvsKey, Configuration_::kNvsTimerWakeHour) == 0) tConfig.Timer.WakeUpHour = static_cast<uint8_t>(atoi(tValue)) % 24;
+    } else if (strcasecmp(tSection, "telnet") == 0) {
+      if (strcmp(tEntry.NvsKey, Configuration_::kNvsTelnetEnable) == 0) tConfig.Telnet.Enable = (strcasecmp(tValue, "true") == 0 || atoi(tValue) != 0);
+      else if (strcmp(tEntry.NvsKey, Configuration_::kNvsTelnetPort) == 0) tConfig.Telnet.TelnetPort = Port(static_cast<uint8_t>(atoi(tValue)));
+      else if (strcmp(tEntry.NvsKey, Configuration_::kNvsTelnetUsername) == 0) tConfig.Telnet.Username = String(tValue);
+      else if (strcmp(tEntry.NvsKey, Configuration_::kNvsTelnetPassword) == 0) tConfig.Telnet.Password = String(tValue);
+      else if (strcmp(tEntry.NvsKey, Configuration_::kNvsTelnetSession) == 0) tConfig.Telnet.Session = UTL.SafeAtoul(tValue, 60, 86400000, 3600000);
+    } else if (strcasecmp(tSection, "ftp") == 0) {
+      if (strcmp(tEntry.NvsKey, Configuration_::kNvsFtpEnable) == 0) tConfig.Ftp.Enable = (strcasecmp(tValue, "true") == 0 || atoi(tValue) != 0);
+      else if (strcmp(tEntry.NvsKey, Configuration_::kNvsFtpPort) == 0) tConfig.Ftp.FtpPort = Port(static_cast<uint8_t>(atoi(tValue)));
+      else if (strcmp(tEntry.NvsKey, Configuration_::kNvsFtpUsername) == 0) tConfig.Ftp.Username = String(tValue);
+      else if (strcmp(tEntry.NvsKey, Configuration_::kNvsFtpPassword) == 0) tConfig.Ftp.Password = String(tValue);
+    }
+  }
+
+  bool Configuration_::ReadINIFile(const char *tFileName, SAppConfig &tConfig) {
+    File tFile = STG.OpenFile(tFileName, FILE_READ);
+    if (!tFile) {
+      xLOG("INI file (%s) open failed!", tFileName);
+      return false;
+    }
+    char tLine[256];
+    char tSection[32] = {};
+    char tKey[32];
+    char tValue[128];
+    const auto &tMapping = GetKeyMapping();
+    while (tFile.available()) {
+      String tLineStr = tFile.readStringUntil('\n');
+      if (tLineStr.length() == 0) continue;
+      if (tLineStr.endsWith("\r")) tLineStr.remove(tLineStr.length() - 1);
+      strncpy(tLine, tLineStr.c_str(), sizeof(tLine) - 1);
+      tLine[sizeof(tLine) - 1] = '\0';
+      if (!ParseLine(tLine, tSection, tKey, tValue)) continue;
+      auto tIt = std::find_if(tMapping.begin(), tMapping.end(), [tSection, tKey](const SConfigKeyMappingEntry &tEntry) {
+        return MatchIniSection(tEntry, tSection) && strcasecmp(tEntry.IniKey, tKey) == 0;
+      });
+      if (tIt != tMapping.end()) ApplyINIValue(tConfig, tSection, *tIt, tValue);
+    }
+    tFile.close();
+    return true;
   }
 
   Configuration_ &Configuration_::Instance() {
@@ -431,56 +567,78 @@ namespace App {
 
   const char *Configuration_::PrepareAllConfigToINI() {
     String tCfgIni = "";
-    String currentSection = "";
     AccessConfig(true, [&]() {
-      for (const auto &tEntry : GetKeyMapping()) {
-        if (tEntry.NvsKey[0] == '\0' && tEntry.Type != EConfigType::GLOBAL_INT) continue;
-        if (strcmp(tEntry.NvsKey, kNvsTimeGmtOffsetLong) == 0) continue;
-        if (String(tEntry.IniSection) != currentSection) {
-          if (!currentSection.isEmpty()) tCfgIni += "\n";
-          currentSection = tEntry.IniSection;
-          tCfgIni += "[" + currentSection + "]\n";
-        }
-        String nvsValue;
-        switch (tEntry.Type) {
-          case EConfigType::BOOL:
-            nvsValue = mConfig.getBool(tEntry.NvsKey) ? "true" : "false";
-            break;
-          case EConfigType::UCHAR:
-            nvsValue = String(mConfig.getUChar(tEntry.NvsKey));
-            break;
-          case EConfigType::USHORT:
-            nvsValue = String(mConfig.getUShort(tEntry.NvsKey));
-            break;
-          case EConfigType::INT:
-            nvsValue = String(mConfig.getInt(tEntry.NvsKey));
-            break;
-          case EConfigType::UINT:
-          case EConfigType::ULONG:
-            nvsValue = String(mConfig.getULong(tEntry.NvsKey));
-            break;
-          case EConfigType::STRING:
-            nvsValue = mConfig.getString(tEntry.NvsKey);
-            break;
-          case EConfigType::GLOBAL_INT:
-            if (strcmp(tEntry.IniKey, "default_file_system") == 0) nvsValue = (DEFAULT_FILE_SYSTEM == EFileSystemType::SDCard) ? "sdcard" : "littlefs";
-            else if (strcmp(tEntry.IniKey, "fallback_enabled") == 0) nvsValue = STORAGE_FALLBACK_ENABLED ? "true" : "false";
-            else if (strcmp(tEntry.IniKey, "config_file") == 0) nvsValue = CONFIG_FILE;
-            else if (strcmp(tEntry.IniKey, "battery_pin") == 0) nvsValue = String(BATTERY_PIN);
-            else if (strcmp(tEntry.IniKey, "setting_pin") == 0) nvsValue = String(SETTING_PIN);
-            else if (strcmp(tEntry.IniKey, "reset_pin") == 0) nvsValue = String(RESET_PIN);
-            else if (strcmp(tEntry.IniKey, "display_width") == 0) nvsValue = String(DISPLAY_WIDTH);
-            else if (strcmp(tEntry.IniKey, "display_height") == 0) nvsValue = String(DISPLAY_HEIGHT);
-            else if (strcmp(tEntry.IniKey, "image_ext") == 0) nvsValue = IMAGE_EXT;
-            else if (strcmp(tEntry.IniKey, "images_dir") == 0) nvsValue = IMAGES_DIR;
-            else if (strcmp(tEntry.IniKey, "wake_pin") == 0) nvsValue = String(SETTING_PIN);
-            else continue;
-            break;
-          default:
-            continue;
-        }
-        tCfgIni += String(tEntry.IniKey) + " = " + nvsValue + "\n";
-      }
+      auto AppendSection = [&](const char *tSection) {
+        if (!tCfgIni.isEmpty()) tCfgIni += "\n";
+        tCfgIni += "[";
+        tCfgIni += tSection;
+        tCfgIni += "]\n";
+      };
+      auto AppendLine = [&](const char *tKey, const String &tValue) {
+        tCfgIni += tKey;
+        tCfgIni += " = ";
+        tCfgIni += tValue;
+        tCfgIni += "\n";
+      };
+      AppendSection("device");
+      AppendLine("appname", mConfig.getString(kNvsDeviceAppName, "PHOTO FRAME GS02"));
+      AppendLine("version", mConfig.getString(kNvsDeviceVersion, "v1.0"));
+      AppendLine("log_enabled", mConfig.getBool(kNvsDeviceLogEnable, true) ? "true" : "false");
+      AppendSection("display");
+      AppendLine("jpg_brightness", String(mConfig.getUChar(kNvsDisplayBrightness, 30)));
+      AppendLine("jpg_contrast", String(mConfig.getUChar(kNvsDisplayContrast, 35)));
+      AppendLine("jpg_gamma", String(mConfig.getUChar(kNvsDisplayGamma, 135)));
+      AppendLine("image_file", mConfig.getString(kNvsDisplayFile, ""));
+      AppendSection("ntp");
+      AppendLine("ntp_server", mConfig.getString(kNvsTimeServer, "ro.pool.ntp.org"));
+      AppendLine("ntp_port", String(mConfig.getUShort(kNvsTimePort, 123)));
+      AppendLine("ntp_gmt_offset", String(mConfig.getInt(kNvsTimeGmtOffset, 2 * 60 * 60)));
+      AppendLine("ntp_daylight_offset", String(mConfig.getInt(kNvsTimeDaylightOffset, 1 * 60 * 60)));
+      AppendLine("ntp_timezone_label", mConfig.getString(kNvsTimeZoneLabel, "EET"));
+      AppendLine("ntp_low_power_sync_enable", mConfig.getBool(kNvsTimeLowPowerSyncEnable, true) ? "true" : "false");
+      AppendLine("ntp_low_power_sync_interval", String(mConfig.getULong(kNvsTimeLowPowerSyncInterval, 7UL * 24UL * 60UL * 60UL)));
+      AppendSection("ap mode");
+      AppendLine("ap_enable", mConfig.getBool(kNvsConApEnable, false) ? "true" : "false");
+      AppendLine("ap_ssid", mConfig.getString(kNvsConApSsid, "PhotoFrame GS02"));
+      AppendLine("ap_password", mConfig.getString(kNvsConApPass, "123456789"));
+      AppendLine("ap_ip", mConfig.getString(kNvsConApIp, "192.168.4.1"));
+      AppendLine("ap_gateway", mConfig.getString(kNvsConApGw, "192.168.4.1"));
+      AppendLine("ap_subnet", mConfig.getString(kNvsConApSubnet, "255.255.255.0"));
+      AppendLine("fallback_ap_ssid", mConfig.getString(kNvsConFallbackApSsid, "PhotoFrameGS02-Fallback"));
+      AppendLine("fallback_ap_password", mConfig.getString(kNvsConFallbackApPass, "123456789"));
+      AppendLine("fallback_ap_ip", mConfig.getString(kNvsConFallbackApIp, "192.168.5.1"));
+      AppendLine("fallback_ap_gateway", mConfig.getString(kNvsConFallbackApGw, "192.168.5.1"));
+      AppendLine("fallback_ap_subnet", mConfig.getString(kNvsConFallbackApSubnet, "255.255.255.0"));
+      AppendSection("sta mode");
+      AppendLine("sta_ssid", mConfig.getString(kNvsConStaSsid, ""));
+      AppendLine("sta_password", mConfig.getString(kNvsConStaPass, ""));
+      AppendLine("sta_auto_fallback", mConfig.getBool(kNvsConStaAutoFallback, true) ? "true" : "false");
+      AppendSection("static ip");
+      AppendLine("sta_enable", mConfig.getBool(kNvsConStaEnable, false) ? "true" : "false");
+      AppendLine("sta_ip", mConfig.getString(kNvsConStaIp, ""));
+      AppendLine("sta_gateway", mConfig.getString(kNvsConStaGw, ""));
+      AppendLine("sta_subnet", mConfig.getString(kNvsConStaSubnet, ""));
+      AppendLine("sta_dns1", mConfig.getString(kNvsConStaDns1, ""));
+      AppendLine("sta_dns2", mConfig.getString(kNvsConStaDns2, ""));
+      AppendSection("mdns");
+      AppendLine("mdns_enable", mConfig.getBool(kNvsConMdnsEnable, false) ? "true" : "false");
+      AppendLine("mdns_hostname", mConfig.getString(kNvsConMdnsName, "photoframegs02"));
+      AppendSection("timer");
+      AppendLine("wake_up", String(static_cast<uint8_t>(mConfig.getUChar(kNvsTimerWake, static_cast<uint8_t>(ETimerWakeUp::Daily)))));
+      AppendLine("wake_up_hour", String(mConfig.getUChar(kNvsTimerWakeHour, 6)));
+      AppendSection("telnet");
+      AppendLine("telnet_enable", mConfig.getBool(kNvsTelnetEnable, true) ? "true" : "false");
+      AppendLine("telnet_port", String(mConfig.getUChar(kNvsTelnetPort, 23)));
+      AppendLine("telnet_username", mConfig.getString(kNvsTelnetUsername, "admin"));
+      AppendLine("telnet_password", mConfig.getString(kNvsTelnetPassword, "123456789"));
+      AppendLine("telnet_session", String(mConfig.getULong(kNvsTelnetSession, 3600000)));
+      AppendSection("ftp");
+      AppendLine("ftp_enable", mConfig.getBool(kNvsFtpEnable, true) ? "true" : "false");
+      AppendLine("ftp_port", String(mConfig.getUChar(kNvsFtpPort, 21)));
+      AppendLine("ftp_username", mConfig.getString(kNvsFtpUsername, "admin"));
+      AppendLine("ftp_password", mConfig.getString(kNvsFtpPassword, "123456789"));
+      AppendSection("storage");
+      AppendLine("fallback_enabled", STORAGE_FALLBACK_ENABLED ? "true" : "false");
     });
     static String sReturn;
     sReturn = tCfgIni;
@@ -587,134 +745,6 @@ namespace App {
       }
     }
     return tSuccess;
-  }
-
-  bool Configuration_::ParseLine(char *tLine, char *tSection, char *tKey, char *tValue) {
-    if (tLine == nullptr || tLine[0] == '\0') return false;
-    TrimValue(tLine);
-    if (tLine[0] == '\0' || tLine[0] == '#' || tLine[0] == ';') return false;
-    if (tLine[0] == '[') {
-      char *tEnd = strchr(tLine, ']');
-      if (tEnd) {
-        *tEnd = '\0';
-        strncpy(tSection, tLine + 1, 31);
-        tSection[31] = '\0';
-      }
-      return false;
-    }
-    char *tSeparator = strchr(tLine, '=');
-    if (tSeparator) {
-      *tSeparator = '\0';
-      strncpy(tKey, tLine, 31);
-      tKey[31] = '\0';
-      strncpy(tValue, tSeparator + 1, 127);
-      tValue[127] = '\0';
-      TrimValue(tKey);
-      TrimValue(tValue);
-      return true;
-    }
-    return false;
-  }
-
-  void Configuration_::TrimValue(char *tValue) {
-    if (!tValue || tValue[0] == '\0') return;
-    size_t tLength = strlen(tValue);
-    while (tLength > 0 && (tValue[tLength - 1] == ' ' || tValue[tLength - 1] == '\t' || tValue[tLength - 1] == '\r' || tValue[tLength - 1] == '\n')) tValue[--tLength] = '\0';
-    size_t tStart = 0;
-    while (tValue[tStart] == ' ' || tValue[tStart] == '\t' || tValue[tStart] == '\r' || tValue[tStart] == '\n') tStart++;
-    if (tStart > 0) memmove(tValue, tValue + tStart, tLength - tStart + 1);
-  }
-
-  void Configuration_::ApplyINIValue(SAppConfig &tConfig, const char *tSection, const SConfigKeyMappingEntry &tEntry, const char *tValue) {
-    if (strcasecmp(tSection, "device") == 0) {
-      if (strcmp(tEntry.NvsKey, kNvsDeviceAppName) == 0) tConfig.Device.Name = String(tValue);
-      else if (strcmp(tEntry.NvsKey, kNvsDeviceVersion) == 0) tConfig.Device.Version = String(tValue);
-    } else if (strcasecmp(tSection, "display") == 0) {
-      if (strcmp(tEntry.NvsKey, kNvsDisplayBrightness) == 0) tConfig.Display.JpgBrightness = Percentage(static_cast<uint8_t>(atoi(tValue)));
-      else if (strcmp(tEntry.NvsKey, kNvsDisplayContrast) == 0) tConfig.Display.JpgContrast = Percentage(static_cast<uint8_t>(atoi(tValue)));
-      else if (strcmp(tEntry.NvsKey, kNvsDisplayGamma) == 0) tConfig.Display.JpgGamma = Percentage(static_cast<uint8_t>(atoi(tValue)));
-      else if (strcmp(tEntry.NvsKey, kNvsDisplayFile) == 0) tConfig.Display.CurrentFile = String(tValue);
-    } else if (strcasecmp(tSection, "ntp") == 0) {
-      if (strcmp(tEntry.NvsKey, kNvsTimeServer) == 0) tConfig.Ntp.Server = String(tValue);
-      else if (strcmp(tEntry.NvsKey, kNvsTimePort) == 0) tConfig.Ntp.NtpPort = Port(static_cast<uint16_t>(atoi(tValue)));
-      else if (strcmp(tEntry.NvsKey, kNvsTimeGmtOffset) == 0 || strcmp(tEntry.NvsKey, kNvsTimeGmtOffsetLong) == 0) tConfig.Ntp.GMTOffset = atol(tValue);
-      else if (strcmp(tEntry.NvsKey, kNvsTimeDaylightOffset) == 0) tConfig.Ntp.DaylightOffset = atol(tValue);
-      else if (strcmp(tEntry.NvsKey, kNvsTimeZoneLabel) == 0) tConfig.Ntp.TimeZoneLabel = String(tValue);
-      else if (strcmp(tEntry.NvsKey, kNvsTimeUpdate) == 0) tConfig.Ntp.UpdateInterval = UTL.SafeAtoul(tValue, 60, 86400000, 3600);
-      else if (strcmp(tEntry.NvsKey, kNvsTimeLowPowerSyncEnable) == 0) tConfig.Ntp.LowPowerSyncEnable = (strcasecmp(tValue, "true") == 0 || atoi(tValue) != 0);
-      else if (strcmp(tEntry.NvsKey, kNvsTimeLowPowerSyncInterval) == 0) tConfig.Ntp.LowPowerSyncIntervalSec = UTL.SafeAtoul(tValue, 60, 31536000, 604800);
-      else if (strcmp(tEntry.NvsKey, kNvsTimeLastSuccessfulSync) == 0) tConfig.Ntp.LastSuccessfulSyncEpochUtc = strtoul(tValue, nullptr, 10);
-    } else if (strcasecmp(tSection, "ap mode") == 0) {
-      if (strcmp(tEntry.NvsKey, kNvsConApEnable) == 0) tConfig.Connection.ApModeEnable = (strcasecmp(tValue, "true") == 0 || atoi(tValue) != 0);
-      else if (strcmp(tEntry.NvsKey, kNvsConApSsid) == 0) tConfig.Connection.ApSsid = String(tValue);
-      else if (strcmp(tEntry.NvsKey, kNvsConApPass) == 0) tConfig.Connection.ApPassword = String(tValue);
-      else if (strcmp(tEntry.NvsKey, kNvsConApIp) == 0) tConfig.Connection.ApIp = String(tValue);
-      else if (strcmp(tEntry.NvsKey, kNvsConApGw) == 0) tConfig.Connection.ApGateway = String(tValue);
-      else if (strcmp(tEntry.NvsKey, kNvsConApSubnet) == 0) tConfig.Connection.ApSubnet = String(tValue);
-    } else if (strcasecmp(tSection, "ap mode fallback") == 0) {
-      if (strcmp(tEntry.NvsKey, kNvsConFallbackApSsid) == 0) tConfig.Connection.FallbackApSsid = String(tValue);
-      else if (strcmp(tEntry.NvsKey, kNvsConFallbackApPass) == 0) tConfig.Connection.FallbackApPassword = String(tValue);
-      else if (strcmp(tEntry.NvsKey, kNvsConFallbackApIp) == 0) tConfig.Connection.FallbackApIp = String(tValue);
-      else if (strcmp(tEntry.NvsKey, kNvsConFallbackApGw) == 0) tConfig.Connection.FallbackApGateway = String(tValue);
-      else if (strcmp(tEntry.NvsKey, kNvsConFallbackApSubnet) == 0) tConfig.Connection.FallbackApSubnet = String(tValue);
-    } else if (strcasecmp(tSection, "sta mode") == 0) {
-      if (strcmp(tEntry.NvsKey, kNvsConStaSsid) == 0) tConfig.Connection.StaSsid = String(tValue);
-      else if (strcmp(tEntry.NvsKey, kNvsConStaPass) == 0) tConfig.Connection.StaPassword = String(tValue);
-      else if (strcmp(tEntry.NvsKey, kNvsConStaAutoFallback) == 0) tConfig.Connection.StaAutoFallbackApEnable = (strcasecmp(tValue, "true") == 0 || atoi(tValue) != 0);
-      else if (strcmp(tEntry.NvsKey, kNvsConStaMaxRetry) == 0) tConfig.Connection.StaConnectMaxRetry = static_cast<uint8_t>(atoi(tValue));
-      else if (strcmp(tEntry.NvsKey, kNvsConStaRetryDelayMs) == 0) tConfig.Connection.StaRetryDelayMs = static_cast<uint32_t>(strtoul(tValue, nullptr, 10));
-    } else if (strcasecmp(tSection, "static ip") == 0) {
-      if (strcmp(tEntry.NvsKey, kNvsConStaEnable) == 0) tConfig.Connection.StaIpEnable = (strcasecmp(tValue, "true") == 0 || atoi(tValue) != 0);
-      else if (strcmp(tEntry.NvsKey, kNvsConStaIp) == 0) tConfig.Connection.StaIp = String(tValue);
-      else if (strcmp(tEntry.NvsKey, kNvsConStaGw) == 0) tConfig.Connection.StaGateway = String(tValue);
-      else if (strcmp(tEntry.NvsKey, kNvsConStaSubnet) == 0) tConfig.Connection.StaSubnet = String(tValue);
-      else if (strcmp(tEntry.NvsKey, kNvsConStaDns1) == 0) tConfig.Connection.StaPrimaryDns = String(tValue);
-      else if (strcmp(tEntry.NvsKey, kNvsConStaDns2) == 0) tConfig.Connection.StaSecondaryDns = String(tValue);
-    } else if (strcasecmp(tSection, "mdns") == 0) {
-      if (strcmp(tEntry.NvsKey, kNvsConMdnsEnable) == 0) tConfig.Connection.MdnsEnable = (strcasecmp(tValue, "true") == 0 || atoi(tValue) != 0);
-      else if (strcmp(tEntry.NvsKey, kNvsConMdnsName) == 0) tConfig.Connection.MdnsName = String(tValue);
-    } else if (strcasecmp(tSection, "timer") == 0) {
-      if (strcmp(tEntry.NvsKey, kNvsTimerWake) == 0) tConfig.Timer.WakeUp = static_cast<ETimerWakeUp>(atoi(tValue));
-      else if (strcmp(tEntry.NvsKey, kNvsTimerWakeHour) == 0) tConfig.Timer.WakeUpHour = static_cast<uint8_t>(atoi(tValue)) % 24;
-    } else if (strcasecmp(tSection, "telnet") == 0) {
-      if (strcmp(tEntry.NvsKey, kNvsTelnetEnable) == 0) tConfig.Telnet.Enable = (strcasecmp(tValue, "true") == 0 || atoi(tValue) != 0);
-      else if (strcmp(tEntry.NvsKey, kNvsTelnetPort) == 0) tConfig.Telnet.TelnetPort = Port(static_cast<uint8_t>(atoi(tValue)));
-      else if (strcmp(tEntry.NvsKey, kNvsTelnetUsername) == 0) tConfig.Telnet.Username = String(tValue);
-      else if (strcmp(tEntry.NvsKey, kNvsTelnetPassword) == 0) tConfig.Telnet.Password = String(tValue);
-      else if (strcmp(tEntry.NvsKey, kNvsTelnetSession) == 0) tConfig.Telnet.Session = UTL.SafeAtoul(tValue, 60, 86400000, 3600000);
-    } else if (strcasecmp(tSection, "ftp") == 0) {
-      if (strcmp(tEntry.NvsKey, kNvsFtpEnable) == 0) tConfig.Ftp.Enable = (strcasecmp(tValue, "true") == 0 || atoi(tValue) != 0);
-      else if (strcmp(tEntry.NvsKey, kNvsFtpPort) == 0) tConfig.Ftp.FtpPort = Port(static_cast<uint8_t>(atoi(tValue)));
-      else if (strcmp(tEntry.NvsKey, kNvsFtpUsername) == 0) tConfig.Ftp.Username = String(tValue);
-      else if (strcmp(tEntry.NvsKey, kNvsFtpPassword) == 0) tConfig.Ftp.Password = String(tValue);
-    }
-  }
-
-  bool Configuration_::ReadINIFile(const char *tFileName, SAppConfig &tConfig) {
-    File tFile = STG.OpenFile(tFileName, FILE_READ);
-    if (!tFile) {
-      xLOG("INI file (%s) open failed!", tFileName);
-      return false;
-    }
-    char tLine[256];
-    char tSection[32] = {};
-    char tKey[32];
-    char tValue[128];
-    const auto &tMapping = GetKeyMapping();
-    while (tFile.available()) {
-      String tLineStr = tFile.readStringUntil('\n');
-      if (tLineStr.length() == 0) continue;
-      if (tLineStr.endsWith("\r")) tLineStr.remove(tLineStr.length() - 1);
-      strncpy(tLine, tLineStr.c_str(), sizeof(tLine) - 1);
-      tLine[sizeof(tLine) - 1] = '\0';
-      if (!ParseLine(tLine, tSection, tKey, tValue)) continue;
-      auto tIt = std::find_if(tMapping.begin(), tMapping.end(), [tSection, tKey](const SConfigKeyMappingEntry &tEntry) {
-        return strcasecmp(tEntry.IniSection, tSection) == 0 && strcasecmp(tEntry.IniKey, tKey) == 0;
-      });
-      if (tIt != tMapping.end()) ApplyINIValue(tConfig, tSection, *tIt, tValue);
-    }
-    tFile.close();
-    return true;
   }
 
   SAppConfig Configuration_::LoadConfigFromINI(const char *tFileName) {

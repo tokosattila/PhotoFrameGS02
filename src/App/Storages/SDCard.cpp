@@ -5,7 +5,7 @@ namespace App {
   char SDCard_::mReadBuffer[4096] = "";
   bool SDCard_::mReadValid = false;
   char SDCard_::mListBuffer[4096] = "";
-  char SDCard_::mFileBuffer[4096] = "";
+  char SDCard_::mFileBuffer[32768] = "";
   size_t SDCard_::mListPos = 0;
   std::vector<const char *> App::SDCard_::mFileList;
   size_t SDCard_::mFilesCount = 0;
@@ -124,49 +124,39 @@ namespace App {
       if (tDot && strlen(tDot + 1) >= 1) return true;
       return false;
     };
-    File tEntry = tRoot.openNextFile();
-    while (tEntry) {
-      const char *tShort = GetFileName(tEntry.name());
-      if (tEntry.isDirectory() && !IsFile(tShort)) {
-        AppendToBuffer(tShort, strlen(tShort));
-        AppendToBuffer("/\r\n", 3);
-        char tSubBuffer[128];
-        snprintf(tSubBuffer, sizeof(tSubBuffer), "/%s", tEntry.name());
-        File tSub = SD.open(tSubBuffer);
-        File tFile = tSub.openNextFile();
-        while (tFile) {
-          const char *tName = GetFileName(tFile.name());
-          if (IsFile(tName)) {
-            char tBuffer[16];
-            UTL.ByteToReadableSize(tFile.size(), tBuffer, sizeof(tBuffer));
-            AppendToBuffer("  ", 2);
+      std::function<void(File &, uint8_t)> tAppendLogsTree;
+      tAppendLogsTree = [&](File &tDir, uint8_t tDepth) {
+        char tIndent[64] = "";
+        size_t tIndentLen = (size_t)(tDepth + 1U) * 2U;
+        if (tIndentLen > sizeof(tIndent) - 1U) tIndentLen = sizeof(tIndent) - 1U;
+        memset(tIndent, ' ', tIndentLen);
+        tIndent[tIndentLen] = '\0';
+
+        File tEntry = tDir.openNextFile();
+        while (tEntry) {
+          const char *tName = GetFileName(tEntry.name());
+          if (tEntry.isDirectory()) {
+            AppendToBuffer(tIndent, strlen(tIndent));
+            AppendToBuffer(tName, strlen(tName));
+            AppendToBuffer("/\r\n", 3);
+            File tSubDir = tEntry;
+            tAppendLogsTree(tSubDir, (uint8_t)(tDepth + 1));
+            tSubDir.close();
+          } else {
+            char tBuffer[16] = "";
+            UTL.ByteToReadableSize((uint64_t)tEntry.size(), tBuffer, sizeof(tBuffer));
+            AppendToBuffer(tIndent, strlen(tIndent));
             AppendToBuffer(tName, strlen(tName));
             AppendToBuffer(" [", 2);
             AppendToBuffer(tBuffer, strlen(tBuffer));
             AppendToBuffer("]\r\n", 3);
           }
-          tFile = tSub.openNextFile();
+          File tNext = tDir.openNextFile();
+          tEntry.close();
+          tEntry = tNext;
         }
-        tSub.close();
-      }
-      tEntry = tRoot.openNextFile();
-    }
-    tRoot.close();
-    File tFileRoot = SD.open(tFullPathBuffer);
-    File tFileEntry = tFileRoot.openNextFile();
-    while (tFileEntry) {
-      const char *tShort = GetFileName(tFileEntry.name());
-      if (IsFile(tShort)) {
-        char tBuffer[16];
-        UTL.ByteToReadableSize((uint64_t)tFileEntry.size(), tBuffer, sizeof(tBuffer));
-        AppendToBuffer(tShort, strlen(tShort));
-        AppendToBuffer(" [", 2);
-        AppendToBuffer(tBuffer, strlen(tBuffer));
-        AppendToBuffer("]\r\n", 3);
-      }
-      tFileEntry = tFileRoot.openNextFile();
-    }
-    tFileRoot.close();
+      };
+      tAppendLogsTree(tRoot, 0);
     return mListBuffer;
   }
 
@@ -302,26 +292,100 @@ namespace App {
   }
 
   void SDCard_::PrintListDir(size_t tMaxLines) {
+    (void)tMaxLines;
     xLOG_PL();
     UTL.PrintInfo("SDCARD FILE STRUCTURE", EUtilsInfoType::Header);
     UTL.PrintInfo("", EUtilsInfoType::Line);
-    const char *tData = ListDir("/");
-    char *tLine = (char*)tData;
-    char *tEnd = (char*)tData + mListPos;
-    size_t tPrintedLines = 0;
-    while (tLine < tEnd) {
-      if (tPrintedLines >= tMaxLines) {
-        UTL.PrintInfo("...", EUtilsInfoType::Cell);
-        break;
-      }
-      char *tNext = tLine;
-      while (tNext < tEnd && *tNext != '\r' && *tNext != '\n') ++tNext;
-      char tTemp = *tNext; *tNext = '\0';
-      UTL.PrintInfo(tLine, EUtilsInfoType::Cell);
-      ++tPrintedLines;
-      if (tTemp) *tNext = tTemp;
-      tLine = tNext + (tTemp ? (tTemp == '\r' && tNext[1] == '\n' ? 2 : 1) : 0);
+    if (!mMounted) {
+      UTL.PrintInfo("SDCard not mounted", EUtilsInfoType::Cell);
+      UTL.PrintInfo("", EUtilsInfoType::Footer);
+      return;
     }
+    static constexpr uint8_t kMaxSubDirFiles = 10;
+    File tRoot = SD.open("/");
+    if (!tRoot || !tRoot.isDirectory()) {
+      UTL.PrintInfo("Invalid root", EUtilsInfoType::Cell);
+      UTL.PrintInfo("", EUtilsInfoType::Footer);
+      return;
+    }
+    std::function<void(File &, uint8_t)> tPrintLogsTree;
+    tPrintLogsTree = [&](File &tDir, uint8_t tDepth) {
+      char tIndent[64] = "";
+      size_t tIndentLen = (size_t)(tDepth + 1U) * 2U;
+      if (tIndentLen > sizeof(tIndent) - 1U) tIndentLen = sizeof(tIndent) - 1U;
+      memset(tIndent, ' ', tIndentLen);
+      tIndent[tIndentLen] = '\0';
+      File tEntry = tDir.openNextFile();
+      while (tEntry) {
+        const char *tName = GetFileName(tEntry.name());
+        if (tEntry.isDirectory()) {
+          char tLine[160] = "";
+          snprintf(tLine, sizeof(tLine), "%s%s/", tIndent, tName);
+          UTL.PrintInfo(tLine, EUtilsInfoType::Cell);
+          File tSubDir = tEntry;
+          tPrintLogsTree(tSubDir, (uint8_t)(tDepth + 1));
+          tSubDir.close();
+        } else {
+          char tSize[16] = "";
+          UTL.ByteToReadableSize((uint64_t)tEntry.size(), tSize, sizeof(tSize));
+          char tLine[192] = "";
+          snprintf(tLine, sizeof(tLine), "%s%s [%s]", tIndent, tName, tSize);
+          UTL.PrintInfo(tLine, EUtilsInfoType::Cell);
+        }
+        File tNext = tDir.openNextFile();
+        tEntry.close();
+        tEntry = tNext;
+      }
+    };
+    File tEntry = tRoot.openNextFile();
+    while (tEntry) {
+      const char *tName = GetFileName(tEntry.name());
+      if (tEntry.isDirectory()) {
+        char tDirLine[160] = "";
+        snprintf(tDirLine, sizeof(tDirLine), "%s/", tName);
+        UTL.PrintInfo(tDirLine, EUtilsInfoType::Cell);
+
+        if (strcmp(tName, "logs") == 0) {
+          File tLogsDir = tEntry;
+          tPrintLogsTree(tLogsDir, 0);
+          tLogsDir.close();
+        } else {
+          File tSubDir = tEntry;
+          uint8_t tFileCount = 0;
+          bool tTruncated = false;
+          File tSubEntry = tSubDir.openNextFile();
+          while (tSubEntry) {
+            if (!tSubEntry.isDirectory()) {
+              if (tFileCount < kMaxSubDirFiles) {
+                char tSize[16] = "";
+                UTL.ByteToReadableSize((uint64_t)tSubEntry.size(), tSize, sizeof(tSize));
+                char tFileLine[192] = "";
+                snprintf(tFileLine, sizeof(tFileLine), "  %s [%s]", GetFileName(tSubEntry.name()), tSize);
+                UTL.PrintInfo(tFileLine, EUtilsInfoType::Cell);
+                ++tFileCount;
+              } else {
+                tTruncated = true;
+              }
+            }
+            File tNextSub = tSubDir.openNextFile();
+            tSubEntry.close();
+            tSubEntry = tNextSub;
+          }
+          if (tTruncated) UTL.PrintInfo("  [...]", EUtilsInfoType::Cell);
+          tSubDir.close();
+        }
+      } else {
+        char tSize[16] = "";
+        UTL.ByteToReadableSize((uint64_t)tEntry.size(), tSize, sizeof(tSize));
+        char tFileLine[192] = "";
+        snprintf(tFileLine, sizeof(tFileLine), "%s [%s]", tName, tSize);
+        UTL.PrintInfo(tFileLine, EUtilsInfoType::Cell);
+      }
+      File tNext = tRoot.openNextFile();
+      tEntry.close();
+      tEntry = tNext;
+    }
+    tRoot.close();
     UTL.PrintInfo("", EUtilsInfoType::Footer);
   }
 

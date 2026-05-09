@@ -60,7 +60,7 @@ namespace App {
       static char mReadBuffer[4096];
       static bool mReadValid;
       static char mListBuffer[4096];
-      static char mFileBuffer[4096];
+      static char mFileBuffer[32768];
       static size_t mListPos;
       static std::vector<const char*> mFileList;
       static size_t mFilesCount;
