@@ -46,7 +46,7 @@ namespace App {
         return true;
       }
       const char *Help() const override {
-        return "netinfo                          " COLOR_YELLOW "- show network info" COLOR_WHITE;
+        return "netinfo                           " COLOR_YELLOW "- show network info" COLOR_WHITE;
       }
   };
 

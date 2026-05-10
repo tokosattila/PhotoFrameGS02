@@ -126,9 +126,9 @@ namespace App {
         return true;
       }
       const char *Help() const override {
-         return "fwupdate                         " COLOR_YELLOW "- show update status\r\n  " COLOR_WHITE
-                "fwupdate verify                  " COLOR_YELLOW "- verify firmware.bin/firmware.sha256\r\n  " COLOR_WHITE
-                "fwupdate run                     " COLOR_YELLOW "- perform update (asks y/n)" COLOR_WHITE;
+         return "fwupdate                          " COLOR_YELLOW "- show update status\r\n  " COLOR_WHITE
+                "fwupdate verify                   " COLOR_YELLOW "- verify firmware.bin/firmware.sha256\r\n  " COLOR_WHITE
+                "fwupdate run                      " COLOR_YELLOW "- perform update (asks y/n)" COLOR_WHITE;
       }
   };
 

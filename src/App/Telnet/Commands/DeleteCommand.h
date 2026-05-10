@@ -24,7 +24,7 @@ namespace App {
         }
         bool tIsSD = UTL.IsSD(tTarget);
         if (tIsSD && !SDC.IsMounted()) {
-          tClient.print(F(COLOR_RED "\r\n  SD card is not mounted.\r\n\r\n" COLOR_WHITE));
+          tClient.print(F(COLOR_RED "\r\n  SD Card is not mounted.\r\n\r\n" COLOR_WHITE));
           return true;
         }
         if (!tIsSD && !LFS.IsMounted()) {
@@ -76,8 +76,8 @@ namespace App {
         return true;
       }
       const char *Help() const override {
-        return "delete sd [/path/]<filespec>     " COLOR_YELLOW "- delete from SD card\r\n  " COLOR_WHITE
-               "delete lfs [/path/]<filespec>    " COLOR_YELLOW "- delete from LittleFS" COLOR_WHITE;
+        return "delete sd [/path/]<filespec>      " COLOR_YELLOW "- delete from SD Card\r\n  " COLOR_WHITE
+               "delete lfs [/path/]<filespec>     " COLOR_YELLOW "- delete from LittleFS" COLOR_WHITE;
       }
     private:
       bool ParseArgs(const char *tInput, char *tTarget, size_t tTargetSize, char *tSpec, size_t tSpecSize) {
@@ -104,9 +104,9 @@ namespace App {
       }
       void PrintUsage(WiFiClient &tClient) {
         tClient.print(F(COLOR_YELLOW "\r\n  Usage: delete <target> <filespec>\r\n"));
-        tClient.print(F("  target: sd | lfs\r\n"));
-        tClient.print(F("  filespec: file.ext | /path/file.ext | *.ext | *pattern*\r\n"));
-        tClient.print(F("  batch:    f1.ext,f2.ext | /path/*.ext\r\n\r\n" COLOR_WHITE));
+        tClient.print(F("  Target: sd | sdcard | lfs | littlefs\r\n"));
+        tClient.print(F("  Filespec: file.ext | /path/file.ext | *.ext | *pattern*\r\n"));
+        tClient.print(F("  Batch:  f1.ext,f2.ext | /path/*.ext\r\n\r\n" COLOR_WHITE));
       }
 
   };

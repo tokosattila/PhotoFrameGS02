@@ -20,7 +20,7 @@ namespace App {
         return true;
       }
       const char *Help() const override {
-        return "exit                             - exit telnet";
+        return "exit                              - exit telnet";
       }
   };
 

@@ -20,7 +20,7 @@ namespace App {
         return true;
       }
       const char *Help() const override {
-        return "reboot                           - restart device";
+        return "reboot                            - restart device";
       }
   };
 

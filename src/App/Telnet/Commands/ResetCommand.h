@@ -29,7 +29,7 @@ namespace App {
         return true;
       }
       const char *Help() const override {
-        return "reset config                     - factory reset config";
+        return "reset config                      - factory reset config";
       }
   };
 

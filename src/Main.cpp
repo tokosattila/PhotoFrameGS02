@@ -36,7 +36,7 @@ class Application {
           UTL.PrintPartitionInfo();
         }
       #endif
-      if (psramFound()) heap_caps_malloc_extmem_enable(256);
+      if (psramFound()) heap_caps_malloc_extmem_enable(128);
       if (!mMutex) mMutex = xSemaphoreCreateRecursiveMutex();
       gBootCount++;
       if(!CFG.Init()) return;
@@ -93,11 +93,11 @@ class Application {
     }
 
   private:
-
     Application() = default;
     SemaphoreHandle_t mMutex = nullptr;
     SAppConfig mCfg {};
     uint32_t mMaintenanceLastActivityMs = 0;
+    bool mExitMaintenanceMode = false;
 
     static void Lock() {
       if (Instance().mMutex) xSemaphoreTakeRecursive(Instance().mMutex, portMAX_DELAY);
@@ -204,18 +204,10 @@ class Application {
       }
       BTN.AddLongPressCallback(mCfg.Device.SettingPin, []() {
         #if !PRODUCTION
-          xLOG("Device rebooting...");
+          xLOG("Exiting Maintenance Mode, entering Photo Frame Mode...");
           vTaskDelay(DELAY_SHORT_MS / portTICK_PERIOD_MS);
         #endif
-        { 
-          Guard tLock;
-          LOG.Halt("REBOOT");
-          DSP.OffAll();
-          STG.End();
-          CON.Stop();
-          if (Instance().mCfg.Ftp.Enable) FTP.End();
-        }
-        esp_restart();
+        Instance().mExitMaintenanceMode = true;
       }, REBOOT_LONG_PRESS_MS);
       BTN.AddLongPressCallback(mCfg.Device.ResetPin, []() {
         #if !PRODUCTION
@@ -298,6 +290,23 @@ class Application {
       UTL.PrintMemoryInfo();
       while (true) {
         vTaskDelay(DELAY_ONE_SEC_MS / portTICK_PERIOD_MS);
+        if (mExitMaintenanceMode) {
+          #if !PRODUCTION
+            xLOG("Exiting Maintenance Mode...");
+          #endif
+          {
+            Guard tLock;
+            LOG.Halt("EXIT_MAINTENANCE");
+            DSP.OffAll();
+            STG.End();
+            CON.Stop();
+            if (mCfg.Ftp.Enable) FTP.End();
+            if (mCfg.Telnet.Enable) TLN.End();
+          }
+          mExitMaintenanceMode = false;
+          PhotoFrameMode();
+          return;
+        }
         if (!UTL.HasElapsedMs(mMaintenanceLastActivityMs, millis(), MAINTENANCE_INACTIVITY_TIMEOUT_MS)) continue;
         {
           Guard tLock;

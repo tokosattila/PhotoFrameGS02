@@ -15,7 +15,7 @@ namespace App {
         if (tArg[0] == '\0') return PrintListing(STG.ListDir("/"), STG.GetListPos(), STG.GetActiveName(), tClient);
         if (strcasecmp(tArg, "sd") == 0 || strcasecmp(tArg, "sdcard") == 0) {
           if (!SDC.IsMounted()) {
-            tClient.print(F(COLOR_RED "\r\n  SD card is not mounted.\r\n\r\n" COLOR_WHITE));
+            tClient.print(F(COLOR_RED "\r\n  SD Card is not mounted.\r\n\r\n" COLOR_WHITE));
             return true;
           }
           return PrintListing(SDC.ListDir("/"), SDC.GetListPos(), SDC.GetName(), tClient);
@@ -35,10 +35,10 @@ namespace App {
         return true;
       }
       const char *Help() const override {
-        return "list                             " COLOR_YELLOW "- list active storage\r\n  " COLOR_WHITE
-               "list sd|sdcard                   " COLOR_YELLOW "- list SD card\r\n  " COLOR_WHITE
-               "list lfs|littlefs|fallback       " COLOR_YELLOW "- list LittleFS\r\n  " COLOR_WHITE
-               "list logs                        " COLOR_YELLOW "- list logs directory tree" COLOR_WHITE;
+        return "list                              " COLOR_YELLOW "- list active storage\r\n  " COLOR_WHITE
+               "list sd|sdcard                    " COLOR_YELLOW "- list SD Card\r\n  " COLOR_WHITE
+               "list lfs|littlefs|fallback        " COLOR_YELLOW "- list LittleFS\r\n  " COLOR_WHITE
+               "list logs                         " COLOR_YELLOW "- list logs directory tree" COLOR_WHITE;
       }
     private:
       const char *ParseSubcommand(const char *tInput) {
@@ -50,6 +50,10 @@ namespace App {
       }
       bool PrintListing(const char *tData, size_t tLen, const char *tLabel, WiFiClient &tClient) {
         tClient.printf(COLOR_GREEN "\r\n  File structure [%s]:\r\n\r\n" COLOR_WHITE, tLabel);
+        if (!tData || tLen == 0 || tData[0] == '\0') {
+          tClient.print(F(COLOR_YELLOW "  File structure is empty.\r\n" COLOR_WHITE));
+          return true;
+        }
         char *tLine = (char *)tData;
         char *tEnd = (char *)tData + tLen;
         while (tLine < tEnd) {
@@ -77,13 +81,12 @@ namespace App {
             if (tLogsDir) tStorageLabel = "SD Card (fallback)";
           }
         }
-        tClient.printf(COLOR_GREEN "\r\n  File structure [logs/ directory]:\r\n\r\n" COLOR_WHITE);
-        if (tStorageLabel[0] != '\0') tClient.printf(COLOR_YELLOW "  Source: %s\r\n\r\n" COLOR_WHITE, tStorageLabel);
-        else tClient.print(F("\r\n"));
         if (!tLogsDir) {
           tClient.print(F(COLOR_YELLOW "  No logs directory found in active or fallback storage.\r\n\r\n" COLOR_WHITE));
           return true;
         }
+        tClient.printf(COLOR_GREEN "\r\n  File structure [logs/ directory]:\r\n\r\n" COLOR_WHITE);
+        if (tStorageLabel[0] != '\0') tClient.printf(COLOR_YELLOW "  Source: %s\r\n\r\n" COLOR_WHITE, tStorageLabel);
         PrintLogsRecursive(tLogsDir, "", 0, tClient);
         tLogsDir.close();
         tClient.print(F("\r\n" COLOR_WHITE));

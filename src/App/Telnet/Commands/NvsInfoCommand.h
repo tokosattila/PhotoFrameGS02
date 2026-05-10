@@ -48,7 +48,7 @@ namespace App {
         return true;
       }
       const char *Help() const override {
-        return "nvsinfo                          - show NVS usage info";
+        return "nvsinfo                           - show NVS usage info";
       }
     private:
       Preferences mCFG;

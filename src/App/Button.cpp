@@ -1,5 +1,3 @@
-// Button.cpp
-
 #include <App/Button.h>
 
 namespace App {

@@ -208,6 +208,12 @@ namespace App {
     return LFS.DeleteFile(tPath);
   }
 
+  bool Storage_::RenameFile(const char *tFrom, const char *tTo) {
+    if (!mMounted) return false;
+    if (mActiveType == EFileSystemType::SDCard) return SDC.RenameFile(tFrom, tTo);
+    return LFS.RenameFile(tFrom, tTo);
+  }
+
   const char *Storage_::ListDir(const char *tPath) {
     if (!mMounted) return "";
     if (mActiveType == EFileSystemType::SDCard) return SDC.ListDir(tPath);

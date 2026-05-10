@@ -15,7 +15,7 @@ namespace App {
         return true;
       }
       const char *Help() const override {
-        return "clear                            - clear display";
+        return "clear                             - clear display";
       }
   };
 

@@ -18,7 +18,7 @@ namespace App {
         return true;
       }
       const char *Help() const override {
-        return "logout                           - logout telnet session";
+        return "logout                            - logout telnet session";
       }
   };
 

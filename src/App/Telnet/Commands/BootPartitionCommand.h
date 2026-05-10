@@ -67,7 +67,7 @@ namespace App {
         return true;  
       }
       const char *Help() const override {
-        return "bootpart [status|ota0|ota1]      - show/set boot OTA slot";
+        return "bootpart status|ota0|ota1         - show/set boot OTA slot";
       }
   };
 

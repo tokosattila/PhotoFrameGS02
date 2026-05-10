@@ -41,7 +41,7 @@ namespace App {
         return true;
       }
       const char *Help() const override {
-        return "imginfo                          - show current image and refresh schedule";
+        return "imginfo                           - show current image and refresh schedule";
       }
     private:
       static void BuildImagePath(const SDisplayConfig &tDisplayCfg, char *tOutPath, size_t tOutSize) {

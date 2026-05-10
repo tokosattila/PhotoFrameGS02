@@ -97,7 +97,7 @@ namespace App {
         return true;
       }
       const char *Help() const override {
-        return "cat <filename>                   - show file content";
+        return "cat <filename>                    - show file content";
       }
   };
 

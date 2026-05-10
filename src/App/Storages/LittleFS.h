@@ -21,9 +21,11 @@ namespace App {
       const char *ReadFile(const char *tPath, const char *tMode = FILE_READ);
       bool WriteFile(const char *tPath, const char *tData, bool tVerbose = false);
       bool DeleteFile(const char *tPath);
+      bool RenameFile(const char *tFrom, const char *tTo);
       bool Exists(const char *tPath);
       bool CreateDir(const char *tPath, bool tVerbose = false);
       bool DeleteDir(const char *tPath);
+      bool Format();
       static const char *NormalizePath(const char *tPath);
       static const char *GetFileName(const char *tPath);
       const char *ListDir(const char *tPath = "/");

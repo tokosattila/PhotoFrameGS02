@@ -22,6 +22,12 @@ struct StorageSelection {
   bool FallbackActive;
 };
 
+enum class ERenameBackend : uint8_t {
+  None = 0,
+  SDCard = 1,
+  LittleFS = 2
+};
+
 StorageSelection SelectActiveStorage(const MockStorageState &state) {
   StorageSelection result = {EFileSystemType::LittleFS, false, false};
 
@@ -78,6 +84,12 @@ StorageSelection SelectActiveStorage(const MockStorageState &state) {
   }
 
   return result;
+}
+
+ERenameBackend SelectRenameBackend(const StorageSelection &state) {
+  if (!state.Mounted) return ERenameBackend::None;
+  if (state.ActiveType == EFileSystemType::SDCard) return ERenameBackend::SDCard;
+  return ERenameBackend::LittleFS;
 }
 
 void test_SDCard_primary_with_images() {
@@ -224,6 +236,21 @@ void test_only_primary_mounted_no_images() {
   TEST_ASSERT_FALSE(result.FallbackActive);
 }
 
+void test_RenameFile_delegates_to_sdcard_when_active() {
+  StorageSelection state = {EFileSystemType::SDCard, true, false};
+  TEST_ASSERT_EQUAL(ERenameBackend::SDCard, SelectRenameBackend(state));
+}
+
+void test_RenameFile_delegates_to_littlefs_when_active() {
+  StorageSelection state = {EFileSystemType::LittleFS, true, false};
+  TEST_ASSERT_EQUAL(ERenameBackend::LittleFS, SelectRenameBackend(state));
+}
+
+void test_RenameFile_returns_none_when_not_mounted() {
+  StorageSelection state = {EFileSystemType::SDCard, false, false};
+  TEST_ASSERT_EQUAL(ERenameBackend::None, SelectRenameBackend(state));
+}
+
 void setUp(void) {}
 void tearDown(void) {}
 
@@ -240,6 +267,9 @@ int main(int argc, char **argv) {
   RUN_TEST(test_nothing_mounted);
   RUN_TEST(test_only_fallback_mounted);
   RUN_TEST(test_only_primary_mounted_no_images);
+  RUN_TEST(test_RenameFile_delegates_to_sdcard_when_active);
+  RUN_TEST(test_RenameFile_delegates_to_littlefs_when_active);
+  RUN_TEST(test_RenameFile_returns_none_when_not_mounted);
   return UNITY_END();
 }
 

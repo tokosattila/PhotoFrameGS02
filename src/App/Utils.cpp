@@ -460,12 +460,6 @@ namespace App {
     ByteToReadableSize(ESP.getFreeHeap(), tFreeHeap, sizeof(tFreeHeap));
     snprintf(tText, sizeof(tText), "Free heap: %s", tFreeHeap);
     PrintInfo(tText);
-    ByteToReadableSize(heap_caps_get_largest_free_block(MALLOC_CAP_8BIT), tLargestFreeBlock, sizeof(tLargestFreeBlock));
-    snprintf(tText, sizeof(tText), "Largest free block: %s", tLargestFreeBlock);
-    PrintInfo(tText);
-    ByteToReadableSize(heap_caps_get_minimum_free_size(MALLOC_CAP_8BIT), tMinimumFreeSize, sizeof(tMinimumFreeSize));
-    snprintf(tText, sizeof(tText), "Min. ever free: %s", tMinimumFreeSize);
-    PrintInfo(tText);
     PrintInfo("", EUtilsInfoType::Footer);
   }
 

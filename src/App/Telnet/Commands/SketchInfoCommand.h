@@ -24,12 +24,12 @@ namespace App {
         snprintf(tText, sizeof(tText), "  Sketch: %s / %s", tSketchSizeBuffer, tSketchTotalSizeBuffer);
         tClient.println(tText);
         if (tRunning) tClient.printf("  Running: %s @ 0x%08x\r\n", tRunning->label, (unsigned)tRunning->address);
-        if (tBoot) tClient.printf("  Boot:    %s @ 0x%08x\r\n", tBoot->label, (unsigned)tBoot->address);
+        if (tBoot) tClient.printf("  Boot: %s @ 0x%08x\r\n", tBoot->label, (unsigned)tBoot->address);
         tClient.print(F("\r\n"));
         return true;
       }
       const char *Help() const override {
-        return "sketchinfo                       - show sketch usage info";
+        return "sketchinfo                        - show sketch usage info";
       }
     };
 

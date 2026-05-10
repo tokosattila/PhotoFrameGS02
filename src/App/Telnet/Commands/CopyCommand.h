@@ -29,7 +29,7 @@ namespace App {
         }
         bool tSrcSD = UTL.IsSD(tFrom);
         if (tSrcSD && !SDC.IsMounted()) {
-          tClient.print(F(COLOR_RED "\r\n  SD card is not mounted.\r\n\r\n" COLOR_WHITE));
+          tClient.print(F(COLOR_RED "\r\n  SD Card is not mounted.\r\n\r\n" COLOR_WHITE));
           return true;
         }
         if (!tSrcSD && !LFS.IsMounted()) {
@@ -38,7 +38,7 @@ namespace App {
         }
         bool tDstSD = !tSrcSD;
         if (tDstSD && !SDC.IsMounted()) {
-          tClient.print(F(COLOR_RED "\r\n  SD card is not mounted.\r\n\r\n" COLOR_WHITE));
+          tClient.print(F(COLOR_RED "\r\n  SD Card is not mounted.\r\n\r\n" COLOR_WHITE));
           return true;
         }
         if (!tDstSD && !LFS.IsMounted()) {
@@ -72,8 +72,8 @@ namespace App {
         return true;
       }
       const char *Help() const override {
-        return "copy sd lfs [/path/]<filespec>   " COLOR_YELLOW "- copy SD -> LittleFS\r\n  " COLOR_WHITE
-               "copy lfs sd [/path/]<filespec>   " COLOR_YELLOW "- copy LittleFS -> SD" COLOR_WHITE;
+        return "copy sd lfs [/path/]<filespec>    " COLOR_YELLOW "- copy SD Card -> LittleFS\r\n  " COLOR_WHITE
+               "copy lfs sd [/path/]<filespec>    " COLOR_YELLOW "- copy LittleFS -> SD Card" COLOR_WHITE;             
       }
     private:
       bool ParseArgs(const char *tInput, char *tFrom, size_t tFromSize, char *tTo, size_t tToSize, char *tSpec, size_t tSpecSize) {
@@ -204,9 +204,9 @@ namespace App {
       }
       void PrintUsage(WiFiClient &tClient) {
         tClient.print(F(COLOR_YELLOW "\r\n  Usage: copy <from> <to> <filespec>\r\n"));
-        tClient.print(F("  from/to: sd | lfs\r\n"));
-        tClient.print(F("  filespec: file.ext | /path/file.ext | *.ext | *pattern*\r\n"));
-        tClient.print(F("  batch:    f1.ext,f2.ext | /path/*.ext\r\n\r\n" COLOR_WHITE));
+        tClient.print(F("  From/To: sd | sdcard | lfs | littlefs\r\n"));
+        tClient.print(F("  Filespec: file.ext | /path/file.ext | *.ext | *pattern*\r\n"));
+        tClient.print(F("  Batch:  f1.ext,f2.ext | /path/*.ext\r\n\r\n" COLOR_WHITE));
       }
 
   };

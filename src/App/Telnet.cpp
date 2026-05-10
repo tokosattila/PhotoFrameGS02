@@ -3,6 +3,7 @@
 #include <App/Telnet/Commands/ClearCommand.h>
 #include <App/Telnet/Commands/ListCommand.h>
 #include <App/Telnet/Commands/CopyCommand.h>
+#include <App/Telnet/Commands/RenameCommand.h>
 #include <App/Telnet/Commands/DeleteCommand.h>
 #include <App/Telnet/Commands/CatCommand.h>
 #include <App/Telnet/Commands/DateCommand.h>
@@ -16,6 +17,7 @@
 #include <App/Telnet/Commands/ImgInfoCommand.h>
 #include <App/Telnet/Commands/ConfigCommand.h>
 #include <App/Telnet/Commands/FetchCommand.h>
+#include <App/Telnet/Commands/FormatCommand.h>
 #include <App/Telnet/Commands/FirmwareUpdateCommand.h>
 #include <App/Telnet/Commands/BootPartitionCommand.h>
 #include <App/Telnet/Commands/CallbackCommand.h>
@@ -31,6 +33,7 @@ namespace App {
   static ClearCommand_ sClearCmd;
   static ListCommand_ sListCmd;
   static CopyCommand_ sCopyCmd;
+  static RenameCommand_ sRenameCmd;  
   static DeleteCommand_ sDeleteCmd;
   static CatCommand_ sCatCmd;
   static DateCommand_ sDateCmd;
@@ -44,6 +47,7 @@ namespace App {
   static ImgInfoCommand_ sImgInfoCmd;
   static ConfigCommand_ sConfigCmd;
   static FetchCommand_ sFetchCmd;
+  static FormatCommand_ sFormatCmd;
   static FirmwareUpdateCommand_ sFirmwareUpdateCmd;
   static BootPartitionCommand_ sBootPartitionCmd;
   static ResetCommand_ sResetCmd;
@@ -102,6 +106,7 @@ namespace App {
       RegisterCommand(&sClearCmd);
       RegisterCommand(&sListCmd);
       RegisterCommand(&sCopyCmd);
+      RegisterCommand(&sRenameCmd);      
       RegisterCommand(&sDeleteCmd);
       RegisterCommand(&sCatCmd);
       RegisterCommand(&sDateCmd);
@@ -115,6 +120,7 @@ namespace App {
       RegisterCommand(&sImgInfoCmd);
       RegisterCommand(&sConfigCmd);
       RegisterCommand(&sFetchCmd);
+      RegisterCommand(&sFormatCmd);
       RegisterCommand(&sFirmwareUpdateCmd);
       RegisterCommand(&sBootPartitionCmd);
       RegisterCommand(&sResetCmd);

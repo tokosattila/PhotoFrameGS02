@@ -23,7 +23,7 @@ namespace App {
         return true;
       }
       const char *Help() const override {
-        return "batinfo                          - show battery voltage and percentage";
+        return "batinfo                           - show battery voltage and percentage";
       }
   };
 

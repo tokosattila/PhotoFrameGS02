@@ -19,7 +19,7 @@ namespace App {
         return true;
       }
       const char *Help() const override {
-        return "timestamp                        - show current timestamp";
+        return "timestamp                         - show current timestamp";
       }
   };
 

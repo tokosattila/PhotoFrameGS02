@@ -11,13 +11,13 @@ The project is designed around three goals:
 
 ## 1. Photo
 
-| <img src="docs/images/pic01.jpg" width="260px" alt="Photo Frame Display" /> | <img src="docs/images/pic02.jpg" width="260px" alt="Photo Frame Hardware" /> | <img src="docs/images/pic03.jpg" width="260px" alt="Photo Frame Back Side" /> |
+| <img src="docs/images/pic01.jpg" width="240px" alt="Photo Frame Display" /> | <img src="docs/images/pic02.jpg" width="240px" alt="Photo Frame Hardware" /> | <img src="docs/images/pic03.jpg" width="240px" alt="Photo Frame Back Side" /> |
 |:---:|:---:|:---:|
 | *Photo frame with image* | *Hardware back side* | *Back cover installed* |
 
-| <img src="docs/images/pic04.jpg" width="390px" alt="Telnet" /> | <img src="docs/images/pic05.jpg" width="390px" alt="FTP" /> |
-|:---:|:---:|
-| *Telnet* | *FTP* |
+| <img src="docs/images/pic04.jpg" width="240px" alt="Telnet 1" /> | <img src="docs/images/pic05.jpg" width="240px" alt="Telnet 2" /> | <img src="docs/images/pic06.jpg" width="240px" alt="FTP" /> |
+|:---:|:---:|:---:|
+| *Telnet Help Command* | *Telnet MemInfo Command* | *FTP* |
 
 ## 2. Hardware
 
@@ -142,12 +142,14 @@ version = v1.0
 jpg_brightness = 25
 jpg_contrast = 75
 jpg_gamma = 125
-image_file =
+image_file = pic01.jpg
 
 [ntp]
 ntp_server = pool.ntp.org
 ntp_port = 123
 ntp_gmt_offset = 7200
+ntp_daylight_offset = 3600
+ntp_timezone_label = EET
 ntp_low_power_sync_enable = true
 ntp_low_power_sync_interval = 604800
 
@@ -158,10 +160,16 @@ ap_password = 123456789
 ap_ip = 192.168.4.1
 ap_gateway = 192.168.4.1
 ap_subnet = 255.255.255.0
+fallback_ap_ssid = PhotoFrameGS02-Fallback
+fallback_ap_password = 123456789
+fallback_ap_ip = 192.168.5.1
+fallback_ap_gateway = 192.168.5.1
+fallback_ap_subnet = 255.255.255.0
 
 [sta mode]
 sta_ssid = YourNetwork
 sta_password = YourPassword
+sta_auto_fallback = true
 
 [static ip]
 sta_enable = false
@@ -176,7 +184,7 @@ mdns_enable = false
 mdns_hostname = photoframegs02
 
 [timer]
-wake_up = 5
+wake_up = 4
 wake_up_hour = 6
 
 [telnet]
@@ -193,7 +201,6 @@ ftp_username = admin
 ftp_password = 123456789
 
 [storage]
-default_file_system = sdcard
 fallback_enabled = true
 ```
 
@@ -354,10 +361,13 @@ USB upload note:
 | `list` | List files on active storage |
 | `list sd\|sdcard` | List SD Card content |
 | `list lfs\|littlefs\|fallback` | List LittleFS content |
-| `copy sd lfs [/path/]<filespec>` | Copy files from SD Card to LittleFS |
-| `copy lfs sd [/path/]<filespec>` | Copy files from LittleFS to SD Card |
-| `delete sd [/path/]<filespec>` | Delete files from SD Card (with confirmation) |
-| `delete lfs [/path/]<filespec>` | Delete files from LittleFS (with confirmation) |
+| `list logs` | List logs directory tree from active or fallback storage |
+| `copy sd\|sdcard lfs\|littlefs [/path/]<filespec>` | Copy files from SD Card to LittleFS |
+| `copy lfs\|littlefs sd\|sdcard [/path/]<filespec>` | Copy files from LittleFS to SD Card |
+| `rename sd\|sdcard <source> <destination>` | Rename a file or directory on SD Card |
+| `rename lfs\|littlefs <source> <destination>` | Rename a file or directory on LittleFS |
+| `delete sd\|sdcard [/path/]<filespec>` | Delete files from SD Card (with confirmation) |
+| `delete lfs\|littlefs [/path/]<filespec>` | Delete files from LittleFS (with confirmation) |
 | `imginfo` | Show current image path, last update time, next scheduled refresh |
 | `cat <filename>` | Show file content |
 | `date` | Show system date and time |
@@ -374,7 +384,7 @@ USB upload note:
 | `batinfo` | Show battery voltage and percentage |
 | `config <key> [value]` | Get or set config value |
 | `fetch <url> [filename]` | Download image (max 400kB, jpg/jpeg) |
-| `log [status\|info\|flush]` | LogManager status/levels/flush |
+| `format sd\|sdcard\|lfs\|littlefs` | Format SD Card or LittleFS (with confirmation) |
 | `fwupdate [status\|verify\|run]` | Verify/apply firmware update from `/firmware/` |
 | `bootpart [status\|ota0\|ota1]` | Show or set active OTA boot slot |
 | `reset config` | Factory reset configuration |
@@ -396,8 +406,10 @@ Notes:
 
 - `delete` requires `y/n` confirmation.
 - `copy` conflict options: `(o)verwrite`, `(r)ename`, `(s)kip`.
-- Rename creates indexed names (for example `photo_1.jpg`, `photo_2.jpg`).
-- Aliases: `sd = sdcard`, `lfs = littlefs = fallback`.
+- `format` requires `y/n` confirmation.
+- `rename` operates inside the selected storage; destination must not already exist.
+- In `copy`, choosing conflict option `(r)ename` creates indexed names (for example `photo_1.jpg`, `photo_2.jpg`).
+- Aliases: `sd = sdcard`, `lfs = littlefs`; `fallback` is supported by `list`.
 
 ### 13.3 FTP Scope
 

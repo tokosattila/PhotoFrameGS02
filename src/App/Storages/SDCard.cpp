@@ -244,6 +244,21 @@ namespace App {
     return tOk;
   }
 
+  bool SDCard_::RenameFile(const char *tFrom, const char *tTo) {
+    Guard tLock;
+    if (!mMounted) return false;
+    char tFromPath[128] = "";
+    char tToPath[128] = "";
+    strncpy(tFromPath, NormalizePath(tFrom), sizeof(tFromPath) - 1);
+    tFromPath[sizeof(tFromPath) - 1] = '\0';
+    strncpy(tToPath, NormalizePath(tTo), sizeof(tToPath) - 1);
+    tToPath[sizeof(tToPath) - 1] = '\0';
+    bool tOk = SD.rename(tFromPath, tToPath);
+    if (tOk) xLOG("File renamed → %s -> %s", tFromPath, tToPath);
+    else xLOG("Error renaming file → %s -> %s", tFromPath, tToPath);
+    return tOk;
+  }
+
   bool SDCard_::CreateDir(const char *tPath, bool tVerbose) {
     Guard tLock;
     if (!mMounted) return false;
@@ -267,6 +282,44 @@ namespace App {
     if (tOk) xLOG("Directory deleted → %s", tPath);
     else xLOG("Error deleted directory → %s", tPath);
     return tOk;
+  }
+
+  bool SDCard_::Format() {
+    Guard tLock;
+    if (!mMounted) return false;
+    return WipeDirRecursive("/");
+  }
+
+  bool SDCard_::WipeDirRecursive(const char *tDirPath) {
+    if (!tDirPath || tDirPath[0] == '\0') return false;
+    File tDir = SD.open(NormalizePath(tDirPath), FILE_READ);
+    if (!tDir || !tDir.isDirectory()) {
+      tDir.close();
+      return false;
+    }
+    bool tAllOk = true;
+    File tEntry = tDir.openNextFile();
+    while (tEntry) {
+      bool tIsDir = tEntry.isDirectory();
+      char tEntryPath[256] = "";
+      strncpy(tEntryPath, NormalizePath(tEntry.name()), sizeof(tEntryPath) - 1);
+      tEntryPath[sizeof(tEntryPath) - 1] = '\0';
+      File tNext = tDir.openNextFile();
+      tEntry.close();
+      if (tEntryPath[0] == '\0' || strcmp(tEntryPath, "/") == 0) {
+        tEntry = tNext;
+        continue;
+      }
+      if (tIsDir) {
+        if (!WipeDirRecursive(tEntryPath)) tAllOk = false;
+        if (!SD.rmdir(tEntryPath)) tAllOk = false;
+      } else {
+        if (!SD.remove(tEntryPath)) tAllOk = false;
+      }
+      tEntry = tNext;
+    }
+    tDir.close();
+    return tAllOk;
   }
 
   bool SDCard_::Exists(const char *tPath) {

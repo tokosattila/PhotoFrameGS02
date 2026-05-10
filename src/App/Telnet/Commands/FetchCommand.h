@@ -25,7 +25,7 @@ namespace App {
       }     
       const char *Help() const override {
         static char tHelp[128];
-        snprintf(tHelp, sizeof(tHelp), "fetch <url> [filename]           - download image (max. %dkB, type: *.jpg, *.jpeg)", kMaxFileSizeKB);
+        snprintf(tHelp, sizeof(tHelp), "fetch <url> [filename]            - download image (max. %dkB, type: *.jpg, *.jpeg)", kMaxFileSizeKB);
         return tHelp;
       }
     private:
@@ -94,7 +94,7 @@ namespace App {
           tPort = kHttpPort;
           tIsHttps = false;
         } else {
-          PrintError(tClient, "URL must start with → http:// or https://");
+          PrintError(tClient, "URL must start with -> http:// or https://");
           return false;
         }
         const char *tPathStart = strchr(tHostStart, '/');

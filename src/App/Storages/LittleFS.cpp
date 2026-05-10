@@ -211,6 +211,20 @@ namespace App {
     return tOk;
   }
 
+  bool LittleFS_::RenameFile(const char *tFrom, const char *tTo) {
+    Guard tLock;
+    char tFromPath[128] = "";
+    char tToPath[128] = "";
+    strncpy(tFromPath, NormalizePath(tFrom), sizeof(tFromPath) - 1);
+    tFromPath[sizeof(tFromPath) - 1] = '\0';
+    strncpy(tToPath, NormalizePath(tTo), sizeof(tToPath) - 1);
+    tToPath[sizeof(tToPath) - 1] = '\0';
+    bool tOk = LittleFS.rename(tFromPath, tToPath);
+    if (tOk) xLOG("File renamed → %s -> %s", tFromPath, tToPath);
+    else xLOG("Error renaming file → %s -> %s", tFromPath, tToPath);
+    return tOk;
+  }
+
   bool LittleFS_::CreateDir(const char *tPath, bool tVerbose) {
     Guard tLock;
     bool tExists = Exists(tPath);
@@ -232,6 +246,11 @@ namespace App {
     if (tOk) xLOG("Directory deleted → %s", tPath);
     else xLOG("Error deleted directory → %s", tPath);
     return tOk;
+  }
+
+  bool LittleFS_::Format() {
+    Guard tLock;
+    return LittleFS.format();
   }
 
   bool LittleFS_::Exists(const char *tPath) {

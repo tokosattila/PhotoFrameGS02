@@ -47,7 +47,7 @@ namespace App {
         return true;
       }
       const char *Help() const override {
-        return "meminfo                          - show memory usage info";
+        return "meminfo                           - show memory usage info";
       }
     };
 

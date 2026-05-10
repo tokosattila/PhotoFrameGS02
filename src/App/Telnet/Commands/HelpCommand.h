@@ -31,7 +31,7 @@ namespace App {
         return true;
       }
       const char *Help() const override {
-        return "help                             - help information";
+        return "help                              - help information";
       }
   };
 

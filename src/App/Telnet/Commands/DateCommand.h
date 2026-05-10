@@ -27,11 +27,11 @@ namespace App {
         return HandleSystemDateTime(tClient);
       }
       const char *Help() const override {
-        return "date                             " COLOR_YELLOW "- show system date and time\r\n  " COLOR_WHITE
-               "date rtc                         " COLOR_YELLOW "- show RTC date and time\r\n  " COLOR_WHITE
-               "date rtc set YYYY.MM.DD HH:MM:SS " COLOR_YELLOW "- set RTC date and time\r\n  " COLOR_WHITE
-               "date rtc sync-from-ntp           " COLOR_YELLOW "- sync RTC from NTP\r\n  " COLOR_WHITE
-               "date rtc sync-to-system          " COLOR_YELLOW "- sync system time from RTC" COLOR_WHITE;
+        return "date                              " COLOR_YELLOW "- show system date and time\r\n  " COLOR_WHITE
+               "date rtc                          " COLOR_YELLOW "- show RTC date and time\r\n  " COLOR_WHITE
+               "date rtc set YYYY.MM.DD HH:MM:SS  " COLOR_YELLOW "- set RTC date and time\r\n  " COLOR_WHITE
+               "date rtc sync-from-ntp            " COLOR_YELLOW "- sync RTC from NTP\r\n  " COLOR_WHITE
+               "date rtc sync-to-system           " COLOR_YELLOW "- sync system time from RTC" COLOR_WHITE;
       }
     private:
       static time_t ToLocalTime(time_t tUtc) {
@@ -108,10 +108,8 @@ namespace App {
         tDateTime.Minute = tMin;
         tDateTime.Second = tSec;
         tClient.print(F("\r\n\r\n  Setting RTC datetime...\r\n"));
-        // Treat user input as LOCAL time, store RTC as UTC internally.
         unsigned long tLocalEpoch = 0;
         {
-          // Same algorithm as RTC_::DateTimeToEpoch (duplicated here to avoid changing RTC_ API)
           unsigned long tDays = 0;
           for (uint16_t y = 1970; y < tDateTime.Year; y++) {
             tDays += (y % 4 == 0 && (y % 100 != 0 || y % 400 == 0)) ? 366 : 365;

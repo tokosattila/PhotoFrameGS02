@@ -81,7 +81,7 @@ namespace App {
         return true;
       }
       const char *Help() const override { 
-        return "config <key> [value]             - get or set config value"; 
+        return "config <key> [value]              - get or set config value"; 
       }
     };
 
