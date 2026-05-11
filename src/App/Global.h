@@ -97,6 +97,7 @@ namespace App {
   enum class EDevicePins : uint8_t {
     Btn1 = 21U,
     Btn2 = 48U,
+    PiezoPin = 47U,
     BatPin = 14U,
     SDMisoPin = 16U,
     SDMosiPin = 15U,
@@ -157,6 +158,14 @@ namespace App {
     bool IsDir = false;
     size_t Size = 0;
   };  
+
+  struct SToneStep {
+    constexpr SToneStep(uint16_t tFrequencyHz = 0, uint16_t tDurationMs = 0, uint16_t tPauseMs = 0, uint8_t tDutyPct = 50) : FrequencyHz(tFrequencyHz), DurationMs(tDurationMs), PauseMs(tPauseMs), DutyPct(tDutyPct) {}
+    uint16_t FrequencyHz;
+    uint16_t DurationMs;
+    uint16_t PauseMs;
+    uint8_t DutyPct;
+  };
 
   struct SDeviceConfig {
     String Name;
@@ -285,6 +294,7 @@ namespace App {
   constexpr uint8_t BATTERY_PIN = static_cast<uint8_t>(EDevicePins::BatPin);
   constexpr uint8_t SETTING_PIN = static_cast<uint8_t>(EDevicePins::Btn1);
   constexpr uint8_t RESET_PIN = static_cast<uint8_t>(EDevicePins::Btn2);
+  constexpr uint8_t TONE_PIN = static_cast<uint8_t>(EDevicePins::PiezoPin);
 
   static constexpr uint8_t RTC_ADDRESS = 0x51;
   constexpr uint8_t RTC_SDA_PIN = static_cast<uint8_t>(EDevicePins::RTCSdaPin);
@@ -336,6 +346,9 @@ namespace App {
 #include <App/RTC.h>
 #include <App/Connection.h>
 #include <App/Button.h>
+#include <App/Tone.h>
+#include <App/Tone/MaintenanceTone.h>
+#include <App/Tone/LowBatteryTone.h>
 #include <App/Display.h>
 #include <App/FTP.h>
 #include <App/Firmware.h>
@@ -357,6 +370,7 @@ namespace App {
 #define RTC RTC_::Instance()
 #define CON Connection_::Instance()
 #define BTN Button_::Instance()
+#define TON Tone_::Instance()
 #define DSP Display_::Instance()
 #define FTP FTP_::Instance()
 #define FWU Firmware_::Instance()

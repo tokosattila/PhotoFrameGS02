@@ -57,6 +57,7 @@ The runtime is organized into focused modules under `src/App`:
 - `Telnet_`: authenticated command console with lockout policy.
 - `LogManager_`: file-based event logger with per-level structured output, daily file rotation, and runtime enable/disable control via NVS config.
 - `Button_`: button logic.
+- `Tone_`: piezo tone signaling with reusable tone patterns.
 - `Utils_`: sleep/wakeup logic, CPU frequency switching, diagnostics.
 
 The application entrypoint in `src/Main.cpp` orchestrates initialization and mode routing.
@@ -96,6 +97,7 @@ Core behavior:
 
 - Bring up WiFi according to AP/STA configuration.
 - Start Telnet and/or FTP services.
+- Play maintenance entry tone sequence on mode start.
 - Display connection hints on e-ink screen.
 - Support remote config, file, and firmware operations.
 - Track activity and enforce inactivity timeout for safe auto-exit.
@@ -107,6 +109,7 @@ Purpose: protect battery and avoid unstable operation.
 Core behavior:
 
 - Show low-battery warning screen.
+- Play low-battery warning tone sequence.
 - Power down non-essential peripherals.
 - Enter low-power sleep path.
 
@@ -126,6 +129,7 @@ Configuration domains include:
 - Telnet/FTP service enable flags, credentials, and session timing.
 - Storage default selection and fallback behavior.
 - LogManager runtime enable flag (`log_enabled`).
+- Tone signaling uses built-in patterns under `src/App/Tone` and fixed pin mapping (no runtime config key yet).
 
 Factory reset clears persisted configuration and restarts the device.
 
@@ -434,7 +438,7 @@ Runtime behavior:
 - Enabled/disabled by NVS-backed config (`log_enabled`).
 - Initialized after storage mount.
 - Tracks boot/halt and subsystem events.
-- Telnet support: `log status`, `log info`, `log flush`.
+- Log files are managed by firmware components; no dedicated `log` Telnet command is currently registered.
 
 ## 15. Build and Deployment
 
@@ -478,6 +482,7 @@ pio device monitor
 |-----|----------|-------------|
 | GPIO21 | Button 1 | Wake from deep sleep, enter maintenance mode |
 | GPIO48 | Button 2 | Factory reset (hold 30 sec) |
+| GPIO47 | Piezo Tone | Tone signaling output (Tone_) |
 | GPIO14 | Battery ADC | Battery voltage measurement |
 | GPIO18 | RTC SDA | PCF8563 data line |
 | GPIO17 | RTC SCL | PCF8563 clock line |
@@ -485,6 +490,11 @@ pio device monitor
 | GPIO15 | SD MOSI | SD data in |
 | GPIO11 | SD SCK | SD clock |
 | GPIO42 | SD CS | SD chip select |
+
+Tone pattern files:
+
+- `src/App/Tone/MaintenanceTone.h`
+- `src/App/Tone/LowBatteryTone.h`
 
 ## License
 

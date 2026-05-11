@@ -186,6 +186,8 @@ class Application {
         snprintf(tText, sizeof(tText), "Device starts in Maintenance [%s] Mode", (mCfg.Connection.ApModeEnable ? "AP" : "STA"));
         UTL.PrintInfo(tText, EUtilsInfoType::Single);
       }
+      TON.Init(TONE_PIN);
+      TON.Play(kMaintenanceTone);
       STG.Init(true);
       LOG.Init();
       LOG.Boot(UTL.ResolveBootReason(), "MAINTENANCE", mCfg.Device.Version.c_str(), gBootCount);
@@ -322,6 +324,8 @@ class Application {
 
     void LowBatteryMode() {
       UTL.PrintInfo("Device starts in Low Battery Mode", EUtilsInfoType::Single);
+      TON.Init(TONE_PIN);
+      TON.Play(kLowBatteryTone);
       LFS.Init(true);
       DSP.Init();
       char tBuffer[32];
