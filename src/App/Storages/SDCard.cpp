@@ -301,8 +301,19 @@ namespace App {
     File tEntry = tDir.openNextFile();
     while (tEntry) {
       bool tIsDir = tEntry.isDirectory();
+      const char *tEntryName = tEntry.name();
       char tEntryPath[256] = "";
-      strncpy(tEntryPath, NormalizePath(tEntry.name()), sizeof(tEntryPath) - 1);
+      if (tEntryName && tEntryName[0] != '\0' && tEntryName[0] != '/') {
+        char tParentPath[256] = "";
+        strncpy(tParentPath, NormalizePath(tDirPath), sizeof(tParentPath) - 1);
+        tParentPath[sizeof(tParentPath) - 1] = '\0';
+        size_t tParentLen = strlen(tParentPath);
+        if (tParentLen > 1 && tParentPath[tParentLen - 1] == '/') tParentPath[tParentLen - 1] = '\0';
+        if (strcmp(tParentPath, "/") == 0) snprintf(tEntryPath, sizeof(tEntryPath), "/%s", tEntryName);
+        else snprintf(tEntryPath, sizeof(tEntryPath), "%s/%s", tParentPath, tEntryName);
+      } else {
+        strncpy(tEntryPath, NormalizePath(tEntryName), sizeof(tEntryPath) - 1);
+      }
       tEntryPath[sizeof(tEntryPath) - 1] = '\0';
       File tNext = tDir.openNextFile();
       tEntry.close();

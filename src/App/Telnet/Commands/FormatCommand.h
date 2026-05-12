@@ -31,16 +31,21 @@ namespace App {
           return true;
         }
         const char *tStorageName = tIsSD ? SDC.GetName() : LFS.GetName();
+        const bool tIsPrimaryStorage = (tIsSD && DEFAULT_FILE_SYSTEM == EFileSystemType::SDCard) ||
+                                       (!tIsSD && DEFAULT_FILE_SYSTEM == EFileSystemType::LittleFS);
         tClient.printf(COLOR_YELLOW "\r\n  Warning:" COLOR_WHITE " this will erase all files and directories on %s\r\n", tStorageName);
         tClient.print(F("\r\n  This operation cannot be undone.\r\n\r\n"));
         char tPrompt[64] = "";
         snprintf(tPrompt, sizeof(tPrompt), "Format %s? (y/n): ", tStorageName);
-        TLN.RequestConfirmation(tPrompt, [this, tIsSD](bool tConfirmed, WiFiClient &tConfirmClient) {
+        TLN.RequestConfirmation(tPrompt, [this, tIsSD, tIsPrimaryStorage](bool tConfirmed, WiFiClient &tConfirmClient) {
           if (!tConfirmed) {
             tConfirmClient.print(F("\r\n  Cancelled\r\n\r\n"));
             return;
           }
           bool tOk = tIsSD ? FormatSD() : FormatLFS();
+          if (tOk && tIsPrimaryStorage) {
+            if (!CFG.SaveImageName("")) xLOG("Failed to clear image name after primary storage format.");
+          }
           if (!tOk) tConfirmClient.print(F(COLOR_RED "\r\n  Error: format failed\r\n\r\n" COLOR_WHITE));
           else tConfirmClient.print(F(COLOR_GREEN "\r\n  Format complete\r\n\r\n" COLOR_WHITE));
         });
