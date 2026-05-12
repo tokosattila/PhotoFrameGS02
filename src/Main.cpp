@@ -110,6 +110,7 @@ class Application {
     void ReloadConfig() {
       Guard tLock;
       mCfg = CFG.Get<SAppConfig>();
+      TON.SetEnabled(mCfg.Tone.Enable);
     }
 
     void ShowDefaultImage() {

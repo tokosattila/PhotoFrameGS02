@@ -359,6 +359,54 @@ void test_PublicConfigKeys_static_display_and_device_keys_exposed() {
   TEST_ASSERT_TRUE(IsPublicConfigKey("wake_pin"));
 }
 
+struct SToneConfig {
+  bool Enable = true;
+  SToneConfig() = default;
+};
+
+void test_SToneConfig_default_enable_true() {
+  SToneConfig tTone {};
+  TEST_ASSERT_TRUE(tTone.Enable);
+}
+
+void test_SToneConfig_enable_can_be_set_false() {
+  SToneConfig tTone {};
+  tTone.Enable = false;
+  TEST_ASSERT_FALSE(tTone.Enable);
+}
+
+void test_ParseLine_tone_section() {
+  char tLine[] = "[tone]";
+  char tSection[32] = {};
+  char tKey[32] = {};
+  char tValue[128] = {};
+  bool tParsed = ParseLine(tLine, tSection, tKey, tValue);
+  TEST_ASSERT_FALSE(tParsed);
+  TEST_ASSERT_EQUAL_STRING("tone", tSection);
+}
+
+void test_ParseLine_tone_enable_true() {
+  char tLine[] = "tone_enable = true";
+  char tSection[32] = {"tone"};
+  char tKey[32] = {};
+  char tValue[128] = {};
+  bool tParsed = ParseLine(tLine, tSection, tKey, tValue);
+  TEST_ASSERT_TRUE(tParsed);
+  TEST_ASSERT_EQUAL_STRING("tone_enable", tKey);
+  TEST_ASSERT_EQUAL_STRING("true", tValue);
+}
+
+void test_ParseLine_tone_enable_false() {
+  char tLine[] = "tone_enable = false";
+  char tSection[32] = {"tone"};
+  char tKey[32] = {};
+  char tValue[128] = {};
+  bool tParsed = ParseLine(tLine, tSection, tKey, tValue);
+  TEST_ASSERT_TRUE(tParsed);
+  TEST_ASSERT_EQUAL_STRING("tone_enable", tKey);
+  TEST_ASSERT_EQUAL_STRING("false", tValue);
+}
+
 void setUp(void) {}
 void tearDown(void) {}
 
@@ -399,6 +447,11 @@ int main(int argc, char **argv) {
   RUN_TEST(test_PublicConfigKeys_new_ntp_keys_exposed);
   RUN_TEST(test_PublicConfigKeys_sta_fallback_keys_exposed);
   RUN_TEST(test_PublicConfigKeys_static_display_and_device_keys_exposed);
+  RUN_TEST(test_SToneConfig_default_enable_true);
+  RUN_TEST(test_SToneConfig_enable_can_be_set_false);
+  RUN_TEST(test_ParseLine_tone_section);
+  RUN_TEST(test_ParseLine_tone_enable_true);
+  RUN_TEST(test_ParseLine_tone_enable_false);
 
   return UNITY_END();
 }

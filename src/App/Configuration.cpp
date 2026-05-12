@@ -65,6 +65,7 @@ namespace App {
       {Configuration_::kNvsFtpUsername, "ftp_username", "ftp", EConfigType::STRING},
       {Configuration_::kNvsFtpPassword, "ftp_password", "ftp", EConfigType::STRING},
       {Configuration_::kNvsDeviceLogEnable, "log_enabled", "device", EConfigType::BOOL},
+      {Configuration_::kNvsToneEnable, "tone_enable", "tone", EConfigType::BOOL},
       {"", "default_file_system", "storage", EConfigType::GLOBAL_INT},
       {"", "fallback_enabled", "storage", EConfigType::GLOBAL_INT},
       {"", "config_file", "device", EConfigType::GLOBAL_INT},
@@ -178,6 +179,8 @@ namespace App {
       else if (strcmp(tEntry.NvsKey, Configuration_::kNvsFtpPort) == 0) tConfig.Ftp.FtpPort = Port(static_cast<uint8_t>(atoi(tValue)));
       else if (strcmp(tEntry.NvsKey, Configuration_::kNvsFtpUsername) == 0) tConfig.Ftp.Username = String(tValue);
       else if (strcmp(tEntry.NvsKey, Configuration_::kNvsFtpPassword) == 0) tConfig.Ftp.Password = String(tValue);
+    } else if (strcasecmp(tSection, "tone") == 0) {
+      if (strcmp(tEntry.NvsKey, Configuration_::kNvsToneEnable) == 0) tConfig.Tone.Enable = (strcasecmp(tValue, "true") == 0 || atoi(tValue) != 0);
     }
   }
 
@@ -637,6 +640,8 @@ namespace App {
       AppendLine("ftp_port", String(mConfig.getUChar(kNvsFtpPort, 21)));
       AppendLine("ftp_username", mConfig.getString(kNvsFtpUsername, "admin"));
       AppendLine("ftp_password", mConfig.getString(kNvsFtpPassword, "123456789"));
+      AppendSection("tone");
+      AppendLine("tone_enable", mConfig.getBool(kNvsToneEnable, true) ? "true" : "false");
       AppendSection("storage");
       AppendLine("fallback_enabled", STORAGE_FALLBACK_ENABLED ? "true" : "false");
     });
@@ -820,6 +825,7 @@ namespace App {
       tSuccess = tSuccess && mConfig.putUChar(kNvsFtpPort, tConfig.Ftp.FtpPort.Get());
       tSuccess = tSuccess && mConfig.putString(kNvsFtpUsername, tConfig.Ftp.Username);
       tSuccess = tSuccess && mConfig.putString(kNvsFtpPassword, tConfig.Ftp.Password);
+      tSuccess = tSuccess && mConfig.putBool(kNvsToneEnable, tConfig.Tone.Enable);
     });
     if (tSuccess) xLOG("Config saved successfully!");
     else xLOG("Failed save, some values may not have been written!");

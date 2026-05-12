@@ -108,6 +108,7 @@ namespace App {
       static constexpr const char *kNvsFtpUsername = "ftp.username";
       static constexpr const char *kNvsFtpPassword = "ftp.password";
       static constexpr const char *kNvsDeviceLogEnable = "log.enable";
+      static constexpr const char *kNvsToneEnable = "ton.en";
     private:
       Configuration_();
       Configuration_(const Configuration_&) = delete;

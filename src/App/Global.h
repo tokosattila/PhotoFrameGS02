@@ -261,6 +261,11 @@ namespace App {
     SStorageConfig() = default;
   };
 
+  struct SToneConfig {
+    bool Enable = true;
+    SToneConfig() = default;
+  };
+
   struct SAppConfig {
     SDeviceConfig Device {};
     SNTPConfig Ntp {};
@@ -270,6 +275,7 @@ namespace App {
     STelnetConfig Telnet {};
     SFTPConfig Ftp {};
     SStorageConfig Storage {};
+    SToneConfig Tone {};
     SAppConfig() = default;
   };
 

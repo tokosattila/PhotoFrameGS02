@@ -1,4 +1,4 @@
-# Photo Frame GS02 (Grayscale E-Ink)
+# Photo Frame GS02 — [ Grayscale E-Ink ]
 
 Grayscale e-ink digital photo frame with autonomous slideshow operation, deep sleep scheduling, RTC backup, and remote maintenance through Telnet and FTP.
 
