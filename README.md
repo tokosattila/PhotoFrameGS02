@@ -129,7 +129,7 @@ Configuration domains include:
 - Telnet/FTP service enable flags, credentials, and session timing.
 - Storage default selection and fallback behavior.
 - LogManager runtime enable flag (`log_enabled`).
-- Tone signaling uses built-in patterns under `src/App/Tone` and fixed pin mapping (no runtime config key yet).
+- Tone signaling enable/disable via NVS config (`ton.en`) and `config.ini` ([tone] section).
 
 Factory reset clears persisted configuration and restarts the device.
 
@@ -203,6 +203,9 @@ ftp_enable = true
 ftp_port = 21
 ftp_username = admin
 ftp_password = 123456789
+
+[tone]
+tone_enable = true
 
 [storage]
 fallback_enabled = true
