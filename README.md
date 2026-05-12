@@ -80,12 +80,14 @@ Purpose: autonomous slideshow operation with minimal power draw.
 
 Core behavior:
 
-- Mount storage.
-- Initialize `LogManager_` and write boot and battery events.
-- Resolve current image from persisted config.
-- Render JPEG with active grayscale tuning.
-- Persist next image pointer.
-- Log halt state and enter deep sleep.
+- Automatically display JPG images from the active `/images/` folder (SD Card or LittleFS).
+- Use storage fallback when primary storage is unavailable or has no images.
+- Cycle images according to wake mode (`Seconds`, `Minutes`, `Hourly`, `Half-Day`, `Daily`, `Weekly`, `Monthly`).
+- Respect `wake_up_hour` (0-23) for `Daily`/`Weekly`/`Monthly` scheduling.
+- Use RTC-backed timing for accurate scheduled wake-up.
+- Initialize `LogManager_` and write boot/battery events.
+- Render JPEG with active grayscale tuning and persist the next image pointer.
+- Enter deep sleep between refresh cycles for battery conservation.
 
 If the current image is missing or unreadable, a built-in fallback image is shown.
 
@@ -93,14 +95,23 @@ If the current image is missing or unreadable, a built-in fallback image is show
 
 Purpose: online maintenance via Telnet and FTP.
 
+Activation: hold Maintenance Button (`GPIO21`) for 3 seconds during boot.
+
 Core behavior:
 
 - Bring up WiFi according to AP/STA configuration.
 - Start Telnet and/or FTP services.
 - Play maintenance entry tone sequence on mode start.
 - Display connection hints on e-ink screen.
-- Support remote config, file, and firmware operations.
+- Support remote config and file operations (`list`, `copy`, `delete`, `fetch`).
+- Enforce Telnet authentication policy (session timeout + lockout).
+- Support mDNS hostname access.
+- Support OTA maintenance commands (firmware verify/run, boot slot control).
 - Track activity and enforce inactivity timeout for safe auto-exit.
+
+Exit: hold Maintenance Button for 3 seconds to reboot.
+
+Factory reset: hold Reset Button (`GPIO48`) for 30 seconds.
 
 ### 4.4 Low Battery Mode
 
@@ -108,10 +119,12 @@ Purpose: protect battery and avoid unstable operation.
 
 Core behavior:
 
-- Show low-battery warning screen.
+- Trigger when battery voltage drops below low-battery threshold.
+- Show battery status on display (voltage + percentage).
 - Play low-battery warning tone sequence.
 - Power down non-essential peripherals.
-- Enter low-power sleep path.
+- Enter extended deep sleep to preserve remaining energy.
+- Wake periodically for battery re-check and safe recovery handling.
 
 ## 5. Configuration
 
@@ -228,6 +241,7 @@ Manual sync is always available via Telnet: `date rtc sync-from-ntp`.
 
 Timer modes are enum-based and support:
 
+- Seconds
 - Minutes
 - Hourly
 - Half-day
