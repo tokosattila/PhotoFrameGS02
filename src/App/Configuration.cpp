@@ -2,6 +2,38 @@
 
 namespace App {
 
+  bool Configuration_::ParseBoolStrict(const char *tValue, bool &tOut) {
+    if (!tValue || tValue[0] == '\0') return false;
+    if (strcasecmp(tValue, "true") == 0 || strcmp(tValue, "1") == 0) {
+      tOut = true;
+      return true;
+    }
+    if (strcasecmp(tValue, "false") == 0 || strcmp(tValue, "0") == 0) {
+      tOut = false;
+      return true;
+    }
+    return false;
+  }
+
+  bool Configuration_::ParseUInt32Strict(const char *tValue, uint32_t tMin, uint32_t tMax, uint32_t &tOut) {
+    if (!tValue || tValue[0] == '\0') return false;
+    char *tEnd = nullptr;
+    unsigned long tParsed = strtoul(tValue, &tEnd, 10);
+    if (!tEnd || *tEnd != '\0') return false;
+    if (tParsed < tMin || tParsed > tMax) return false;
+    tOut = static_cast<uint32_t>(tParsed);
+    return true;
+  }
+
+  bool Configuration_::ParseInt32Strict(const char *tValue, int32_t &tOut) {
+    if (!tValue || tValue[0] == '\0') return false;
+    char *tEnd = nullptr;
+    long tParsed = strtol(tValue, &tEnd, 10);
+    if (!tEnd || *tEnd != '\0') return false;
+    tOut = static_cast<int32_t>(tParsed);
+    return true;
+  }
+
   bool Configuration_::MatchIniSection(const SConfigKeyMappingEntry &tEntry, const char *tFileSection) {
     if (strcasecmp(tEntry.IniSection, tFileSection) == 0) return true;
     if ((strcasecmp(tEntry.IniSection, "ap mode fallback") == 0 && strcasecmp(tFileSection, "ap mode") == 0) ||
@@ -78,7 +110,9 @@ namespace App {
       {"", "images_dir", "display", EConfigType::GLOBAL_INT},
       {"", "wake_pin", "timer", EConfigType::GLOBAL_INT},
     };
-    static const std::vector<SConfigKeyMappingEntry> tKeyMappingVector(tKeyMapping, tKeyMapping + (sizeof(tKeyMapping) / sizeof(tKeyMapping[0])));
+    static const std::vector<SConfigKeyMappingEntry> tKeyMappingVector(
+      tKeyMapping, tKeyMapping + (sizeof(tKeyMapping) / sizeof(tKeyMapping[0]))
+    );
     return tKeyMappingVector;
   }
 
@@ -296,9 +330,9 @@ namespace App {
     tDefaultConfig.Device.LogManagerEnabled = true;
     tDefaultConfig.Display.Width = DISPLAY_WIDTH;
     tDefaultConfig.Display.Height = DISPLAY_HEIGHT;
-    tDefaultConfig.Display.JpgBrightness = Percentage(25);
-    tDefaultConfig.Display.JpgContrast = Percentage(75);
-    tDefaultConfig.Display.JpgGamma = Percentage(125);
+    tDefaultConfig.Display.JpgBrightness = Percentage(0);
+    tDefaultConfig.Display.JpgContrast = Percentage(100);
+    tDefaultConfig.Display.JpgGamma = Percentage(100);
     tDefaultConfig.Display.ImagesDir = IMAGES_DIR;
     tDefaultConfig.Display.ImageExt = IMAGE_EXT;
     tDefaultConfig.Display.CurrentFile = "";
@@ -459,9 +493,9 @@ namespace App {
     AccessConfig(true, [&]() {
       tCfg.Width = DISPLAY_WIDTH;
       tCfg.Height = DISPLAY_HEIGHT;
-      tCfg.JpgBrightness = Percentage(mConfig.getUChar(kNvsDisplayBrightness, 30));
-      tCfg.JpgContrast = Percentage(mConfig.getUChar(kNvsDisplayContrast, 35));
-      tCfg.JpgGamma = Percentage(mConfig.getUChar(kNvsDisplayGamma, 135));
+      tCfg.JpgBrightness = Percentage(mConfig.getUChar(kNvsDisplayBrightness, 0));
+      tCfg.JpgContrast = Percentage(mConfig.getUChar(kNvsDisplayContrast, 100));
+      tCfg.JpgGamma = Percentage(mConfig.getUChar(kNvsDisplayGamma, 100));
       tCfg.ImagesDir = IMAGES_DIR;
       tCfg.ImageExt = IMAGE_EXT;
       tCfg.CurrentFile = mConfig.getString(kNvsDisplayFile, "");
@@ -588,9 +622,9 @@ namespace App {
       AppendLine("version", mConfig.getString(kNvsDeviceVersion, "v1.0"));
       AppendLine("log_enabled", mConfig.getBool(kNvsDeviceLogEnable, true) ? "true" : "false");
       AppendSection("display");
-      AppendLine("jpg_brightness", String(mConfig.getUChar(kNvsDisplayBrightness, 30)));
-      AppendLine("jpg_contrast", String(mConfig.getUChar(kNvsDisplayContrast, 35)));
-      AppendLine("jpg_gamma", String(mConfig.getUChar(kNvsDisplayGamma, 135)));
+      AppendLine("jpg_brightness", String(mConfig.getUChar(kNvsDisplayBrightness, 0)));
+      AppendLine("jpg_contrast", String(mConfig.getUChar(kNvsDisplayContrast, 100)));
+      AppendLine("jpg_gamma", String(mConfig.getUChar(kNvsDisplayGamma, 100)));
       AppendLine("image_file", mConfig.getString(kNvsDisplayFile, ""));
       AppendSection("ntp");
       AppendLine("ntp_server", mConfig.getString(kNvsTimeServer, "ro.pool.ntp.org"));
@@ -706,6 +740,17 @@ namespace App {
     return "";
   }
 
+  bool Configuration_::HasConfigKey(const char *tKey) {
+    if (!tKey || tKey[0] == '\0') return false;
+    String tLowerKey = tKey;
+    tLowerKey.toLowerCase();
+    const auto &tMapping = GetKeyMapping();
+    auto tIt = std::find_if(tMapping.begin(), tMapping.end(), [&tLowerKey](const SConfigKeyMappingEntry &tEntry) {
+      return tLowerKey.equals(tEntry.IniKey);
+    });
+    return tIt != tMapping.end();
+  }
+
   bool Configuration_::SetConfig(const char *tKey, const char *tValue) {
     if (!tKey || tKey[0] == '\0' || !tValue) return false;
     String tLowerKey = tKey;
@@ -720,25 +765,61 @@ namespace App {
       if (tEntry.NvsKey[0] != '\0') {
         AccessConfig(false, [&]() {
           switch (tEntry.Type) {
-            case EConfigType::BOOL:
-              tSuccess = mConfig.putBool(tEntry.NvsKey, (strcasecmp(tValue, "true") == 0 || atoi(tValue) != 0));
-              break;
-            case EConfigType::UCHAR: {
-              uint8_t tVal = static_cast<uint8_t>(atoi(tValue));
-              if (strcmp(tEntry.NvsKey, kNvsTimerWakeHour) == 0) tVal %= 24;
-              tSuccess = mConfig.putUChar(tEntry.NvsKey, tVal);
+            case EConfigType::BOOL: {
+              bool tBoolValue = false;
+              if (!ParseBoolStrict(tValue, tBoolValue)) {
+                tSuccess = false;
+                break;
+              }
+              tSuccess = mConfig.putBool(tEntry.NvsKey, tBoolValue);
               break;
             }
-            case EConfigType::USHORT:
-              tSuccess = mConfig.putUShort(tEntry.NvsKey, static_cast<uint16_t>(atoi(tValue)));
+            case EConfigType::UCHAR: {
+              uint32_t tRaw = 0;
+              uint32_t tMin = 0;
+              uint32_t tMax = 255;
+              if (strcmp(tEntry.NvsKey, kNvsTimerWakeHour) == 0) {
+                tMin = 0;
+                tMax = 23;
+              } else if (strcmp(tEntry.NvsKey, kNvsTimerWake) == 0) {
+                tMin = 1;
+                tMax = static_cast<uint32_t>(ETimerWakeUp::Monthly);
+              }
+              if (!ParseUInt32Strict(tValue, tMin, tMax, tRaw)) {
+                tSuccess = false;
+                break;
+              }
+              tSuccess = mConfig.putUChar(tEntry.NvsKey, static_cast<uint8_t>(tRaw));
               break;
-            case EConfigType::INT:
-              tSuccess = mConfig.putInt(tEntry.NvsKey, static_cast<int32_t>(atol(tValue)));
+            }
+            case EConfigType::USHORT: {
+              uint32_t tRaw = 0;
+              if (!ParseUInt32Strict(tValue, 1, 65535, tRaw)) {
+                tSuccess = false;
+                break;
+              }
+              tSuccess = mConfig.putUShort(tEntry.NvsKey, static_cast<uint16_t>(tRaw));
               break;
+            }
+            case EConfigType::INT: {
+              int32_t tIntValue = 0;
+              if (!ParseInt32Strict(tValue, tIntValue)) {
+                tSuccess = false;
+                break;
+              }
+              tSuccess = mConfig.putInt(tEntry.NvsKey, tIntValue);
+              break;
+            }
             case EConfigType::UINT:
-            case EConfigType::ULONG:
-              tSuccess = mConfig.putULong(tEntry.NvsKey, static_cast<uint32_t>(atol(tValue)));
+            case EConfigType::ULONG: {
+              uint32_t tUIntValue = 0;
+              if (!ParseUInt32Strict(tValue, 0, 0xFFFFFFFFUL, tUIntValue)) {
+                tSuccess = false;
+                break;
+              }
+              tSuccess = mConfig.putULong(tEntry.NvsKey, tUIntValue);
               break;
+            }
             case EConfigType::STRING:
               tSuccess = mConfig.putString(tEntry.NvsKey, tValue);
               break;
@@ -759,14 +840,24 @@ namespace App {
     if (!STG.Exists(tFileName)) {
       xLOG("INI file (%s) not found.", tFileName);
       xLOG("Using current NVS config.");
-      return tConfig;
+    } else {
+      if (!ReadINIFile(tFileName, tConfig)) {
+        xLOG("Failed to read INI file, using current config.");
+      } else {
+        xLOG("Configs loaded from file, ready to save.");
+        SaveAllConfig(tConfig);
+      }
     }
-    if (!ReadINIFile(tFileName, tConfig)) {
-      xLOG("Failed to read INI file, using current config.");
-      return tConfig;
+    if (tConfig.Display.CurrentFile.isEmpty()) {
+      const char *tAutoFile = STG.GetNextFile("");
+      if (tAutoFile && tAutoFile[0]) {
+        tConfig.Display.CurrentFile = tAutoFile;
+        xLOG("Auto-selected image_file: %s", tAutoFile);
+        mConfig.putString(kNvsDisplayFile, tAutoFile);
+      } else {
+        xLOG("No image found to auto-select as image_file.");
+      }
     }
-    xLOG("Configs loaded from file, ready to save.");
-    SaveAllConfig(tConfig);
     return tConfig;
   }
 

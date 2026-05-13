@@ -37,9 +37,27 @@ namespace App {
         tKey[tKeyLen] = '\0';
         while (*tPtr == ' ' || *tPtr == '\t') ++tPtr;
         if (*tPtr == '\0') {
+          if (!CFG.HasConfigKey(tKey)) {
+            tClient.print(F(COLOR_RED "\r\n  Error: Key not found\r\n\r\n" COLOR_WHITE));
+            return true;
+          }
+          if (strcasecmp(tKey, "image_file") == 0) {
+            const char *tCurrent = CFG.GetConfig(tKey);
+            bool tNeedReseed = (!tCurrent || tCurrent[0] == '\0');
+            if (!tNeedReseed) {
+              SDisplayConfig tDisplayCfg = CFG.Get<SDisplayConfig>();
+              char tCurrentPath[128] = "";
+              snprintf(tCurrentPath, sizeof(tCurrentPath), "/%s/%s", tDisplayCfg.ImagesDir.c_str(), tCurrent);
+              tNeedReseed = !STG.Exists(tCurrentPath);
+            }
+            if (tNeedReseed) {
+              const char *tAutoFile = STG.GetNextFile("");
+              if (tAutoFile && tAutoFile[0]) CFG.SaveImageName(tAutoFile);
+            }
+          }
           const char *tVal = CFG.GetConfig(tKey);
-          if (!tVal || tVal[0] == '\0') tClient.print(F(COLOR_RED "\r\n  Error: Key not found\r\n\r\n" COLOR_WHITE));
-          else tClient.printf("\r\n  %s = %s\r\n\r\n" COLOR_WHITE, tKey, tVal);
+          if (!tVal) tVal = "";
+          tClient.printf("\r\n  %s = %s\r\n\r\n" COLOR_WHITE, tKey, tVal);
           return true;
         }
         const char *tValueStart = tPtr;

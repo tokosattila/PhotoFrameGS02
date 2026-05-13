@@ -222,9 +222,9 @@ namespace App {
   struct SDisplayConfig {
     int32_t Width = 0;
     int32_t Height = 0;
-    Percentage JpgBrightness {30};
-    Percentage JpgContrast {35};
-    Percentage JpgGamma {135};
+    Percentage JpgBrightness {0};
+    Percentage JpgContrast {100};
+    Percentage JpgGamma {100};
     String ImagesDir;
     String ImageExt;
     String CurrentFile;

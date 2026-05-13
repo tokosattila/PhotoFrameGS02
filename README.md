@@ -143,9 +143,9 @@ appname = PHOTO FRAME GS02
 version = v1.0
 
 [display]
-jpg_brightness = 25
-jpg_contrast = 75
-jpg_gamma = 125
+jpg_brightness = 0
+jpg_contrast = 100
+jpg_gamma = 100
 image_file = pic01.jpg
 
 [ntp]
@@ -468,9 +468,11 @@ pio device monitor
 
 - `default.h` / `default.png`: bundled fallback visual asset source.
 - `imgconvert.py`: image conversion/preparation helper.
+- `imgprepare/imgprepare.py`: converts JPG/PNG/WEBP to e-paper-ready grayscale JPG (8-bit default to preserve detail; optional `--quantize-16` for pre-quantized output).
+- `imgprepare/input/`: default source folder for batch conversion inputs.
+- `imgprepare/output/`: default target folder for converted outputs.
 - `fontconvert.py`: font conversion helper.
 - `firmware_sha.py`: firmware hash helper used by OTA packaging.
-
 ## 17. Dependencies
 
 - [LilyGoEPD47](https://github.com/Xinyuan-LilyGO/LilyGo-EPD47)

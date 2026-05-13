@@ -133,6 +133,27 @@ class Application {
       return DSP.PrintJpg(0, 0, tImage);
     }
 
+    void EnsureImageFileSeededOnBoot() {
+      bool tNeedSeed = mCfg.Display.CurrentFile.isEmpty();
+      if (!tNeedSeed) {
+        char tCurrentPath[128] = "";
+        snprintf(tCurrentPath, sizeof(tCurrentPath), "/%s/%s", mCfg.Display.ImagesDir.c_str(), mCfg.Display.CurrentFile.c_str());
+        tNeedSeed = !STG.Exists(tCurrentPath);
+      }
+      if (!tNeedSeed) return;
+      const char *tSeedImage = STG.GetNextFile("");
+      if (!tSeedImage || tSeedImage[0] == '\0') {
+        xLOG("Boot seed skipped: no image found in active storage.");
+        return;
+      }
+      if (!CFG.SaveImageName(tSeedImage)) {
+        xLOG("Boot seed failed: unable to save image_file.");
+        return;
+      }
+      mCfg.Display.CurrentFile = tSeedImage;
+      xLOG("Boot seed image_file → %s", tSeedImage);
+    }
+
     bool WaitForWifiClient(uint32_t tTimeoutMs) {
       const uint32_t tStartMs = millis();
       while (!CON.HasActiveWifiClient()) {
@@ -150,6 +171,7 @@ class Application {
       ReloadConfig();
       UTL.PrintInfo("Device starts in Photo Frame Mode", EUtilsInfoType::Single);
       STG.Init(true);
+      EnsureImageFileSeededOnBoot();
       LOG.Init();
       LOG.Boot(UTL.ResolveBootReason(), "PHOTO_FRAME", mCfg.Device.Version.c_str(), gBootCount);
       LOG.Battery(UTL.mBatteryPercentage, static_cast<uint16_t>(UTL.mBatteryVoltage * 1000.0f), "measured");

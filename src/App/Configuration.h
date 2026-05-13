@@ -44,6 +44,7 @@ namespace App {
       bool CreateConfig();
       bool FactoryReset();
       const char *GetConfig(const char *tKey);
+      bool HasConfigKey(const char *tKey);
       bool SetConfig(const char *tKey, const char *tValue);
       bool SaveImageName(const char *tValue);
       uint32_t GetImageUpdatedAt();
@@ -125,6 +126,9 @@ namespace App {
       static const std::vector<SConfigKeyMappingEntry> &GetKeyMapping();
       static bool ParseLine(char *tLine, char *tSection, char *tKey, char *tValue);
       static void TrimValue(char *tValue);
+      static bool ParseBoolStrict(const char *tValue, bool &tOut);
+      static bool ParseUInt32Strict(const char *tValue, uint32_t tMin, uint32_t tMax, uint32_t &tOut);
+      static bool ParseInt32Strict(const char *tValue, int32_t &tOut);
       static void ApplyINIValue(SAppConfig &tConfig, const char *tSection, const SConfigKeyMappingEntry &tEntry, const char *tValue);
       static bool ReadINIFile(const char *tFileName, SAppConfig &tConfig);
       bool Begin(bool tReadOnly);
