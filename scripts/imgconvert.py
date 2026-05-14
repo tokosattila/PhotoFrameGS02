@@ -5,8 +5,8 @@ from argparse import ArgumentParser
 import sys
 import math
 
-SCREEN_WIDTH = 1200
-SCREEN_HEIGHT = 825
+SCREEN_WIDTH = 960
+SCREEN_HEIGHT = 540
 
 if SCREEN_WIDTH % 2:
     print("image width must be even!", file=sys.stderr)

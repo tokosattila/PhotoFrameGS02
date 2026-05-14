@@ -27,8 +27,8 @@ namespace App {
   }
 
   bool LogManager_::IsEnabledByConfig() const {
-    const SDeviceConfig tDeviceConfig = CFG.Get<SDeviceConfig>();
-    return tDeviceConfig.LogManagerEnabled;
+    const SLogConfig tLogConfig = CFG.Get<SLogConfig>();
+    return tLogConfig.LogManagerEnabled;
   }
 
   void LogManager_::ReloadConfig() {

@@ -51,7 +51,7 @@ namespace App {
       bool PrintListing(const char *tData, size_t tLen, const char *tLabel, WiFiClient &tClient) {
         tClient.printf(COLOR_GREEN "\r\n  File structure [%s]:\r\n\r\n" COLOR_WHITE, tLabel);
         if (!tData || tLen == 0 || tData[0] == '\0') {
-          tClient.print(F(COLOR_YELLOW "  File structure is empty.\r\n" COLOR_WHITE));
+          tClient.print(F(COLOR_YELLOW "  File structure is empty.\r\n\r\n" COLOR_WHITE));
           return true;
         }
         char *tLine = (char *)tData;

@@ -43,8 +43,8 @@ namespace App {
             return;
           }
           bool tOk = tIsSD ? FormatSD() : FormatLFS();
-          if (tOk && tIsPrimaryStorage) {
-            if (!CFG.SaveImageName("")) xLOG("Failed to clear image name after primary storage format.");
+          if (!CFG.SaveImageName("")) {
+            tConfirmClient.print(F(COLOR_YELLOW "\r\n  Warning: failed to clear image name after format.\r\n" COLOR_WHITE));
           }
           if (!tOk) tConfirmClient.print(F(COLOR_RED "\r\n  Error: format failed\r\n\r\n" COLOR_WHITE));
           else tConfirmClient.print(F(COLOR_GREEN "\r\n  Format complete\r\n\r\n" COLOR_WHITE));

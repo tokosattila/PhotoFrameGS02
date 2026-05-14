@@ -174,7 +174,6 @@ namespace App {
     uint8_t BatteryPin = 0;
     uint8_t ResetPin = 0;
     uint8_t SettingPin = 0;
-    bool LogManagerEnabled = true;
     SDeviceConfig() = default;
   };
 
@@ -255,6 +254,11 @@ namespace App {
     SFTPConfig() = default;
   };
 
+  struct SLogConfig {
+    bool LogManagerEnabled = true;
+    SLogConfig() = default;
+  };
+
   struct SStorageConfig {
     EFileSystemType DefaultFileSystem = EFileSystemType::LittleFS;
     bool FallbackEnabled = true;
@@ -268,6 +272,7 @@ namespace App {
 
   struct SAppConfig {
     SDeviceConfig Device {};
+    SLogConfig Log {};
     SNTPConfig Ntp {};
     SConnectionConfig Connection {};
     SDisplayConfig Display {};

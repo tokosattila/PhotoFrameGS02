@@ -202,7 +202,8 @@ namespace App {
       STaskData *tData = static_cast<STaskData*>(tParameter);
       Display_ &tSelf = Instance();
       char tFullPath[128];
-      snprintf(tFullPath, sizeof(tFullPath), "/%s/%s", tSelf.mCfg.ImagesDir.c_str(), tData->FileName);
+      if (tData->FileName && tData->FileName[0] == '/') snprintf(tFullPath, sizeof(tFullPath), "%s", tData->FileName);
+      else snprintf(tFullPath, sizeof(tFullPath), "/%s/%s", tSelf.mCfg.ImagesDir.c_str(), tData->FileName ? tData->FileName : "");
       File tFile = STG.OpenFile(tFullPath, FILE_READ);
       if (tFile) {
         size_t tSize = tFile.size();

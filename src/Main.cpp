@@ -127,7 +127,8 @@ class Application {
     bool TryDisplayImage(const char *tImage) {
       if (!tImage || *tImage == '\0') return false;
       char tFullPath[128] = "";
-      snprintf(tFullPath, sizeof(tFullPath), "/%s/%s", mCfg.Display.ImagesDir.c_str(), tImage);
+      if (tImage[0] == '/') snprintf(tFullPath, sizeof(tFullPath), "%s", tImage);
+      else snprintf(tFullPath, sizeof(tFullPath), "/%s/%s", mCfg.Display.ImagesDir.c_str(), tImage);
       if (!STG.Exists(tFullPath)) return false;
       xLOG("Trying image → %s", tImage);
       return DSP.PrintJpg(0, 0, tImage);
@@ -137,7 +138,8 @@ class Application {
       bool tNeedSeed = mCfg.Display.CurrentFile.isEmpty();
       if (!tNeedSeed) {
         char tCurrentPath[128] = "";
-        snprintf(tCurrentPath, sizeof(tCurrentPath), "/%s/%s", mCfg.Display.ImagesDir.c_str(), mCfg.Display.CurrentFile.c_str());
+        if (mCfg.Display.CurrentFile[0] == '/') snprintf(tCurrentPath, sizeof(tCurrentPath), "%s", mCfg.Display.CurrentFile.c_str());
+        else snprintf(tCurrentPath, sizeof(tCurrentPath), "/%s/%s", mCfg.Display.ImagesDir.c_str(), mCfg.Display.CurrentFile.c_str());
         tNeedSeed = !STG.Exists(tCurrentPath);
       }
       if (!tNeedSeed) return;
@@ -212,6 +214,7 @@ class Application {
       TON.Init(TONE_PIN);
       TON.Play(kMaintenanceTone);
       STG.Init(true);
+      STG.WriteFile(CONFIG_FILE, CFG.PrepareAllConfigToINI(), false);
       LOG.Init();
       LOG.Boot(UTL.ResolveBootReason(), "MAINTENANCE", mCfg.Device.Version.c_str(), gBootCount);
       LOG.Battery(UTL.mBatteryPercentage, static_cast<uint16_t>(UTL.mBatteryVoltage * 1000.0f), "measured");
