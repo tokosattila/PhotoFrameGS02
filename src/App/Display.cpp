@@ -139,11 +139,11 @@ namespace App {
   int IRAM_ATTR Display_::JpegDrawCallback(JPEGDRAW *tDraw) {
     Display_ *tSelf = &Instance();
     if (!tSelf->mFrameBuffer) return 0;
-    constexpr int kJpgBrightnessCorrection = 0;
+    constexpr int kJpgBrightnessCorrection = 5;
     constexpr int kJpgContrastCorrection = 0;
     constexpr int kJpgGammaCorrection = 50;
     constexpr int kJpgShadowLift = 12;
-    static const uint8_t kLevelRemap[16] = { 0, 2, 4, 6, 8, 10, 11, 12, 13, 14, 14, 14, 14, 14, 14, 15 };
+    static const uint8_t kLevelRemap[16] = { 0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 13, 14, 14, 15, 15, 15 };
     static const int8_t kBayer4x4[4][4] = {
       {-8,  0, -6,  2},
       { 4, -4,  6, -2},
