@@ -16,6 +16,7 @@ namespace App {
     Image,
     Sleep,
     Ota,
+    Info,
     Warn,
     Error
   };
@@ -80,7 +81,14 @@ void test_LogLevel_EnumValues(void) {
   TEST_ASSERT_EQUAL(1, static_cast<uint8_t>(App::ELogLevel::Halt));
   TEST_ASSERT_EQUAL(2, static_cast<uint8_t>(App::ELogLevel::Storage));
   TEST_ASSERT_EQUAL(9, static_cast<uint8_t>(App::ELogLevel::Ota));
-  TEST_ASSERT_EQUAL(11, static_cast<uint8_t>(App::ELogLevel::Error));
+  TEST_ASSERT_EQUAL(10, static_cast<uint8_t>(App::ELogLevel::Info));
+  TEST_ASSERT_EQUAL(11, static_cast<uint8_t>(App::ELogLevel::Warn));
+  TEST_ASSERT_EQUAL(12, static_cast<uint8_t>(App::ELogLevel::Error));
+}
+
+void test_LogLevel_InfoOrderedBetweenOtaAndWarn(void) {
+  TEST_ASSERT_TRUE(static_cast<uint8_t>(App::ELogLevel::Ota) < static_cast<uint8_t>(App::ELogLevel::Info));
+  TEST_ASSERT_TRUE(static_cast<uint8_t>(App::ELogLevel::Info) < static_cast<uint8_t>(App::ELogLevel::Warn));
 }
 
 int main(int argc, char **argv) {
@@ -90,5 +98,6 @@ int main(int argc, char **argv) {
   RUN_TEST(test_LogFilePath_BufferSize);
   RUN_TEST(test_LogFilePath_MultipleRolloverIndices);
   RUN_TEST(test_LogLevel_EnumValues);
+  RUN_TEST(test_LogLevel_InfoOrderedBetweenOtaAndWarn);
   return UNITY_END();
 }

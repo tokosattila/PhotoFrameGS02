@@ -50,6 +50,8 @@ namespace App {
       uint32_t GetImageUpdatedAt();
       bool SaveSession(uint32_t tValue);
       uint32_t GetSession();
+      uint32_t GetBootCount();
+      bool SaveBootCount(uint32_t tValue);
       const char *PrepareAllConfigToINI();
       SAppConfig LoadConfigFromINI(const char *tFileName = nullptr);
       bool SaveAllConfig(const SAppConfig &tConfig);
@@ -57,6 +59,7 @@ namespace App {
       static constexpr const char *kNvsDeviceConfig = "dvc.cfg";
       static constexpr const char *kNvsDeviceAppName = "dvc.appname";
       static constexpr const char *kNvsDeviceVersion = "dvc.version";
+      static constexpr const char *kNvsDeviceBootCount = "dvc.boot.cnt";
       static constexpr const char *kNvsDisplayBrightness = "dsp.jpg.brght";
       static constexpr const char *kNvsDisplayContrast = "dsp.jpg.cntrst";
       static constexpr const char *kNvsDisplayGamma = "dsp.jpg.gmm";

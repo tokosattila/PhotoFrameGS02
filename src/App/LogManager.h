@@ -16,6 +16,7 @@ namespace App {
     Image,
     Sleep,
     Ota,
+    Info,
     Warn,
     Error
   };
@@ -40,6 +41,7 @@ namespace App {
       void Image(const char *tFilename, const char *tStorage);
       void Sleep(uint64_t tWakeupInSeconds);
       void Ota(const char *tEvent, size_t tWritten = 0, size_t tTotal = 0);
+      void Info(const char *tFormat, ...);
       void Warn(const char *tFormat, ...);
       void Error(const char *tFormat, ...);
     private:

@@ -606,6 +606,23 @@ namespace App {
     return tValue;
   }
 
+  uint32_t Configuration_::GetBootCount() {
+    uint32_t tValue = 0;
+    AccessConfig(true, [&]() {
+      tValue = mConfig.getULong(kNvsDeviceBootCount, 0);
+    });
+    return tValue;
+  }
+
+  bool Configuration_::SaveBootCount(uint32_t tValue) {
+    bool tSuccess = false;
+    AccessConfig(false, [&]() {
+      tSuccess = mConfig.putULong(kNvsDeviceBootCount, tValue);
+    });
+    if (!tSuccess) xLOG("Failed to save boot count → %lu", (unsigned long)tValue);
+    return tSuccess;
+  }
+
   void Configuration_::UpdateNTPLastSync(unsigned long tEpochUtc) {
     AccessConfig(false, [&]() {
       mConfig.putULong(kNvsTimeLastSuccessfulSync, tEpochUtc);

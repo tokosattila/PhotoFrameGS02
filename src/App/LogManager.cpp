@@ -158,6 +158,16 @@ namespace App {
     else Write(ELogLevel::Ota, "%s", tEvent ? tEvent : "event");
   }
 
+  void LogManager_::Info(const char *tFormat, ...) {
+    if (!tFormat) return;
+    char tMessage[kLineBufferSize] = "";
+    va_list tArgs;
+    va_start(tArgs, tFormat);
+    vsnprintf(tMessage, sizeof(tMessage) - 1, tFormat, tArgs);
+    va_end(tArgs);
+    Write(ELogLevel::Info, "%s", tMessage);
+  }
+
   void LogManager_::Warn(const char *tFormat, ...) {
     if (!tFormat) return;
     char tMessage[kLineBufferSize] = "";
@@ -191,6 +201,7 @@ namespace App {
       case ELogLevel::Image: return "IMAGE";
       case ELogLevel::Sleep: return "SLEEP";
       case ELogLevel::Ota: return "FIRMW";
+      case ELogLevel::Info: return "INFO";
       case ELogLevel::Warn: return "WARN";
       case ELogLevel::Error: return "ERROR";
       default: return "LOG";

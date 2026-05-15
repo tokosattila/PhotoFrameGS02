@@ -358,4 +358,37 @@ namespace App {
     NTP.End();
   }
 
+  bool Connection_::SyncTimeIfDue() {
+    ReloadConfig();
+    if (mCfg.Connection.ApModeEnable) {
+      xLOG("AP mode active, low-power NTP sync skipped");
+      return false;
+    }
+    if (mCfg.Ntp.LowPowerSyncEnable) {
+      unsigned long tCurrentEpoch = static_cast<unsigned long>(time(nullptr));
+      unsigned long tLastSync = mCfg.Ntp.LastSuccessfulSyncEpochUtc;
+      if (tLastSync > 0 && tCurrentEpoch >= tLastSync) {
+        unsigned long tElapsed = tCurrentEpoch - tLastSync;
+        if (tElapsed < mCfg.Ntp.LowPowerSyncIntervalSec) {
+          xLOG("NTP sync not due (synced %lu sec ago, interval %lu sec)", tElapsed, mCfg.Ntp.LowPowerSyncIntervalSec);
+          return false;
+        }
+      }
+    }
+    xLOG("Low-power NTP sync starting...");
+    Start();
+    uint32_t tStart = millis();
+    while (!HasActiveWifiClient()) {
+      if (millis() - tStart > WIFI_CONNECT_TIMEOUT_MS) {
+        xLOG("WiFi connect timeout, NTP sync skipped");
+        Stop();
+        return false;
+      }
+      vTaskDelay(DELAY_HALF_SEC_MS / portTICK_PERIOD_MS);
+    }
+    BootstrapVault();
+    Stop();
+    return true;
+  }
+
 }

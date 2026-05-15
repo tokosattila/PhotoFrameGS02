@@ -556,11 +556,8 @@ namespace App {
   }
 
   bool Utils_::HasElapsedMs(uint32_t tStart, uint32_t tNow, uint32_t tDelayMs) {
-    if (tNow >= tStart) {
-      return (tNow - tStart) >= tDelayMs;
-    } else {
-      return ((UINT32_MAX - tStart) + tNow + 1) >= tDelayMs;
-    }
+    if (tNow >= tStart) return (tNow - tStart) >= tDelayMs;
+    else return ((UINT32_MAX - tStart) + tNow + 1) >= tDelayMs;
   }
 
   const char *Utils_::ResolveBootReason() {
@@ -594,11 +591,11 @@ namespace App {
   }
 
   uint64_t Utils_::SecondsUntilHour(uint8_t tTargetHour) {
-    uint32_t tEpochUtc = static_cast<uint32_t>(time(nullptr));
-    if (tEpochUtc < 1735689600UL) tEpochUtc = static_cast<uint32_t>(RTC.GetEpoch());
-    if (tEpochUtc < 1735689600UL) return SECONDS_PER_DAY;
-    unsigned long tLocalEpoch = static_cast<unsigned long>(tEpochUtc) + mCfg.Ntp.GMTOffset;
-    uint32_t tNowSec = static_cast<uint32_t>(tLocalEpoch % SECONDS_PER_DAY);
+    time_t tEpochUtc = time(nullptr);
+    if (static_cast<uint32_t>(tEpochUtc) < 1735689600UL) return SECONDS_PER_DAY;
+    struct tm tLocal;
+    localtime_r(&tEpochUtc, &tLocal);
+    uint32_t tNowSec = tLocal.tm_hour * SECONDS_PER_HOUR + tLocal.tm_min  * SECONDS_PER_MINUTE + tLocal.tm_sec;
     uint32_t tTargetSec = tTargetHour * SECONDS_PER_HOUR;
     if (tTargetSec <= tNowSec) tTargetSec += SECONDS_PER_DAY;
     return tTargetSec - tNowSec;
@@ -650,7 +647,12 @@ namespace App {
       tUnit = "min";
     }
     xLOG("Going to deep sleep...");
-    xLOG("Wake-up hour → %02u:00", tHour);
+    bool tUsesWallClock = (mCfg.Timer.WakeUp == ETimerWakeUp::Daily || mCfg.Timer.WakeUp == ETimerWakeUp::Weekly || mCfg.Timer.WakeUp == ETimerWakeUp::Monthly);
+    if (tUsesWallClock) {
+      bool tValidTime = (static_cast<uint32_t>(time(nullptr)) >= 1735689600UL);
+      if (tValidTime) xLOG("Wake-up hour → %02u:00", tHour);
+      else xLOG("Wake-up hour → %02u:00 (no valid time, relative fallback)", tHour);
+    }
     xLOG("Next wake-up → %llu %s\n\n", tDisplay, tUnit);
     uint8_t tSettingPin = static_cast<uint8_t>(mCfg.Device.SettingPin);
     esp_sleep_enable_timer_wakeup(tDelaySec * tSecToUs);

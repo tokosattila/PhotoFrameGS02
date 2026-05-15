@@ -15,7 +15,6 @@ class Application {
   static bool sButtonTaskStarted;
 
   public:
-
     using Guard = AutoGuard<Application>;
 
     static Application &Instance() {
@@ -40,6 +39,9 @@ class Application {
       if (!mMutex) mMutex = xSemaphoreCreateRecursiveMutex();
       gBootCount++;
       if(!CFG.Init()) return;
+      const uint32_t tPersistedBoot = CFG.GetBootCount();
+      if (tPersistedBoot + 1 > gBootCount) gBootCount = tPersistedBoot + 1;
+      CFG.SaveBootCount(gBootCount);
       ReloadConfig();
       UTL.Init();
       #if PRODUCTION
@@ -120,8 +122,13 @@ class Application {
     }
 
     void SaveNextImage(const char *tNextImage) {
-      if (!CFG.SaveImageName(tNextImage)) xLOG("Failed to save next image name");
-      else xLOG("Next image → %s", tNextImage);
+      if (!CFG.SaveImageName(tNextImage)) {
+        xLOG("Failed to save next image name");
+        LOG.Warn("Save next image FAILED -> %s", (tNextImage && tNextImage[0]) ? tNextImage : "<empty>");
+      } else {
+        xLOG("Next image → %s", tNextImage);
+        LOG.Info("NEXT_IMAGE -> %s", (tNextImage && tNextImage[0]) ? tNextImage : "<empty>");
+      }
     }
 
     bool TryDisplayImage(const char *tImage) {
@@ -136,24 +143,27 @@ class Application {
 
     void EnsureImageFileSeededOnBoot() {
       bool tNeedSeed = mCfg.Display.CurrentFile.isEmpty();
+      char tCurrentPath[128] = "";
       if (!tNeedSeed) {
-        char tCurrentPath[128] = "";
-        if (mCfg.Display.CurrentFile[0] == '/') snprintf(tCurrentPath, sizeof(tCurrentPath), "%s", mCfg.Display.CurrentFile.c_str());
-        else snprintf(tCurrentPath, sizeof(tCurrentPath), "/%s/%s", mCfg.Display.ImagesDir.c_str(), mCfg.Display.CurrentFile.c_str());
-        tNeedSeed = !STG.Exists(tCurrentPath);
+        snprintf(tCurrentPath, sizeof(tCurrentPath), "/%s/%s", mCfg.Display.ImagesDir.c_str(), mCfg.Display.CurrentFile.c_str());
+        tNeedSeed = !LFS.Exists(tCurrentPath);
       }
+      LOG.Info("SEED_CHECK -> nvs='%s' path='%s' exists=%d need_seed=%d", mCfg.Display.CurrentFile.isEmpty() ? "<empty>" : mCfg.Display.CurrentFile.c_str(), tCurrentPath[0] ? tCurrentPath : "<n/a>", (tCurrentPath[0] ? (int)LFS.Exists(tCurrentPath) : -1), (int)tNeedSeed);
       if (!tNeedSeed) return;
-      const char *tSeedImage = STG.GetNextFile("");
+      const char *tSeedImage = LFS.GetNextFile("");
       if (!tSeedImage || tSeedImage[0] == '\0') {
         xLOG("Boot seed skipped: no image found in active storage.");
+        LOG.Warn("SEED_SKIP -> no image found");
         return;
       }
       if (!CFG.SaveImageName(tSeedImage)) {
         xLOG("Boot seed failed: unable to save image_file.");
+        LOG.Warn("SEED_SAVE_FAIL -> %s", tSeedImage);
         return;
       }
       mCfg.Display.CurrentFile = tSeedImage;
       xLOG("Boot seed image_file → %s", tSeedImage);
+      LOG.Info("SEED_OK -> %s", tSeedImage);
     }
 
     bool WaitForWifiClient(uint32_t tTimeoutMs) {
@@ -176,9 +186,11 @@ class Application {
       EnsureImageFileSeededOnBoot();
       LOG.Init();
       LOG.Boot(UTL.ResolveBootReason(), "PHOTO_FRAME", mCfg.Device.Version.c_str(), gBootCount);
+      LOG.Info("BOOT_COUNT -> %u", (unsigned)gBootCount);
       LOG.Battery(UTL.mBatteryPercentage, static_cast<uint16_t>(UTL.mBatteryVoltage * 1000.0f), "measured");
       DSP.Init();
       const char *tImage = mCfg.Display.CurrentFile.isEmpty() ? STG.GetNextFile("")  : mCfg.Display.CurrentFile.c_str();
+      LOG.Info("PICK_IMAGE -> '%s' (nvs='%s')", tImage ? tImage : "<null>", mCfg.Display.CurrentFile.isEmpty() ? "<empty>" : mCfg.Display.CurrentFile.c_str());
       if (TryDisplayImage(tImage)) SaveNextImage(STG.GetNextFile(tImage));
       else {
         xLOG("Image failed → %s", tImage ? tImage : "(null)");
@@ -196,10 +208,11 @@ class Application {
       LOG.Halt("SLEEP");
       STG.End();
       #if PRODUCTION
+        CON.SyncTimeIfDue();
         UTL.SleepAndWakeup();
         __builtin_unreachable();
       #else
-        while (true) vTaskDelay(1e3 / portTICK_PERIOD_MS);
+        while (true) vTaskDelay(DELAY_ONE_SEC_MS / portTICK_PERIOD_MS);
       #endif
     }
 
@@ -217,6 +230,7 @@ class Application {
       STG.WriteFile(CONFIG_FILE, CFG.PrepareAllConfigToINI(), false);
       LOG.Init();
       LOG.Boot(UTL.ResolveBootReason(), "MAINTENANCE", mCfg.Device.Version.c_str(), gBootCount);
+      LOG.Info("BOOT_COUNT -> %u", (unsigned)gBootCount);
       LOG.Battery(UTL.mBatteryPercentage, static_cast<uint16_t>(UTL.mBatteryVoltage * 1000.0f), "measured");
       TouchMaintenanceActivity();
       DSP.Init();
@@ -275,9 +289,32 @@ class Application {
       DSP.ClearDisplay();
       DSP.Update();
       if (WaitForWifiClient(WIFI_CONNECT_TIMEOUT_MS)) TouchMaintenanceActivity();
+      constexpr uint8_t kInitRetryCount = 3;
+      constexpr uint32_t kInitRetryDelayMs = 5000;
+      auto tInitFailRestart = [this](const char *tService, bool tTelnetStarted, bool tFtpStarted) {
+        LOG.Halt("INIT_FAIL_RESTART");
+        {
+          Guard tLock;
+          DSP.OffAll();
+          LFS.End();
+          CON.Stop();
+          if (tFtpStarted) FTP.End();
+          if (tTelnetStarted) TLN.End();
+        }
+        esp_restart();
+      };
+      bool tTelnetStarted = false;
       if (mCfg.Telnet.Enable) {
         TLN.ActivityCallback([this]() { TouchMaintenanceActivity(); });
-        TLN.Init(true);
+        for (uint8_t tAttempt = 0; tAttempt < kInitRetryCount; tAttempt++) {
+          if (TLN.Init(true)) { tTelnetStarted = true; break; }
+          LOG.Warn("TELNET_INIT_FAIL attempt=%u/%u", (unsigned)(tAttempt + 1), (unsigned)kInitRetryCount);
+          if (tAttempt + 1 < kInitRetryCount) vTaskDelay(kInitRetryDelayMs / portTICK_PERIOD_MS);
+        }
+        if (!tTelnetStarted) {
+          tInitFailRestart("TELNET", false, false);
+          __builtin_unreachable();
+        }
         vTaskDelay(DELAY_HALF_SEC_MS / portTICK_PERIOD_MS);
       }
       if (mCfg.Ftp.Enable) {
@@ -287,7 +324,16 @@ class Application {
         FTP.TransferCallback([this](FtpTransferOperation, const char *, uint32_t) {
           TouchMaintenanceActivity();
         });
-        FTP.Init(true);
+        bool tFtpStarted = false;
+        for (uint8_t tAttempt = 0; tAttempt < kInitRetryCount; tAttempt++) {
+          if (FTP.Init(true)) { tFtpStarted = true; break; }
+          LOG.Warn("FTP_INIT_FAIL attempt=%u/%u", (unsigned)(tAttempt + 1), (unsigned)kInitRetryCount);
+          if (tAttempt + 1 < kInitRetryCount) vTaskDelay(kInitRetryDelayMs / portTICK_PERIOD_MS);
+        }
+        if (!tFtpStarted) {
+          tInitFailRestart("FTP", tTelnetStarted, false);
+          __builtin_unreachable();
+        }
         FTP.Callback([this](const char *tFileName, uint32_t tFileSize) {
           Guard tLock;
           TouchMaintenanceActivity();

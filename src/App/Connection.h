@@ -18,6 +18,7 @@ namespace App {
       void Stop();
       const char *GetIpAddress();
       bool HasActiveWifiClient() const;
+      bool SyncTimeIfDue();
       void Callback(FConnectionCallback tCallback);
     private:
       Connection_();

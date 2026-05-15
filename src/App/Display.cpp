@@ -139,10 +139,11 @@ namespace App {
   int IRAM_ATTR Display_::JpegDrawCallback(JPEGDRAW *tDraw) {
     Display_ *tSelf = &Instance();
     if (!tSelf->mFrameBuffer) return 0;
-    constexpr int kJpgBrightnessCorrection = 5;
+    constexpr int kJpgBrightnessCorrection = 10;
     constexpr int kJpgContrastCorrection = 0;
-    constexpr int kJpgGammaCorrection = 50;
-    constexpr int kJpgShadowLift = 12;
+    constexpr int kJpgGammaCorrection = 20;
+    constexpr int kJpgShadowLift = 4;
+    constexpr int kDitherStrength = 6;
     static const uint8_t kLevelRemap[16] = { 0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 13, 14, 14, 15, 15, 15 };
     static const int8_t kBayer4x4[4][4] = {
       {-8,  0, -6,  2},
@@ -171,7 +172,7 @@ namespace App {
         tVal = static_cast<int>(tNorm * 255.0f + 0.5f);
         tVal = max(0, min(255, tVal));
         int tDither = kBayer4x4[(tDraw->y + tY) & 0x03][(tDraw->x + tX) & 0x03];
-        int tQuant = max(0, min(255, tVal + tDither * 6));
+        int tQuant = max(0, min(255, tVal + tDither * kDitherStrength));
         int tLevel4bit = min(15, (tQuant + 8) >> 4);
         tLevel4bit = kLevelRemap[tLevel4bit];
         uint32_t tByteOffset = (tDraw->y + tY) * (tSelf->mCfg.Width / 2) + (tDraw->x + tX) / 2;
@@ -180,7 +181,7 @@ namespace App {
       }
     }
     return 1;
-  }
+  }  
 
   bool Display_::PrintJpg(int32_t tX, int32_t tY, const char *tFileName) {
     struct STaskData {
