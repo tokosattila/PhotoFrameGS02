@@ -1,4 +1,4 @@
-#include <App/RTC.h>
+﻿#include <App/RTC.h>
 
 namespace App {
 
@@ -34,7 +34,7 @@ namespace App {
       if (mAvailable) {
         xLOG("RTC is available, found PCF8563");
         PrintInfo();
-      } else xLOG("RTC is not available, PCF85063 not detected on I2C bus");
+      } else xLOG("RTC is not available, PCF8563 not detected on I2C bus");
     }
     return mAvailable;
   }
@@ -50,33 +50,179 @@ namespace App {
     return (mWire.endTransmission() == 0);
   }
 
+  bool RTC_::ReadRegister(uint8_t tReg, uint8_t &tValue) {
+    for (uint8_t tRetry = 0; tRetry < I2C_RETRY_COUNT; tRetry++) {
+      mWire.beginTransmission(mAddress);
+      mWire.write(tReg);
+      if (mWire.endTransmission() != 0) {
+        if (tRetry < I2C_RETRY_COUNT - 1) vTaskDelay(pdMS_TO_TICKS(I2C_RETRY_DELAY_MS));
+        continue;
+      }
+      if (mWire.requestFrom(mAddress, (uint8_t)1) < 1) {
+        if (tRetry < I2C_RETRY_COUNT - 1) vTaskDelay(pdMS_TO_TICKS(I2C_RETRY_DELAY_MS));
+        continue;
+      }
+      tValue = mWire.read();
+      return true;
+    }
+    return false;
+  }
+
+  bool RTC_::WriteRegister(uint8_t tReg, uint8_t tValue) {
+    for (uint8_t tRetry = 0; tRetry < I2C_RETRY_COUNT; tRetry++) {
+      mWire.beginTransmission(mAddress);
+      mWire.write(tReg);
+      mWire.write(tValue);
+      if (mWire.endTransmission() == 0) return true;
+      if (tRetry < I2C_RETRY_COUNT - 1) vTaskDelay(pdMS_TO_TICKS(I2C_RETRY_DELAY_MS));
+    }
+    return false;
+  }
+
+  bool RTC_::WriteAlarmRegisters(const SAlarmSpec &tSpec) {
+    for (uint8_t tRetry = 0; tRetry < I2C_RETRY_COUNT; tRetry++) {
+      mWire.beginTransmission(mAddress);
+      mWire.write(kRegAlarmMinute);
+      uint8_t tMinReg = DecToBcd(tSpec.Minute) & 0x7F;
+      if (!tSpec.EnableMinute) tMinReg |= kBitAen;
+      mWire.write(tMinReg);
+      uint8_t tHourReg = DecToBcd(tSpec.Hour) & 0x3F;
+      if (!tSpec.EnableHour) tHourReg |= kBitAen;
+      mWire.write(tHourReg);
+      uint8_t tDayReg = DecToBcd(tSpec.Day) & 0x3F;
+      if (!tSpec.EnableDay) tDayReg |= kBitAen;
+      mWire.write(tDayReg);
+      uint8_t tWdReg = DecToBcd(tSpec.Weekday) & 0x07;
+      if (!tSpec.EnableWeekday) tWdReg |= kBitAen;
+      mWire.write(tWdReg);
+      if (mWire.endTransmission() == 0) return true;
+      if (tRetry < I2C_RETRY_COUNT - 1) vTaskDelay(pdMS_TO_TICKS(I2C_RETRY_DELAY_MS));
+    }
+    return false;
+  }
+
+  bool RTC_::ReadAlarmRegisters(SAlarmSpec &tSpec) {
+    for (uint8_t tRetry = 0; tRetry < I2C_RETRY_COUNT; tRetry++) {
+      mWire.beginTransmission(mAddress);
+      mWire.write(kRegAlarmMinute);
+      if (mWire.endTransmission() != 0) {
+        if (tRetry < I2C_RETRY_COUNT - 1) vTaskDelay(pdMS_TO_TICKS(I2C_RETRY_DELAY_MS));
+        continue;
+      }
+      if (mWire.requestFrom(mAddress, (uint8_t)4) < 4) {
+        if (tRetry < I2C_RETRY_COUNT - 1) vTaskDelay(pdMS_TO_TICKS(I2C_RETRY_DELAY_MS));
+        continue;
+      }
+      uint8_t tMinRaw = mWire.read();
+      uint8_t tHourRaw = mWire.read();
+      uint8_t tDayRaw = mWire.read();
+      uint8_t tWdRaw = mWire.read();
+      tSpec.EnableMinute = ((tMinRaw & kBitAen) == 0);
+      tSpec.EnableHour = ((tHourRaw & kBitAen) == 0);
+      tSpec.EnableDay = ((tDayRaw & kBitAen) == 0);
+      tSpec.EnableWeekday = ((tWdRaw & kBitAen) == 0);
+      tSpec.Minute = BcdToDec(tMinRaw & 0x7F);
+      tSpec.Hour = BcdToDec(tHourRaw & 0x3F);
+      tSpec.Day = BcdToDec(tDayRaw & 0x3F);
+      tSpec.Weekday = BcdToDec(tWdRaw & 0x07);
+      return true;
+    }
+    return false;
+  }
+
+  bool RTC_::SetAlarm(const SAlarmSpec &tSpec) {
+    Guard tLock;
+    if (!mAvailable) return false;
+    uint8_t tCtrl2 = 0;
+    if (!ReadRegister(kRegControl2, tCtrl2)) {
+      xLOG("Control_2 read failed");
+      return false;
+    }
+    uint8_t tCtrl2Cleared = (uint8_t)(tCtrl2 & ~(kBitAie | kBitAf));
+    if (!WriteRegister(kRegControl2, tCtrl2Cleared)) {
+      xLOG("Control_2 disable write failed");
+      return false;
+    }
+    if (!WriteAlarmRegisters(tSpec)) {
+      xLOG("Alarm registers write failed");
+      return false;
+    }
+    uint8_t tCtrl2Enable = (uint8_t)((tCtrl2Cleared | kBitAie) & ~kBitAf);
+    if (!WriteRegister(kRegControl2, tCtrl2Enable)) {
+      xLOG("Control_2 enable write failed");
+      return false;
+    }
+    return true;
+  }
+
+  bool RTC_::DisableAlarm() {
+    Guard tLock;
+    if (!mAvailable) return false;
+    uint8_t tCtrl2 = 0;
+    if (!ReadRegister(kRegControl2, tCtrl2)) return false;
+    uint8_t tCtrl2New = (uint8_t)(tCtrl2 & ~(kBitAie | kBitAf));
+    if (!WriteRegister(kRegControl2, tCtrl2New)) return false;
+    SAlarmSpec tNone;
+    tNone.EnableMinute = false;
+    tNone.EnableHour = false;
+    tNone.EnableDay = false;
+    tNone.EnableWeekday = false;
+    return WriteAlarmRegisters(tNone);
+  }
+
+  bool RTC_::ClearAlarmFlag() {
+    Guard tLock;
+    if (!mAvailable) return false;
+    uint8_t tCtrl2 = 0;
+    if (!ReadRegister(kRegControl2, tCtrl2)) return false;
+    uint8_t tCtrl2New = (uint8_t)(tCtrl2 & ~kBitAf);
+    return WriteRegister(kRegControl2, tCtrl2New);
+  }
+
+  bool RTC_::IsAlarmTriggered() {
+    Guard tLock;
+    if (!mAvailable) return false;
+    uint8_t tCtrl2 = 0;
+    if (!ReadRegister(kRegControl2, tCtrl2)) return false;
+    return ((tCtrl2 & kBitAf) != 0);
+  }
+
+  bool RTC_::GetAlarm(SAlarmSpec &tSpec) {
+    Guard tLock;
+    if (!mAvailable) return false;
+    return ReadAlarmRegisters(tSpec);
+  }
+
+  bool RTC_::SetFromEpoch(unsigned long tEpoch) {
+    SRTCDateTime tDateTime;
+    EpochToDateTime(tEpoch, tDateTime);
+    return SetDateTime(tDateTime);
+  }
+
+
   bool RTC_::IsDateTimePlausible(const SRTCDateTime &tDateTime) {
     if (tDateTime.Year < 2000 || tDateTime.Year > 2099) {
-      xLOG("RTC plausibility check FAIL: year %u out of range [2000-2099]", tDateTime.Year);
+      xLOG("Year %u out of range [2000-2099]", tDateTime.Year);
       return false;
     }
     if (tDateTime.Month < 1 || tDateTime.Month > 12) {
-      xLOG("RTC plausibility check FAIL: month %u out of range [1-12]", tDateTime.Month);
+      xLOG("RMonth %u out of range [1-12]", tDateTime.Month);
       return false;
     }
     if (tDateTime.Day < 1 || tDateTime.Day > 31) {
-      xLOG("RTC plausibility check FAIL: day %u out of range [1-31]", tDateTime.Day);
+      xLOG("Day %u out of range [1-31]", tDateTime.Day);
       return false;
     }
     if (tDateTime.Hour > 23) {
-      xLOG("RTC plausibility check FAIL: hour %u out of range [0-23]", tDateTime.Hour);
+      xLOG("Hour %u out of range [0-23]", tDateTime.Hour);
       return false;
     }
     if (tDateTime.Minute > 59) {
-      xLOG("RTC plausibility check FAIL: minute %u out of range [0-59]", tDateTime.Minute);
+      xLOG("Minute %u out of range [0-59]", tDateTime.Minute);
       return false;
     }
     if (tDateTime.Second > 59) {
-      xLOG("RTC plausibility check FAIL: second %u out of range [0-59]", tDateTime.Second);
-      return false;
-    }
-    if (tDateTime.DayOfWeek > 6) {
-      xLOG("RTC plausibility check FAIL: day of week %u out of range [0-6]", tDateTime.DayOfWeek);
+      xLOG("Second %u out of range [0-59]", tDateTime.Second);
       return false;
     }
     return true;
@@ -102,7 +248,7 @@ namespace App {
     tDateTime.Minute = BcdToDec(mWire.read() & 0x7F);
     tDateTime.Hour = BcdToDec(mWire.read() & 0x3F);
     tDateTime.Day = BcdToDec(mWire.read() & 0x3F);
-    tDateTime.DayOfWeek = BcdToDec(mWire.read() & 0x07);
+    tDateTime.Weekday = BcdToDec(mWire.read() & 0x07);
     uint8_t tMonthReg = mWire.read();
     tDateTime.Month = BcdToDec(tMonthReg & 0x1F);
     tDateTime.Year = 2000 + BcdToDec(mWire.read());
@@ -146,7 +292,7 @@ namespace App {
       mWire.write(DecToBcd(tDateTime.Minute));
       mWire.write(DecToBcd(tDateTime.Hour));
       mWire.write(DecToBcd(tDateTime.Day));
-      mWire.write(DecToBcd(tDateTime.DayOfWeek));
+      mWire.write(DecToBcd(tDateTime.Weekday));
       uint8_t tMonthReg = DecToBcd(tDateTime.Month);
       if (tDateTime.Year >= 2100) tMonthReg |= 0x80;
       mWire.write(tMonthReg);
@@ -209,7 +355,6 @@ namespace App {
     tDateTime.Minute = tMinutes;
     tDateTime.Hour = tHours;
     unsigned long tDays = tEpoch;
-    tDateTime.DayOfWeek = ((tDays + 4) % 7);
     uint16_t tYear = 1970;
     while (true) {
       uint16_t tDaysInYear = (tYear % 4 == 0 && (tYear % 100 != 0 || tYear % 400 == 0)) ? 366 : 365;
@@ -234,15 +379,8 @@ namespace App {
   unsigned long RTC_::GetEpoch() {
     Guard tLock;
     SRTCDateTime tDateTime;
-    if (!GetDateTime(tDateTime)) return 0;
+    if (!this->GetDateTime(tDateTime)) return 0;
     return DateTimeToEpoch(tDateTime);
-  }
-
-  bool RTC_::SetFromEpoch(unsigned long tEpoch) {
-    Guard tLock;
-    SRTCDateTime tDateTime;
-    EpochToDateTime(tEpoch, tDateTime);
-    return SetDateTime(tDateTime);
   }
 
   bool RTC_::SyncFromNTP() {
@@ -252,14 +390,14 @@ namespace App {
       xLOG("NTP time not available");
       return false;
     }
-    bool tOk = SetFromEpoch(tEpoch);
+    bool tOk = this->SetFromEpoch(tEpoch);
     if (tOk) xLOG("RTC synced from NTP");
     return tOk;
   }
 
   bool RTC_::SyncToSystem() {
     Guard tLock;
-    unsigned long tEpoch = GetEpoch();
+    unsigned long tEpoch = this->GetEpoch();
     if (tEpoch == 0) {
       xLOG("RTC epoch is 0, cannot sync");
       return false;
@@ -288,14 +426,14 @@ namespace App {
     struct timeval tTv;
     gettimeofday(&tTv, nullptr);
     if (tTv.tv_sec < 1735689600) return false;
-    bool tOk = SetFromEpoch(tTv.tv_sec);
+    bool tOk = this->SetFromEpoch(tTv.tv_sec);
     if (tOk) xLOG("RTC synced from system time");
     return tOk;
   }
 
   void RTC_::GetTime(char *tBuffer, size_t tSize) {
     SRTCDateTime tDateTime;
-    if (!GetDateTime(tDateTime)) {
+    if (!this->GetDateTime(tDateTime)) {
       snprintf(tBuffer, tSize, "--:--:--");
       return;
     }
@@ -304,7 +442,7 @@ namespace App {
 
   void RTC_::GetDate(char *tBuffer, size_t tSize) {
     SRTCDateTime tDateTime;
-    if (!GetDateTime(tDateTime)) {
+    if (!this->GetDateTime(tDateTime)) {
       snprintf(tBuffer, tSize, "----.--.--");
       return;
     }
@@ -313,7 +451,7 @@ namespace App {
 
   void RTC_::GetDateTime(char *tBuffer, size_t tSize) {
     SRTCDateTime tDateTime;
-    if (!GetDateTime(tDateTime)) {
+    if (!this->GetDateTime(tDateTime)) {
       snprintf(tBuffer, tSize, "----.--.-- --:--:--");
       return;
     }
@@ -322,9 +460,9 @@ namespace App {
 
   void RTC_::PrintInfo() {
     SRTCDateTime tDt;
-    if (GetDateTime(tDt)) {
-      xLOG("RTC DateTime → %04d.%02d.%02d %02d:%02d:%02d", tDt.Year, tDt.Month, tDt.Day, tDt.Hour, tDt.Minute, tDt.Second);
-    } else xLOG("RTC DateTime read failed");
+    if (this->GetDateTime(tDt)) {
+      xLOG("DateTime → %04d.%02d.%02d %02d:%02d:%02d", tDt.Year, tDt.Month, tDt.Day, tDt.Hour, tDt.Minute, tDt.Second);
+    } else xLOG("DateTime read failed");
   }
 
 }

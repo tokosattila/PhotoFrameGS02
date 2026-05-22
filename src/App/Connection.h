@@ -17,9 +17,10 @@ namespace App {
       void Start();
       void Stop();
       const char *GetIpAddress();
-      bool HasActiveWifiClient() const;
       bool SyncTimeIfDue();
+      bool HasActiveWifiClient() const;
       void Callback(FConnectionCallback tCallback);
+      bool TryConnectApSta();
     private:
       Connection_();
       Connection_(const Connection_&) = delete;
@@ -36,10 +37,9 @@ namespace App {
       static void Unlock();
       static void WiFiEventTask(void *tParameter);
       void SetupAp();
+      bool ConnectSta();
       bool TryConnectStaWithRetry();
-      bool TryConnectApSta();
-      void SwitchToFallbackApMode();
-      void ConnectSta();
+      void SwitchToFallbackApMode(bool tPersistConfig);
       void StartMdns();
       void PrintConnectionInfo();
       void BootstrapVault();

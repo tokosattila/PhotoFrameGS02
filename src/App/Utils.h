@@ -43,11 +43,16 @@ namespace App {
       void SleepLowBattery();
       void SleepAndWakeup();
       uint64_t SecondsUntilHour(uint8_t tTargetHour);
+      static bool ComputeWakePlan(const STimerConfig &tTimerCfg, SWakeSchedule &tOutPlan);
+      static uint32_t ComputeWakeDelaySeconds(const STimerConfig &tTimerCfg);
       bool MeasureBattery();
       static bool WasWokenByButton();
-        static bool HasElapsedMs(uint32_t tStart, uint32_t tNow, uint32_t tDelayMs);
-        static const char *ResolveBootReason();
-        static bool WasWokenByPin(uint8_t tPin);
+      static bool WasWokenByRtcAlarm();
+      static void SetBootRtcReady(bool tReady);
+      static bool WasBootRtcReady();
+      static bool HasElapsedMs(uint32_t tStart, uint32_t tNow, uint32_t tDelayMs);
+      static const char *ResolveBootReason();
+      static bool WasWokenByPin(uint8_t tPin);
       static bool SecureStrcmp(const char *tA, const char *tB);
       static uint32_t SafeAtoul(const char *tStr, uint32_t tMinVal, uint32_t tMaxVal, uint32_t tDefaultVal);
       static bool IsSD(const char *tTarget);
@@ -81,6 +86,8 @@ namespace App {
       void PrintFileSystemInfo();
       void PrintResourceInfo();
       void PrintRadioInfo();
+      static bool TryResolveScheduleNow(SRTCDateTime &tNow);
+      static uint32_t ComputeFallbackDelaySeconds(const STimerConfig &tTimerCfg);
   };
 
 }

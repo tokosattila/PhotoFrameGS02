@@ -65,10 +65,13 @@ class Application {
       UTL.DisableBT();
       UTL.DisableTouchPad();
       if (RTC.Init() && RTC.IsAvailable()) {
+        UTL.SetBootRtcReady(true);
+        if (UTL.WasWokenByRtcAlarm()) xLOG("Wake source RTC alarm");
+        RTC.ClearAlarmFlag();
         RTC.SyncToSystem();
         RTC.End();
         UTL.PrintDateTime();
-      }
+      } else UTL.SetBootRtcReady(false);
       if (!UTL.MeasureBattery()) {
         LowBatteryMode();
         return;

@@ -2,19 +2,8 @@
 #define RTC_H
 
 #include <App/Global.h>
-#include <Wire.h>
 
 namespace App {
-
-  struct SRTCDateTime {
-    uint8_t Second = 0;
-    uint8_t Minute = 0;
-    uint8_t Hour = 0;
-    uint8_t DayOfWeek = 0;
-    uint8_t Day = 1;
-    uint8_t Month = 1;
-    uint16_t Year = 2026;
-  };
 
   class RTC_ {
     DEFINE_TAG("RTC");
@@ -36,6 +25,14 @@ namespace App {
       void GetDate(char *tBuffer, size_t tSize);
       void GetDateTime(char *tBuffer, size_t tSize);
       void PrintInfo();
+      bool SetAlarm(const SAlarmSpec &tSpec);
+      bool DisableAlarm();
+      bool ClearAlarmFlag();
+      bool IsAlarmTriggered();
+      bool GetAlarm(SAlarmSpec &tSpec);
+    public:
+      static unsigned long DateTimeToEpoch(const SRTCDateTime &tDateTime);
+      static void EpochToDateTime(unsigned long tEpoch, SRTCDateTime &tDateTime);
     private:
       RTC_();
       RTC_(const RTC_&) = delete;
@@ -49,6 +46,14 @@ namespace App {
       bool mAvailable = false;
       static constexpr uint8_t I2C_RETRY_COUNT = 3;
       static constexpr uint32_t I2C_RETRY_DELAY_MS = 5;
+      static constexpr uint8_t kRegControl2 = 0x01;
+      static constexpr uint8_t kRegAlarmMinute = 0x09;
+      static constexpr uint8_t kRegAlarmHour = 0x0A;
+      static constexpr uint8_t kRegAlarmDay = 0x0B;
+      static constexpr uint8_t kRegAlarmWeekday = 0x0C;
+      static constexpr uint8_t kBitAie = 0x02;
+      static constexpr uint8_t kBitAf = 0x08;
+      static constexpr uint8_t kBitAen = 0x80;
       static void Lock();
       static void Unlock();
       bool TryI2C();
@@ -56,10 +61,12 @@ namespace App {
       bool ReadDateTimeWithRetry(SRTCDateTime &tDateTime);
       bool WriteDateTimeWithRetry(const SRTCDateTime &tDateTime);
       bool IsDateTimePlausible(const SRTCDateTime &tDateTime);
+      bool ReadRegister(uint8_t tReg, uint8_t &tValue);
+      bool WriteRegister(uint8_t tReg, uint8_t tValue);
+      bool WriteAlarmRegisters(const SAlarmSpec &tSpec);
+      bool ReadAlarmRegisters(SAlarmSpec &tSpec);
       static uint8_t BcdToDec(uint8_t tBcd);
       static uint8_t DecToBcd(uint8_t tDec);
-      static unsigned long DateTimeToEpoch(const SRTCDateTime &tDateTime);
-      static void EpochToDateTime(unsigned long tEpoch, SRTCDateTime &tDateTime);
   };
 
 }

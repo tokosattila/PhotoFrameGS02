@@ -7,6 +7,7 @@
 #include <freertos/task.h>
 #include <driver/adc.h>
 #include <driver/gpio.h>
+#include <driver/rtc_io.h>
 #include <driver/touch_pad.h>
 #include <esp_adc_cal.h>
 #include <esp_bt.h>
@@ -21,6 +22,7 @@
 #include <soc/rtc_cntl_reg.h>
 #include <soc/soc.h>
 #include <ctype.h>
+#include <cstdint>
 #include <stdio.h>
 #include <strings.h>
 #include <sys/time.h>
@@ -95,6 +97,7 @@ namespace App {
 
   enum class EDevicePins : uint8_t {
     Btn1 = 21U,
+    RtcIntPin = 37U,
     Btn2 = 48U,
     PiezoPin = 47U,
     BatPin = 14U,
@@ -236,6 +239,44 @@ namespace App {
     STimerConfig() = default;
   };
 
+  struct SRTCDateTime {
+    uint8_t Second = 0;
+    uint8_t Minute = 0;
+    uint8_t Hour = 0;
+    uint8_t Day = 1;
+    uint8_t Weekday = 0;
+    uint8_t Month = 1;
+    uint16_t Year = 2026;
+  };
+
+  struct SAlarmSpec {
+    uint8_t Minute = 0;
+    uint8_t Hour = 0;
+    uint8_t Day = 1;
+    uint8_t Weekday = 0;
+    bool EnableMinute = false;
+    bool EnableHour = false;
+    bool EnableDay = false;
+    bool EnableWeekday = false;
+    bool Enabled = false;
+    SAlarmSpec() = default;
+  };
+
+  struct SWakeSchedule {
+    SRTCDateTime NextWake{};
+    uint32_t DelaySeconds = 0;
+    SAlarmSpec Alarm{};
+    bool Enabled = false;
+    SWakeSchedule() = default;
+  };
+
+  struct SWakeStatus {
+    bool WakeDue = false;
+    SRTCDateTime NextWake{};
+    SAlarmSpec LastMatched{};
+    SWakeStatus() = default;
+  };
+
   struct STelnetConfig{
     bool Enable = false;
     Port TelnetPort {23};
@@ -309,6 +350,8 @@ namespace App {
   static constexpr uint8_t RTC_ADDRESS = 0x51;
   constexpr uint8_t RTC_SDA_PIN = static_cast<uint8_t>(EDevicePins::RTCSdaPin);
   constexpr uint8_t RTC_SCL_PIN = static_cast<uint8_t>(EDevicePins::RTCSclPin);
+  constexpr uint8_t RTC_INT_PIN = static_cast<uint8_t>(EDevicePins::RtcIntPin);
+
 
   constexpr uint8_t SD_MISO_PIN = static_cast<uint8_t>(EDevicePins::SDMisoPin);
   constexpr uint8_t SD_MOSI_PIN = static_cast<uint8_t>(EDevicePins::SDMosiPin);
@@ -343,6 +386,7 @@ namespace App {
   constexpr uint32_t CONFIG_RETRY_DELAY_MS = ONE_SECOND_MS;
 
   extern RTC_DATA_ATTR uint32_t gBootCount;
+  extern RTC_DATA_ATTR bool gBootRtcReady;
 
 }
 
@@ -354,6 +398,7 @@ namespace App {
 #include <App/LogManager.h>
 #include <App/NTP.h>
 #include <App/RTC.h>
+#include <App/WakeScheduler.h>
 #include <App/Connection.h>
 #include <App/Button.h>
 #include <App/Tone.h>
@@ -378,6 +423,7 @@ namespace App {
 #define STG Storage_::Instance()
 #define NTP NTP_::Instance()
 #define RTC RTC_::Instance()
+#define WSC WakeScheduler_::Instance()
 #define CON Connection_::Instance()
 #define BTN Button_::Instance()
 #define TON Tone_::Instance()
